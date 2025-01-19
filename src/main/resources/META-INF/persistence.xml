@@ -5,6 +5,10 @@
              version="3.0">
     <persistence-unit name="mariadb-pu">
 <!--        Thêm Object class vào-->
+        <class>model.Room</class>
+        <class>model.RoomType</class>
+        <class>model.Promotion</class>
+        <class>model.Service</class>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/studentdb"/>
