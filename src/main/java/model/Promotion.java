@@ -1,10 +1,6 @@
 package model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,6 +39,7 @@ public class Promotion {
     @Column(name = "luotSuDung", nullable = false)
     private int luotSuDung;
 
-   /* @OneToMany(mappedBy = "phieuGiamGia")
-    private Set<ChiTietPGG> danhSachChiTietPGG;*/
+    // Mối quan hệ nhiều-nhiều giữa room với promotion
+    @ManyToMany(mappedBy = "promotions")
+    private Set<Room> rooms;
 }

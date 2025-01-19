@@ -1,16 +1,13 @@
 package model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.Set;
 
 @Entity
 @NoArgsConstructor
@@ -19,6 +16,7 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
 @Table(name = "Phong")
+@Embeddable
 public class Room {
 
     @Id
@@ -42,6 +40,15 @@ public class Room {
     private int soNguoi;
 
     @ManyToOne
-    @JoinColumn(name = "maLoai", nullable = false)
+    @JoinColumn(name = "loaiPhong", nullable = false)
     private RoomType loaiPhong;
+
+    // Mối quan hệ nhiều-nhiều giữa room với promotion
+    @ManyToMany
+    @JoinTable(
+            name = "Detail_Room_Promotion",
+            joinColumns = @JoinColumn(name = "maPhong"),
+            inverseJoinColumns = @JoinColumn(name = "maPGG")
+    )
+    private Set<Promotion> promotions;
 }

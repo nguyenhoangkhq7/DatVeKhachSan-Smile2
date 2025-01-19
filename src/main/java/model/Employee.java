@@ -12,6 +12,7 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "NhanVien")
+@Embeddable
 public class Employee {
 
     @Id
