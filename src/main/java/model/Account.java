@@ -14,10 +14,10 @@ public class Account {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "tenDN", length = 50, nullable = false)
+    @Column(name = "TenDN", length = 50, nullable = false)
     private String tenDN;
 
-    @Column(name = "matKhau", nullable = false)
+    @Column(name = "MatKhau", nullable = false)
     private String matKhau;
 
     // Thiết lập quan hệ 1-1
