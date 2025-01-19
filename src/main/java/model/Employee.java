@@ -13,6 +13,7 @@ import java.util.Date;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "NhanVien")
 public class Employee {
+
     @Id
     @EqualsAndHashCode.Include
     @Column(name = "maNhanVien", length = 50, nullable = false)
@@ -36,8 +37,8 @@ public class Employee {
     @Column(name = "ngaySinh")
     private Date ngaySinh;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "tenDN", referencedColumnName = "tenDN")
+    // Thiết lập quan hệ 1-1
+    @OneToOne(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Account taiKhoan;
 }
-
