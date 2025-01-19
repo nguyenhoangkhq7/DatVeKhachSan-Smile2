@@ -15,19 +15,19 @@ public class Customer {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "maKH", length = 50, nullable = false)
+    @Column(name = "MaKH", length = 50, nullable = false)
     private String maKH;
 
-    @Column(name = "hoTen", length = 100, nullable = false)
+    @Column(name = "HoTen", length = 100, nullable = false)
     private String hoTen;
 
     @Column(name = "SDT", length = 15, nullable = false)
     private String SDT;
 
-    @Column(name = "soCCCD", length = 12, unique = true, nullable = false)
+    @Column(name = "SoCCCD", length = 12, unique = true, nullable = false)
     private String soCCCD;
 
-    @Column(name = "email", length = 100, nullable = false)
+    @Column(name = "Email", length = 100, nullable = false)
     private String email;
 }
 
