@@ -50,8 +50,7 @@ public class DataGenerator {
         employee.setSDT(generatePhoneNumber(faker));
         employee.setDiaChi(faker.address().fullAddress());
         employee.setEmail(faker.internet().emailAddress());
-        employee.setNgaySinh(faker.date().birthday(20, 60));
-
+//        employee.setNgaySinh(faker.date().birthday(20, 60));
         return employee;
     }
 
