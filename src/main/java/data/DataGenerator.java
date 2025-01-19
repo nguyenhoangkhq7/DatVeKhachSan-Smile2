@@ -10,6 +10,9 @@
 
 package data;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
 import model.Account;
 import model.Customer;
 import model.Employee;
@@ -38,7 +41,7 @@ public class DataGenerator {
         return (Customer) customers;
     }
 
-    public Employee FakeEmployeeData() {
+    public Employee EmployeeData() {
         Faker faker = new Faker();
         Employee employee = new Employee();
         employee.setMaNhanVien("NV" + faker.number().numberBetween(1000, 9999));
@@ -72,5 +75,28 @@ public class DataGenerator {
         return faker.number().digits(length);
     }
 
+    public void generateAndPrintSampleData() {
+        EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu")
+                .createEntityManager();
+
+        EntityTransaction tr = em.getTransaction();
+        for (int i = 0; i <  10; i++) {
+            Customer customer = CustomerData();
+            Employee employee = EmployeeData();
+//            Account account = (Account) generateFakeAccounts();
+
+            tr.begin();
+                em.persist(customer.getClass());
+                em.persist(employee.getClass());
+                em.persist(customer);
+                em.persist(employee);
+            tr.commit();
+
+        }
+    }
+    public static void main(String[] args) {
+        DataGenerator generator = new DataGenerator();
+        generator.generateAndPrintSampleData();
+    }
 
 }
