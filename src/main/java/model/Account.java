@@ -10,7 +10,7 @@ import lombok.*;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "TaiKhoan")
-public class Account{
+public class Account {
 
     @Id
     @EqualsAndHashCode.Include
@@ -20,8 +20,11 @@ public class Account{
     @Column(name = "matKhau", nullable = false)
     private String matKhau;
 
-    @OneToOne(mappedBy = "taiKhoan")
+    // Thiết lập quan hệ 1-1
+    @OneToOne
+    @JoinColumn(name = "maNhanVien", referencedColumnName = "maNhanVien", unique = true)
     private Employee nhanVien;
 }
+
 
 
