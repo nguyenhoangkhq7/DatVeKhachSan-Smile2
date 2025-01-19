@@ -43,6 +43,10 @@ public class Room {
     @JoinColumn(name = "loaiPhong", nullable = false)
     private RoomType loaiPhong;
 
+    @ManyToOne
+    @JoinColumn(name = "maPDP", nullable = false)
+    private Booking booking;
+
     // Mối quan hệ nhiều-nhiều giữa room với promotion
     @ManyToMany
     @JoinTable(

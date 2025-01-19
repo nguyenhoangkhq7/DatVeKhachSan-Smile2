@@ -52,6 +52,6 @@ public class Booking {
 //  Mối quan hệ giữa booking với room
 //  (1 nhiều nhưng bên phía room không có tham chiếu ngược lại đơn đặt phòng)
     @ToString.Exclude
-    @OneToMany(mappedBy = "loaiPhong", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Room> dsPhong;
 }
