@@ -21,22 +21,22 @@ public class Promotion {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "maPGG", length = 50, nullable = false)
+    @Column(name = "MaPGG", length = 50, nullable = false)
     private String maPGG;
 
-    @Column(name = "mucGiamGia", nullable = false)
+    @Column(name = "MucGiamGia", nullable = false)
     private double mucGiamGia;
 
-    @Column(name = "ngayBatDau", nullable = false)
+    @Column(name = "NgayBatDau", nullable = false)
     private Date ngayBatDau;
 
-    @Column(name = "ngayKetThuc", nullable = false)
+    @Column(name = "NgayKetThuc", nullable = false)
     private Date ngayKetThuc;
 
-    @Column(name = "dieuKienApDung", length = 255)
+    @Column(name = "DieuKienApDung", length = 255)
     private String dieuKienApDung;
 
-    @Column(name = "luotSuDung", nullable = false)
+    @Column(name = "LuotSuDung", nullable = false)
     private int luotSuDung;
 
     // Mối quan hệ nhiều-nhiều giữa room với promotion

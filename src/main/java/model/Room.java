@@ -16,43 +16,42 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
 @Table(name = "Phong")
-@Embeddable
 public class Room {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "maPhong", length = 50, nullable = false)
+    @Column(name = "MaPhong", length = 50, nullable = false)
     private String maPhong;
 
-    @Column(name = "tenPhong", length = 100, nullable = false)
+    @Column(name = "TenPhong", length = 100, nullable = false)
     private String tenPhong;
 
-    @Column(name = "giaPhong", nullable = false)
+    @Column(name = "GiaPhong", nullable = false)
     private double giaPhong;
 
-    @Column(name = "tinhTrang", nullable = false)
+    @Column(name = "TinhTrang", nullable = false)
     private int tinhTrang;
 
-    @Column(name = "moTa", length = 250)
+    @Column(name = "MoTa", length = 250)
     private String moTa;
 
-    @Column(name = "soNguoi", nullable = false)
+    @Column(name = "SoNguoi", nullable = false)
     private int soNguoi;
 
     @ManyToOne
-    @JoinColumn(name = "loaiPhong", nullable = false)
+    @JoinColumn(name = "LoaiPhong", nullable = false)
     private RoomType loaiPhong;
 
     @ManyToOne
-    @JoinColumn(name = "maPDP", nullable = false)
+    @JoinColumn(name = "MaPDP", nullable = false)
     private Booking booking;
 
-    // Mối quan hệ nhiều-nhiều giữa room với promotion
+    // Mối quan hệ nhiều-nhiều giữa phòng và khuyến mãi
     @ManyToMany
     @JoinTable(
             name = "Detail_Room_Promotion",
-            joinColumns = @JoinColumn(name = "maPhong"),
-            inverseJoinColumns = @JoinColumn(name = "maPGG")
+            joinColumns = @JoinColumn(name = "MaPhong"),
+            inverseJoinColumns = @JoinColumn(name = "MaPGG")
     )
     private Set<Promotion> promotions;
 }

@@ -20,22 +20,22 @@ public class Service {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "maDV", length = 50, nullable = false, unique = true)
+    @Column(name = "MaDV", length = 50, nullable = false, unique = true)
     private String maDV;
 
-    @Column(name = "tenDV", length = 100, nullable = false)
+    @Column(name = "TenDV", length = 100, nullable = false)
     private String tenDV;
 
-    @Column(name = "donGia", nullable = false)
+    @Column(name = "DonGia", nullable = false)
     private double donGia;
 
-    @Column(name = "donViTinh", nullable = false)
+    @Column(name = "DonViTinh", nullable = false)
     private String donViTinh;
 
-    @Column(name = "moTa", length = 250)
+    @Column(name = "MoTa", length = 250)
     private String moTa;
 
-    /*@OneToMany(mappedBy = "dichVu")
+    /*@OneToMany(mappedBy = "DichVu")
     @ToString.Exclude
     private List<ChiTietHoaDon_DichVu> chiTietHoaDonDichVu;*/
 }

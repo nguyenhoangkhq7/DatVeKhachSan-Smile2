@@ -1,10 +1,6 @@
 package model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,13 +20,13 @@ public class RoomType {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "maLoai", length = 50, nullable = false)
+    @Column(name = "MaLoai", length = 50, nullable = false)
     private String maLoai;
 
-    @Column(name = "tenLoai", length = 100, nullable = false)
+    @Column(name = "TenLoai", length = 100, nullable = false)
     private String tenLoai;
 
-    @Column(name = "moTa", length = 255)
+    @Column(name = "MoTa", length = 255)
     private String moTa;
 
     @OneToMany(mappedBy = "loaiPhong")
