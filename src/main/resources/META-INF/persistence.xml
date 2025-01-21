@@ -16,7 +16,7 @@
             <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/QuanLyKS"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
-            <property name="jakarta.persistence.jdbc.password" value="sapassword"/>
+            <property name="jakarta.persistence.jdbc.password" value="Thanh042004"/>
             <property name="jakarta.persistence.jdbc.dialect" value="org.hibernate.dialect.MariaDBDialect"/>
 
             <!-- Cho đẹp-->

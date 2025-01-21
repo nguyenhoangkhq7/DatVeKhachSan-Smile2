@@ -17,6 +17,8 @@ import model.*;
 import net.datafaker.Faker;
 import org.hibernate.usertype.CompositeUserType;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class DataGenerator {
@@ -125,6 +127,62 @@ public class DataGenerator {
 
         return service;
     }
+    private ServiceOrder generateServiceOrder(List<Customer> customers, List<Booking> bookings, List<Employee> employees) {
+        if (customers.isEmpty() || bookings.isEmpty() || employees.isEmpty()) {
+            System.out.println("Một trong các danh sách khách hàng, đặt phòng hoặc nhân viên trống. Không thể tạo đơn hàng dịch vụ.");
+            return null;
+        }
+
+        var customer = customers.get(faker.number().numberBetween(0, customers.size()));
+        var booking = bookings.get(faker.number().numberBetween(0, bookings.size()));
+        var employee = employees.get(faker.number().numberBetween(0, employees.size()));
+
+        ServiceOrder serviceOrder = new ServiceOrder();
+        serviceOrder.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
+        serviceOrder.setNgayDatDichVu(generatePastDate(30));  // Giả sử generatePastDate là hàm đã được định nghĩa
+        serviceOrder.setSoLuongDichVu(faker.number().numberBetween(1, 5));
+        serviceOrder.setDonDatPhong(booking);
+        serviceOrder.setKhachHang(customer);
+        serviceOrder.setNhanVien(employee);
+        serviceOrder.setMoTa(faker.lorem().sentence());
+
+        return serviceOrder;
+    }
+    // Tạo dữ liệu cho Invoice
+    private Invoice generateInvoice(List<Customer> customers, List<Booking> bookings) {
+        if (customers.isEmpty() || bookings.isEmpty()) {
+            System.out.println("Danh sách khách hàng hoặc đặt phòng trống. Không thể tạo hóa đơn.");
+            return null;  // Hoặc xử lý theo cách khác tùy nhu cầu
+        }
+
+        var customer = customers.get(faker.number().numberBetween(0, customers.size()));
+        var booking = bookings.get(faker.number().numberBetween(0, bookings.size()));
+
+        Invoice invoice = new Invoice();
+        invoice.setMaHD("HD" + faker.number().numberBetween(1000, 9999));
+
+        LocalDate invoiceDate = LocalDate.now().minus(faker.number().numberBetween(1, 30), ChronoUnit.DAYS);
+        invoice.setNgayLapHD(java.sql.Date.valueOf(invoiceDate));
+
+        invoice.setKhachHang(customer);
+
+        LocalDate checkInDate = LocalDate.now().plus(faker.number().numberBetween(1, 10), ChronoUnit.DAYS);
+        invoice.setNgayNhanPhong(java.sql.Date.valueOf(checkInDate));
+
+        LocalDate checkOutDate = LocalDate.now().plus(faker.number().numberBetween(1, 20), ChronoUnit.DAYS);
+        invoice.setNgayTraPhong(java.sql.Date.valueOf(checkOutDate));
+
+        invoice.setSoPhongDat(faker.number().numberBetween(1, 5));
+        invoice.setPhieuDatPhong(booking);
+
+        return invoice;
+    }
+    private static Date generatePastDate(int daysBack) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -new Random().nextInt(daysBack + 1)); // Trừ đi một số ngày ngẫu nhiên
+        return calendar.getTime();
+    }
+
 
     private static String generatePhoneNumber(Faker faker) {
         int length = faker.number().numberBetween(10, 13); // Số chữ số từ 10-13
@@ -144,6 +202,8 @@ public class DataGenerator {
             Promotion promotion = PromotionData();
             RoomType roomType = RoomTypeData();
             Service service = ServiceData();
+            ServiceOrder serviceOrder = ServiceData();
+            Invoice invoice =  Invoice();
 
             // Tạo phòng và gán với loại phòng, khuyến mãi, và booking (booking ở đây để null)
             Room room = RoomData(roomType, null, new HashSet<>(Collections.singletonList(promotion))); // Phòng không có booking
@@ -158,6 +218,9 @@ public class DataGenerator {
             em.persist(roomType);
             em.persist(service);
             em.persist(room);
+            em.persist(serviceOrder);
+
+            em.persist(invoice);
 
             tr.commit();
         }
