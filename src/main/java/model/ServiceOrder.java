@@ -1,9 +1,11 @@
 package model;
 
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.Order;
 import lombok.*;
 
 import java.util.Date;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -37,6 +39,11 @@ public class ServiceOrder {
     @ManyToOne
     @JoinColumn(name = "MaNhanVien", nullable = false)
     private Employee nhanVien; // Mối quan hệ với NhanVien
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "serviceOrder")
+    private Set<Service> dsDichVu;
+
 
     @Column(name = "MoTa", length = 255)
     private String moTa;

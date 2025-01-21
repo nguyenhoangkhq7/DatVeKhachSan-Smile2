@@ -1,10 +1,6 @@
 package model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
@@ -35,7 +31,8 @@ public class Service {
     @Column(name = "MoTa", length = 250)
     private String moTa;
 
-    /*@OneToMany(mappedBy = "DichVu")
-    @ToString.Exclude
-    private List<ChiTietHoaDon_DichVu> chiTietHoaDonDichVu;*/
+
+    @ManyToOne
+    @JoinColumn(name ="MaPDDV",nullable = false)
+    private ServiceOrder serviceOrder;
 }
