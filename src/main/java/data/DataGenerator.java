@@ -133,6 +133,7 @@ public class DataGenerator {
             return null;
         }
 
+        // số
         var customer = customers.get(faker.number().numberBetween(0, customers.size()));
         var booking = bookings.get(faker.number().numberBetween(0, bookings.size()));
         var employee = employees.get(faker.number().numberBetween(0, employees.size()));
@@ -189,46 +190,46 @@ public class DataGenerator {
         return faker.number().digits(length);
     }
 
-    public void generateAndPrintSampleData() {
-        EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu")
-                .createEntityManager();
+//    public void generateAndPrintSampleData() {
+//        EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu")
+//                .createEntityManager();
+//
+//        EntityTransaction tr = em.getTransaction();
+//        for (int i = 0; i < 10; i++) {
+//
+//            Customer customer = CustomerData();
+//            Employee employee = EmployeeData();
+//            Account account = generateFakeAccounts(Collections.singletonList(employee)).get(0); // Tạo tài khoản cho nhân viên
+//            Promotion promotion = PromotionData();
+//            RoomType roomType = RoomTypeData();
+//            Service service = ServiceData();
+//            ServiceOrder serviceOrder = ServiceData();
+//            Invoice invoice =  Invoice();
+//
+//            // Tạo phòng và gán với loại phòng, khuyến mãi, và booking (booking ở đây để null)
+//            Room room = RoomData(roomType, null, new HashSet<>(Collections.singletonList(promotion))); // Phòng không có booking
+//
+//
+//            tr.begin();
+//
+//            em.persist(customer);
+//            em.persist(employee);
+//            em.persist(account);
+//            em.persist(promotion);
+//            em.persist(roomType);
+//            em.persist(service);
+//            em.persist(room);
+//            em.persist(serviceOrder);
+//
+//            em.persist(invoice);
+//
+//            tr.commit();
+//        }
+//    }
 
-        EntityTransaction tr = em.getTransaction();
-        for (int i = 0; i < 10; i++) {
-
-            Customer customer = CustomerData();
-            Employee employee = EmployeeData();
-            Account account = generateFakeAccounts(Collections.singletonList(employee)).get(0); // Tạo tài khoản cho nhân viên
-            Promotion promotion = PromotionData();
-            RoomType roomType = RoomTypeData();
-            Service service = ServiceData();
-            ServiceOrder serviceOrder = ServiceData();
-            Invoice invoice =  Invoice();
-
-            // Tạo phòng và gán với loại phòng, khuyến mãi, và booking (booking ở đây để null)
-            Room room = RoomData(roomType, null, new HashSet<>(Collections.singletonList(promotion))); // Phòng không có booking
-
-
-            tr.begin();
-
-            em.persist(customer);
-            em.persist(employee);
-            em.persist(account);
-            em.persist(promotion);
-            em.persist(roomType);
-            em.persist(service);
-            em.persist(room);
-            em.persist(serviceOrder);
-
-            em.persist(invoice);
-
-            tr.commit();
-        }
-    }
-
-    public static void main(String[] args) {
-        DataGenerator generator = new DataGenerator();
-        generator.generateAndPrintSampleData();
-    }
+//    public static void main(String[] args) {
+//        DataGenerator generator = new DataGenerator();
+//        generator.generateAndPrintSampleData();
+//    }
 
 }
