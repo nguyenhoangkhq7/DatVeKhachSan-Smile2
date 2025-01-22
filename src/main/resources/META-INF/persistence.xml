@@ -12,6 +12,11 @@
         <class>model.LoaiPhong</class>
         <class>model.PhieuGiamGia</class>
         <class>model.DichVu</class>
+        <class>model.HoaDon</class>
+        <class>model.PhieuDatDichVu</class>
+        <class>model.PhieuDatPhong</class>
+
+
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/QuanLyKS"/>

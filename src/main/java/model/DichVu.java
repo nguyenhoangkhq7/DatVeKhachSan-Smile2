@@ -29,5 +29,4 @@ public class DichVu {
     @Column(name = "mo_ta", length = 250)
     private String moTa;
 
-
 }

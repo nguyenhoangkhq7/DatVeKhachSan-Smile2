@@ -24,7 +24,7 @@ import java.util.Set;
 @NoArgsConstructor
 
 @Entity
-public class DonDatPhong {
+public class PhieuDatPhong {
 
     @Id
     @Column(name = "ma_ddp", nullable = false)
@@ -41,14 +41,22 @@ public class DonDatPhong {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "ma_khach_hang")
     private KhachHang khachHang;
 
     @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "ma_nhan_vien")
     private NhanVien nhanVien;
 
     @ToString.Exclude
+    @OneToMany
+    @JoinColumn(name = "ma_phong")
     private Set<Phong> dsPhong;
 
     @ToString.Exclude
+    @OneToOne
+    @JoinColumn(name = "ma_hd")
     private HoaDon hoaDon;
 }

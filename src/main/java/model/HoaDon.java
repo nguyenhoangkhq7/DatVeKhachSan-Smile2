@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Set;
 
 @Getter
@@ -33,11 +32,22 @@ public class HoaDon {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "ma_khach_hang")
     private KhachHang khachHang; // Mối quan hệ với KhachHang
 
     @ToString.Exclude
-    private DonDatPhong phieuDatPhong; // Mối quan hệ với PhieuDatPhong (Đơn Đặt Phòng)
+    @ManyToOne
+    @JoinColumn(name = "ma_phieu_dat_phong")
+    private PhieuDatPhong phieuDatPhong; // Mối quan hệ với PhieuDatPhong (Đơn Đặt Phòng)
 
     @ToString.Exclude
-    private Set<DonDatDichVu> dsDonDatDichVu; // Mối quan hệ với PhieuDatPhong (Đơn Đặt Phòng)
+    @OneToMany
+    @JoinColumn(name = "ma_phieu_dat_dv")
+    private Set<PhieuDatDichVu> dsPhieuDatDichVu; // Mối quan hệ với PhieuDatPhong (Đơn Đặt Phòng)
+
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "ma_nhan_vien")
+    private NhanVien nhanVien;
 }
