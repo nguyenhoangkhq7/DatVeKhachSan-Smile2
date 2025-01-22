@@ -40,8 +40,9 @@ public class Phong {
 
 
     // các thuộc tính tham chiếu
+
     @ToString.Exclude
-    @ManyToOne()
+    @ManyToOne
     @JoinColumn(name = "ma_loai_phong")
     private LoaiPhong loaiPhong;
 

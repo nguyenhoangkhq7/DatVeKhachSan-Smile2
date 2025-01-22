@@ -43,5 +43,7 @@ public class PhieuGiamGia {
     private int moTa;
 
     // Mối quan hệ nhiều-nhiều giữa room với promotion
+    @ToString.Exclude
+    @ManyToMany(mappedBy = "dsPhieuGiamGia")
     private Set<Phong> phongs;
 }
