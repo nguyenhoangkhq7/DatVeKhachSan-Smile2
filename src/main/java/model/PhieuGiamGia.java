@@ -16,30 +16,32 @@ import java.util.Set;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
-@Table(name = "PhieuGiamGia")
-public class Promotion {
+@Table(name = "phieu_giam_gia")
+public class PhieuGiamGia {
 
     @Id
     @EqualsAndHashCode.Include
-    @Column(name = "MaPGG", length = 50, nullable = false)
+    @Column(name = "ma_PGG", length = 50, nullable = false)
     private String maPGG;
 
-    @Column(name = "MucGiamGia", nullable = false)
+    @Column(name = "muc_giam_gia", nullable = false)
     private double mucGiamGia;
 
-    @Column(name = "NgayBatDau", nullable = false)
+    @Column(name = "ngay_bat_dau", nullable = false)
     private Date ngayBatDau;
 
-    @Column(name = "NgayKetThuc", nullable = false)
+    @Column(name = "ngay_ket_thuc", nullable = false)
     private Date ngayKetThuc;
 
-    @Column(name = "DieuKienApDung", length = 255)
+    @Column(name = "dieu_kien_ap_dung", length = 255)
     private String dieuKienApDung;
 
-    @Column(name = "LuotSuDung", nullable = false)
+    @Column(name = "luot_su_dung", nullable = false)
     private int luotSuDung;
 
+    @Column(name = "mo_ta", nullable = false)
+    private int moTa;
+
     // Mối quan hệ nhiều-nhiều giữa room với promotion
-    @ManyToMany(mappedBy = "promotions")
-    private Set<Room> rooms;
+    private Set<Phong> phongs;
 }

@@ -4,14 +4,14 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
     <persistence-unit name="mariadb-pu">
-        <class>model.Account</class>
-        <class>model.Employee</class>
-        <class>model.Customer</class>
+        <class>model.TaiKhoan</class>
+        <class>model.NhanVien</class>
+        <class>model.KhachHang</class>
 <!--        Thêm Object class vào-->
-        <class>model.Room</class>
-        <class>model.RoomType</class>
-        <class>model.Promotion</class>
-        <class>model.Service</class>
+        <class>model.Phong</class>
+        <class>model.LoaiPhong</class>
+        <class>model.PhieuGiamGia</class>
+        <class>model.DichVu</class>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/QuanLyKS"/>
