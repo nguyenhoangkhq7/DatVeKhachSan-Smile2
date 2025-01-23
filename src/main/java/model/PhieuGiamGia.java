@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.Set;
 
@@ -28,10 +29,10 @@ public class PhieuGiamGia {
     private double mucGiamGia;
 
     @Column(name = "ngay_bat_dau", nullable = false)
-    private Date ngayBatDau;
+    private LocalDate ngayBatDau;
 
     @Column(name = "ngay_ket_thuc", nullable = false)
-    private Date ngayKetThuc;
+    private LocalDate ngayKetThuc;
 
     @Column(name = "dieu_kien_ap_dung", length = 255)
     private String dieuKienApDung;

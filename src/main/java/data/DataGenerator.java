@@ -1,231 +1,235 @@
-///*
-//    *QLKS_smile2  day creative: 1/18/2025
-//    version: 2023.2  IntelliJ IDEA
-//    author: Nguyễn Hoàng Khang  */
-//    /*
-//       *class description:
-//            write description right here
-//     */
-//
-//
 //package data;
 //
+//import jakarta.persistence.EntityManager;
+//import jakarta.persistence.EntityTransaction;
+//import jakarta.persistence.Persistence;
 //import model.*;
 //import net.datafaker.Faker;
 //
 //import java.time.LocalDate;
-//import java.time.temporal.ChronoUnit;
-//import java.util.*;
+//import java.time.LocalDateTime;
+//import java.time.ZoneId;
+//import java.util.HashSet;
+//import java.util.Set;
 //
 //public class DataGenerator {
 //    private Faker faker = new Faker();
 //
-//    private final Random rd = new Random();
-//
-//    //tạo dữ liệu cho Customer
-//    private KhachHang CustomerData() {
-//        List<KhachHang> khachHangs = new ArrayList<>();
-//            KhachHang khachHang = new KhachHang();
-//            khachHang.setMaKH("KH" + faker.number().numberBetween(1000, 9999));
-//            khachHang.setHoTen(faker.name().fullName());
-//            khachHang.setSoDienThoai(generatePhoneNumber(faker));
-//            khachHang.setSoCCCD(faker.number().digits(12)); // Số CCCD 12 chữ số
-//            khachHang.setEmail(faker.internet().emailAddress());
-//            khachHangs.add(khachHang);
-//        return (KhachHang) khachHangs;
+//    // Generate fake KhachHang
+//    private KhachHang generateKhachHang() {
+//        KhachHang khachHang = new KhachHang();
+//        khachHang.setMaKH("KH" + faker.number().numberBetween(1000, 9999));
+//        khachHang.setHoTen(faker.name().fullName());
+//        khachHang.setSoDienThoai(generatePhoneNumber());
+//        khachHang.setSoCCCD(faker.number().digits(12));
+//        khachHang.setEmail(faker.internet().emailAddress());
+//        return khachHang;
 //    }
 //
-//    public NhanVien EmployeeData() {
-//        Faker faker = new Faker();
-//        NhanVien nhanVien = new NhanVien();
-//        nhanVien.setMaNhanVien("NV" + faker.number().numberBetween(1000, 9999));
-//        nhanVien.setHoTen(faker.name().fullName());
-//        nhanVien.setChucVu(faker.number().numberBetween(1, 5));
-//        nhanVien.setSDT(generatePhoneNumber(faker));
-//        nhanVien.setDiaChi(faker.address().fullAddress());
-//        nhanVien.setEmail(faker.internet().emailAddress());
-////        employee.setNgaySinh(faker.date().birthday(20, 60));
-//        return nhanVien;
-//    }
+//    // Generate fake HoaDon
+//    private HoaDon generateHoaDon(KhachHang khachHang, PhieuDatPhong phieuDatPhong, NhanVien nhanVien) {
+//        HoaDon hoaDon = new HoaDon();
+//        hoaDon.setMaHD("HD" + faker.number().numberBetween(1000, 9999));
+//        hoaDon.setNgayLapHD(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
+//        hoaDon.setNgayNhanPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(1, 10)));
+//        hoaDon.setNgayTraPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(11, 20)));
+//        hoaDon.setSoPhongDat(faker.number().numberBetween(1, 5));
+//        hoaDon.setKhachHang(khachHang);
+//        hoaDon.setPhieuDatPhong(phieuDatPhong);
 //
-//    public static List<TaiKhoan> generateFakeAccounts(List<NhanVien> nhanViens) {
-//        Faker faker = new Faker();
-//        List<TaiKhoan> taiKhoans = new ArrayList<>();
-//
-//        for (NhanVien nhanVien : nhanViens) {
-//            TaiKhoan taiKhoan = new TaiKhoan();
-//            taiKhoan.setTenDN(nhanVien.getMaNhanVien());
-//            taiKhoan.setMatKhau(faker.internet().password(8, 16));
-//            taiKhoan.setNhanVien(nhanVien);
-//            taiKhoans.add(taiKhoan);
+//        // dsPhieuDatDichVu
+//        Set<PhieuDatDichVu> dsPhieuDatDichVu = new HashSet<>();
+//        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
+//            dsPhieuDatDichVu.add(generatePhieuDatDichVu(khachHang, nhanVien));
 //        }
-//
-//        return taiKhoans;
-//    }
-//    // Tạo dữ liệu giả lập cho bảng Promotion
-//    private PhieuGiamGia PromotionData() {
-//        PhieuGiamGia phieuGiamGia = new PhieuGiamGia();
-//        phieuGiamGia.setMaPGG("PGG" + faker.number().numberBetween(1000, 9999)); // Mã khuyến mãi
-//        phieuGiamGia.setMucGiamGia(faker.number().randomDouble(2, 5, 50)); // Mức giảm giá (5% đến 50%)
-//
-//        // Ngày bắt đầu (hiện tại - 30 ngày)
-//        Calendar calStart = Calendar.getInstance();
-//        calStart.add(Calendar.DAY_OF_MONTH, -faker.number().numberBetween(1, 30)); // Trừ 1-30 ngày
-//        phieuGiamGia.setNgayBatDau(calStart.getTime());
-//
-//        // Ngày kết thúc (hiện tại + 30 ngày)
-//        Calendar calEnd = Calendar.getInstance();
-//        calEnd.add(Calendar.DAY_OF_MONTH, faker.number().numberBetween(1, 30)); // Thêm 1-30 ngày
-//        phieuGiamGia.setNgayKetThuc(calEnd.getTime());
-//
-//        phieuGiamGia.setDieuKienApDung(faker.lorem().sentence(10)); // Điều kiện áp dụng
-//        phieuGiamGia.setLuotSuDung(faker.number().numberBetween(1, 100)); // Số lượt sử dụng
-//
-//        return phieuGiamGia;
+//        hoaDon.setDsPhieuDatDichVu(dsPhieuDatDichVu); // Set danh sách phiếu đặt dịch vụ
+//        hoaDon.setNhanVien(nhanVien); // Set nhân viên
+//        return hoaDon;
 //    }
 //
-//    // Tạo dữ liệu giả lập cho bảng RoomType
-//    private LoaiPhong RoomTypeData() {
-//        LoaiPhong loaiPhong = new LoaiPhong();
-//        loaiPhong.setMaLoai("LP" + faker.number().numberBetween(1000, 9999)); // Mã loại phòng
-//        loaiPhong.setTenLoai(faker.lorem().words(2).toString().replaceAll("[\\[\\],]", "")); // Tên loại phòng (2 từ ngẫu nhiên)
-//        loaiPhong.setMoTa(faker.lorem().sentence(10)); // Mô tả loại phòng (1 câu mô tả)
-//
-//        loaiPhong.setDanhSachPhong(new HashSet<>()); // Danh sách phòng ban đầu để trống
-//        return loaiPhong;
+//    // Generate fake DichVu
+//    private DichVu generateDichVu() {
+//        DichVu dichVu = new DichVu();
+//        dichVu.setMaDV("DV" + faker.number().numberBetween(1000, 9999));
+//        dichVu.setTenDV(faker.commerce().productName());
+//        dichVu.setDonGia(faker.number().randomDouble(2, 100, 1000));
+//        dichVu.setDonViTinh(faker.options().option("Lần", "Chiếc", "Hộp", "Bộ", "Giờ"));
+//        dichVu.setMoTa(faker.lorem().sentence(10));
+//        return dichVu;
 //    }
 //
-//    // Tạo dữ liệu giả lập cho bảng Room
-//    private Phong RoomData(LoaiPhong loaiPhong, PhieuDatPhong phieuDatPhong, Set<PhieuGiamGia> phieuGiamGias) {
+//    // Generate fake PhieuDatDichVu
+//    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang khachHang, NhanVien nhanVien) {
+//        PhieuDatDichVu phieuDatDichVu = new PhieuDatDichVu();
+//        phieuDatDichVu.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
+//        phieuDatDichVu.setNgayDatDichVu(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
+//        phieuDatDichVu.setSoLuongDichVu(faker.number().numberBetween(1, 5));
+//        phieuDatDichVu.setMoTa(faker.lorem().sentence());
+//        phieuDatDichVu.setNhanVien(nhanVien);
+//        phieuDatDichVu.setKhachHang(khachHang);
+//
+//        // dsDichVu
+//        Set<DichVu> dsDichVu = new HashSet<>();
+//        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
+//            DichVu dichVu = generateDichVu();
+//            dichVu.setPhieuDatDichVu(phieuDatDichVu); // Gán giá trị cho phieuDatDichVu
+//            dsDichVu.add(dichVu);
+//        }
+//        phieuDatDichVu.setDsDichVu(dsDichVu); // Set danh sách dịch vụ
+//        return phieuDatDichVu;
+//    }
+//
+//    // Generate fake Phong
+//    private Phong generatePhong(LoaiPhong loaiPhong) {
 //        Phong phong = new Phong();
-//        phong.setMaPhong("PH" + faker.number().numberBetween(1000, 9999)); // Mã phòng
-//        phong.setTenPhong("Phòng " + faker.number().numberBetween(1, 100)); // Tên phòng
-//        phong.setGiaPhong(faker.number().randomDouble(2, 500000, 5000000)); // Giá phòng từ 500k đến 5 triệu
-//        phong.setTinhTrang(faker.number().numberBetween(0, 2)); // 0: Trống, 1: Đã đặt, 2: Bảo trì
-//        phong.setMoTa(faker.lorem().sentence(10)); // Mô tả phòng
-//        phong.setSoNguoi(faker.number().numberBetween(1, 6)); // Số người từ 1 đến 6
-//        phong.setLoaiPhong(loaiPhong); // Loại phòng
-//        phong.setDonDatPhong(phieuDatPhong); // Booking liên kết
-//        phong.setKhuyenMais(phieuGiamGias); // Các khuyến mãi liên kết
+//        phong.setMaPhong("PH" + faker.number().numberBetween(1000, 9999));
+//        phong.setTenPhong("Phòng " + faker.number().numberBetween(1, 100));
+//        phong.setGiaPhong(faker.number().randomDouble(2, 500000, 5000000));
+//        phong.setTinhTrang(faker.number().numberBetween(0, 2));
+//        phong.setMoTa(faker.lorem().sentence(10));
+//        phong.setSoNguoi(faker.number().numberBetween(1, 6));
+//        phong.setLoaiPhong(loaiPhong);
+//
+//        // Tạo danh sách phiếu giảm giá ngẫu nhiên
+//        Set<PhieuGiamGia> dsPhieuGiamGia = new HashSet<>();
+//        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
+//            dsPhieuGiamGia.add(generatePhieuGiamGia());
+//        }
+//        phong.setDsPhieuGiamGia(dsPhieuGiamGia); // Gán danh sách phiếu giảm giá vào phòng
 //
 //        return phong;
 //    }
 //
+//    // Generate fake PhieuDatPhong
+//    private PhieuDatPhong generatePhieuDatPhong(KhachHang khachHang, NhanVien nhanVien) {
+//        PhieuDatPhong phieuDatPhong = new PhieuDatPhong();
+//        phieuDatPhong.setMaPDP("PDP" + faker.number().numberBetween(1000, 9999));
 //
-//    // Tạo dữ liệu giả lập cho bảng Service
-//    private DichVu ServiceData() {
-//        DichVu dichVu = new DichVu();
-//        dichVu.setMaDV("DV" + faker.number().numberBetween(1000, 9999)); // Mã dịch vụ
-//        dichVu.setTenDV(faker.commerce().productName()); // Tên dịch vụ
-//        dichVu.setDonGia(faker.number().randomDouble(2, 100, 1000)); // Đơn giá ngẫu nhiên từ 100 đến 1000
-//        dichVu.setDonViTinh(faker.options().option("Lần", "Chiếc", "Hộp", "Bộ", "Giờ")); // Đơn vị tính ngẫu nhiên
-//        dichVu.setMoTa(faker.lorem().sentence(10)); // Mô tả dịch vụ (1 câu ngẫu nhiên)
+//        // Sử dụng LocalDate thay vì LocalDateTime
+//        phieuDatPhong.setNgayDatPhong(LocalDate.now().minusDays(faker.number().numberBetween(1, 30)));
+//        phieuDatPhong.setNgayNhanPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(1, 10)));
+//        phieuDatPhong.setNgayTraPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(11, 20)));
 //
-//        return dichVu;
+//        phieuDatPhong.setKhachHang(khachHang);
+//        phieuDatPhong.setNhanVien(nhanVien);
+//
+//        // dsPhong
+//        Set<Phong> dsPhong = new HashSet<>();
+//        dsPhong.add(generatePhong(generateLoaiPhong())); // Thêm một phòng vào danh sách
+//        phieuDatPhong.setDsPhong(dsPhong); // Set danh sách phòng
+//
+//        // hoaDon
+//        HoaDon hoaDon = generateHoaDon(khachHang, phieuDatPhong, nhanVien);
+//        phieuDatPhong.setHoaDon(hoaDon); // Set hóa đơn
+//        return phieuDatPhong;
 //    }
-//    private PhieuDatDichVu generateServiceOrder(List<KhachHang> khachHangs, List<PhieuDatPhong> phieuDatPhongs, List<NhanVien> nhanViens) {
-//        if (khachHangs.isEmpty() || phieuDatPhongs.isEmpty() || nhanViens.isEmpty()) {
-//            System.out.println("Một trong các danh sách khách hàng, đặt phòng hoặc nhân viên trống. Không thể tạo đơn hàng dịch vụ.");
-//            return null;
+//
+//    // Generate fake LoaiPhong
+//    private LoaiPhong generateLoaiPhong() {
+//        LoaiPhong loaiPhong = new LoaiPhong();
+//        String[] loaiPhongOptions = {"Phòng Đơn", "Phòng Đôi", "Phòng Gia Đình", "Phòng Deluxe"};
+//        String tenLoai = loaiPhongOptions[faker.number().numberBetween(0, loaiPhongOptions.length)];
+//        loaiPhong.setMaLoai("LP" + faker.number().numberBetween(1000, 9999));
+//        loaiPhong.setTenLoai(tenLoai);
+//        loaiPhong.setMoTa(faker.lorem().sentence(10));
+//        return loaiPhong;
+//    }
+//
+//    // Generate fake NhanVien
+//    private NhanVien generateNhanVien(TaiKhoan taiKhoan) {
+//        NhanVien nhanVien = new NhanVien();
+//        nhanVien.setMaNhanVien("NV" + faker.number().numberBetween(1000, 9999));
+//        nhanVien.setHoTen(faker.name().fullName());
+//        nhanVien.setChucVu(faker.number().numberBetween(1, 5));
+//        nhanVien.setSDT(generatePhoneNumber());
+//        nhanVien.setDiaChi(faker.address().fullAddress());
+//        nhanVien.setEmail(faker.internet().emailAddress());
+//        nhanVien.setNgaySinh(faker.date().birthday(20, 60).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+//        nhanVien.setTaiKhoan(taiKhoan); // Set taiKhoan
+//        return nhanVien;
+//    }
+//
+//    // Generate fake PhieuGiamGia
+//    private PhieuGiamGia generatePhieuGiamGia() {
+//        PhieuGiamGia phieuGiamGia = new PhieuGiamGia();
+//        phieuGiamGia.setMaPGG("PGG" + faker.number().numberBetween(1000, 9999));
+//        phieuGiamGia.setMucGiamGia(faker.number().randomDouble(2, 5, 50));
+//
+//        // S ử dụng LocalDate thay vì Date
+//        phieuGiamGia.setNgayBatDau(LocalDate.now().minusDays(faker.number().numberBetween(1, 30)));
+//        phieuGiamGia.setNgayKetThuc(LocalDate.now().plusDays(faker.number().numberBetween(1, 30)));
+//
+//        phieuGiamGia.setDieuKienApDung(faker.lorem().sentence(10));
+//        phieuGiamGia.setLuotSuDung(faker.number().numberBetween(1, 100));
+//
+//        return phieuGiamGia;
+//    }
+//
+//    // Generate fake TaiKhoan
+//    private TaiKhoan generateTaiKhoan() {
+//        TaiKhoan taiKhoan = new TaiKhoan();
+//        taiKhoan.setTenDN(faker.internet().username());
+//        taiKhoan.setMatKhau(faker.internet().password(8, 16));
+//        return taiKhoan;
+//    }
+//
+//    // Generate a random phone number
+//    private String generatePhoneNumber() {
+//        return faker.phoneNumber().phoneNumber();
+//    }
+//
+//    public void generateAndPrintSampleData() {
+//        EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu").createEntityManager();
+//        EntityTransaction tr = em.getTransaction();
+//
+//        for (int i = 0; i < 10; i++) {
+//            TaiKhoan taiKhoan = generateTaiKhoan();
+//            LoaiPhong loaiPhong = generateLoaiPhong();
+//            KhachHang khachHang = generateKhachHang();
+//            NhanVien nhanVien = generateNhanVien(taiKhoan);
+//            DichVu dichVu = generateDichVu();
+//            Phong phong = generatePhong(loaiPhong);
+//            PhieuGiamGia phieuGiamGia = generatePhieuGiamGia();
+//            PhieuDatPhong phieuDatPhong = generatePhieuDatPhong(khachHang, nhanVien);
+//            PhieuDatDichVu phieuDatDichVu = generatePhieuDatDichVu(khachHang, nhanVien);
+//
+//            try {
+//                tr.begin();
+////                em.persist(taiKhoan); // Lưu TaiKhoan
+////                em.persist(khachHang); // Lưu KhachHang
+////                  em.persist(phieuGiamGia);
+//                em.persist(dichVu);
+////                em.persist(nhanVien); // Lưu NhanVien
+////                em.persist(loaiPhong); // Lưu LoaiPhong
+////                em.persist(phong); // Lưu Phong
+////                em.persist(phieuDatPhong); // Lưu PhieuDatPhong
+////                em.persist(phieuDatDichVu); // Lưu PhieuDatDichVu
+//                tr.commit();
+//            } catch (Exception e) {
+//                if (tr.isActive()) {
+//                    tr.rollback();
+//                }
+//                e.printStackTrace(); // Ghi lại lỗi
+//            }
+//
+//            // Sau khi đã lưu các thực thể, giờ bạn có thể tạo HoaDon
+//            HoaDon hoaDon = generateHoaDon(khachHang, phieuDatPhong, nhanVien);
+//
+//            try {
+//                tr.begin();
+////                em.persist(hoaDon); // Lưu HoaDon
+//                tr.commit();
+//            } catch (Exception e) {
+//                if (tr.isActive()) {
+//                    tr.rollback();
+//                }
+//                e.printStackTrace(); // Ghi lại lỗi
+//            }
 //        }
-//
-//        // số
-//        var customer = khachHangs.get(faker.number().numberBetween(0, khachHangs.size()));
-//        var booking = phieuDatPhongs.get(faker.number().numberBetween(0, phieuDatPhongs.size()));
-//        var employee = nhanViens.get(faker.number().numberBetween(0, nhanViens.size()));
-//
-//        PhieuDatDichVu phieuDatDichVu = new PhieuDatDichVu();
-//        phieuDatDichVu.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
-//        phieuDatDichVu.setNgayDatDichVu(generatePastDate(30));  // Giả sử generatePastDate là hàm đã được định nghĩa
-//        phieuDatDichVu.setSoLuongDichVu(faker.number().numberBetween(1, 5));
-//        phieuDatDichVu.setPhieuDatPhong(booking);
-//        phieuDatDichVu.setKhachHang(customer);
-//        phieuDatDichVu.setNhanVien(employee);
-//        phieuDatDichVu.setMoTa(faker.lorem().sentence());
-//
-//        return phieuDatDichVu;
-//    }
-//    // Tạo dữ liệu cho Invoice
-//    private HoaDon generateInvoice(List<KhachHang> khachHangs, List<PhieuDatPhong> phieuDatPhongs) {
-//        if (khachHangs.isEmpty() || phieuDatPhongs.isEmpty()) {
-//            System.out.println("Danh sách khách hàng hoặc đặt phòng trống. Không thể tạo hóa đơn.");
-//            return null;  // Hoặc xử lý theo cách khác tùy nhu cầu
-//        }
-//
-//        var customer = khachHangs.get(faker.number().numberBetween(0, khachHangs.size()));
-//        var booking = phieuDatPhongs.get(faker.number().numberBetween(0, phieuDatPhongs.size()));
-//
-//        HoaDon hoaDon = new HoaDon();
-//        hoaDon.setMaHD("HD" + faker.number().numberBetween(1000, 9999));
-//
-//        LocalDate invoiceDate = LocalDate.now().minus(faker.number().numberBetween(1, 30), ChronoUnit.DAYS);
-//        hoaDon.setNgayLapHD(java.sql.Date.valueOf(invoiceDate));
-//
-//        hoaDon.setKhachHang(customer);
-//
-//        LocalDate checkInDate = LocalDate.now().plus(faker.number().numberBetween(1, 10), ChronoUnit.DAYS);
-//        hoaDon.setNgayNhanPhong(java.sql.Date.valueOf(checkInDate));
-//
-//        LocalDate checkOutDate = LocalDate.now().plus(faker.number().numberBetween(1, 20), ChronoUnit.DAYS);
-//        hoaDon.setNgayTraPhong(java.sql.Date.valueOf(checkOutDate));
-//
-//        hoaDon.setSoPhongDat(faker.number().numberBetween(1, 5));
-//        hoaDon.setPhieuDatPhong(booking);
-//
-//        return hoaDon;
-//    }
-//    private static Date generatePastDate(int daysBack) {
-//        Calendar calendar = Calendar.getInstance();
-//        calendar.add(Calendar.DAY_OF_MONTH, -new Random().nextInt(daysBack + 1)); // Trừ đi một số ngày ngẫu nhiên
-//        return calendar.getTime();
 //    }
 //
-//
-//    private static String generatePhoneNumber(Faker faker) {
-//        int length = faker.number().numberBetween(10, 13); // Số chữ số từ 10-13
-//        return faker.number().digits(length);
+//    public static void main(String[] args) {
+//        DataGenerator generator = new DataGenerator();
+//        generator.generateAndPrintSampleData();
 //    }
-//
-////    public void generateAndPrintSampleData() {
-////        EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu")
-////                .createEntityManager();
-////
-////        EntityTransaction tr = em.getTransaction();
-////        for (int i = 0; i < 10; i++) {
-////
-////            Customer customer = CustomerData();
-////            Employee employee = EmployeeData();
-////            Account account = generateFakeAccounts(Collections.singletonList(employee)).get(0); // Tạo tài khoản cho nhân viên
-////            Promotion promotion = PromotionData();
-////            RoomType roomType = RoomTypeData();
-////            Service service = ServiceData();
-////            ServiceOrder serviceOrder = ServiceData();
-////            Invoice invoice =  Invoice();
-////
-////            // Tạo phòng và gán với loại phòng, khuyến mãi, và booking (booking ở đây để null)
-////            Room room = RoomData(roomType, null, new HashSet<>(Collections.singletonList(promotion))); // Phòng không có booking
-////
-////
-////            tr.begin();
-////
-////            em.persist(customer);
-////            em.persist(employee);
-////            em.persist(account);
-////            em.persist(promotion);
-////            em.persist(roomType);
-////            em.persist(service);
-////            em.persist(room);
-////            em.persist(serviceOrder);
-////
-////            em.persist(invoice);
-////
-////            tr.commit();
-////        }
-////    }
-//
-////    public static void main(String[] args) {
-////        DataGenerator generator = new DataGenerator();
-////        generator.generateAndPrintSampleData();
-////    }
-//
 //}

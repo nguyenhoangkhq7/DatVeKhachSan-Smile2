@@ -1,19 +1,9 @@
-/*
-    *QLKS_smile2  day creative: 1/19/2025
-    version: 2023.2  IntelliJ IDEA
-    author: Nguyễn Hoàng Khang  */
-    /*
-       *class description:
-            write description right here   
-     */
-
-
 package model;
 
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Set;
 
 //getter setter tostring hashcode equal
@@ -31,13 +21,13 @@ public class PhieuDatPhong {
     private String maPDP;
 
     @Column(name = "ngay_dat_phong", nullable = false)
-    private LocalDateTime ngayDatPhong;
+    private LocalDate ngayDatPhong; // Sử dụng LocalDate
 
     @Column(name = "ngay_nhan_phong_du_kien", nullable = false)
-    private LocalDateTime ngayNhanPhongDuKien;
+    private LocalDate ngayNhanPhongDuKien; // Sử dụng LocalDate
 
     @Column(name = "ngay_tra_phong_du_kien", nullable = false)
-    private LocalDateTime ngayTraPhongDuKien;
+    private LocalDate ngayTraPhongDuKien; // Sử dụng LocalDate
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
@@ -51,12 +41,11 @@ public class PhieuDatPhong {
     private NhanVien nhanVien;
 
     @ToString.Exclude
-    @OneToMany
-    @JoinColumn(name = "ma_phong")
+    @OneToMany(mappedBy = "phieuDatPhong") // Thêm mappedBy để chỉ định mối quan hệ
     private Set<Phong> dsPhong;
 
     @ToString.Exclude
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST) // Thêm cascade
     @JoinColumn(name = "ma_hd")
-    private HoaDon hoaDon;
+    private HoaDon hoaDon; // Mối quan hệ với HoaDon
 }

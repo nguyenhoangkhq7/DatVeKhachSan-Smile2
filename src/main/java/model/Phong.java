@@ -38,22 +38,31 @@ public class Phong {
     @Column(name = "so_nguoi", nullable = false)
     private int soNguoi;
 
-
     // các thuộc tính tham chiếu
-
     @ToString.Exclude
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "ma_loai_phong")
     private LoaiPhong loaiPhong;
 
     // có cái bảng phụ là Phong_PGG
     @ToString.Exclude
-    @ManyToMany
+//    @ManyToMany
+//    @JoinTable(
+//            name = "phong_pgg",
+//            joinColumns = @JoinColumn(name = "ma_phong"),
+//            inverseJoinColumns = @JoinColumn(name = "ma_PGG")
+//    )
+//    private Set<PhieuGiamGia> dsPhieuGiamGia;
+    @ManyToMany(cascade = CascadeType.PERSIST)
     @JoinTable(
-        name = "phong_pgg",
-        joinColumns = @JoinColumn(name = "ma_phong"),
-        inverseJoinColumns = @JoinColumn(name = "ma_PGG")
+            name = "phong_pgg",
+            joinColumns = @JoinColumn(name = "ma_phong"),
+            inverseJoinColumns = @JoinColumn(name = "ma_PGG")
     )
     private Set<PhieuGiamGia> dsPhieuGiamGia;
 
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "ma_ddp") // Thêm mối quan hệ với PhieuDatPhong
+    private PhieuDatPhong phieuDatPhong; // Thêm thuộc tính này để liên kết với PhieuDatPhong
 }
