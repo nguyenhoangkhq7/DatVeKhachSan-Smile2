@@ -31,12 +31,12 @@ public class PhieuDatPhong {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "ma_khach_hang")
     private KhachHang khachHang;
 
     @ToString.Exclude
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "ma_nhan_vien")
     private NhanVien nhanVien;
 
