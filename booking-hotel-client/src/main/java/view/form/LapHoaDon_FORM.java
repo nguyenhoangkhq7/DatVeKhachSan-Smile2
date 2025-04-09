@@ -1,12 +1,9 @@
 package view.form;
 
-import connectDB.ConnectDB;
-import customElements.CustomHeaderRenderer;
-import customElements.FontManager;
-import customElements.RoundedPanel;
+import utils.custom_element.*;
 import dao.KhachHang_DAO;
 import dao.PhieuDatPhong_DAO;
-import entity.PhieuDatPhong;
+import model.PhieuDatPhong;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -74,12 +71,12 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
 
 
     public LapHoaDon_FORM()  {
-        try {
-            ConnectDB.getInstance().connect();
-            this.conn = ConnectDB.getConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            ConnectDB.getInstance().connect();
+//            this.conn = ConnectDB.getConnection();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         setBackground(new Color(16, 16, 20));
         Box b = Box.createVerticalBox();
         b.add(Box.createVerticalStrut(10));
@@ -496,136 +493,139 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        openHoaDon();
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(null, "Vui lòng chọn một hàng trong bảng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        try {
-            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
-            PhieuDatPhong pdp = new PhieuDatPhong_DAO().getPDPTheoMa(maPDP);
-
-            if (pdp == null) {
-                JOptionPane.showMessageDialog(null, "Không tìm thấy phiếu đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Hiển thị thông tin khách hàng
-            lbhoten1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getHoTen() : "Chưa xác định");
-            lbcccd1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getcCCD() : "Chưa xác định");
-            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
-            lbsdt1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getSdt() : "Chưa xác định");
-            lbsophong1.setText(pdp.getPhong() != null ? pdp.getPhong().getMaPhong() : "Chưa xác định");
-            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
-
-            // Hiển thị thông tin ngày
-            lbngaynhan1.setText(pdp.getNgayDen() != null ? pdp.getNgayDen().toString() : "Chưa xác định");
-            lbngaytra1.setText(pdp.getNgayDi() != null ? pdp.getNgayDi().toString() : "Chưa xác định");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi khi lấy thông tin phiếu đặt phòng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
+//        openHoaDon();
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow == -1) {
+//            JOptionPane.showMessageDialog(null, "Vui lòng chọn một hàng trong bảng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+//            return;
+//        }
+//        try {
+//            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
+//            PhieuDatPhong pdp = new PhieuDatPhong_DAO().getPDPTheoMa(maPDP);
+//
+//            if (pdp == null) {
+//                JOptionPane.showMessageDialog(null, "Không tìm thấy phiếu đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+//                return;
+//            }
+//
+//            // Hiển thị thông tin khách hàng
+//            lbhoten1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getHoTen() : "Chưa xác định");
+//            lbcccd1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getcCCD() : "Chưa xác định");
+//            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
+//            lbsdt1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getSdt() : "Chưa xác định");
+//            lbsophong1.setText(pdp.getPhong() != null ? pdp.getPhong().getMaPhong() : "Chưa xác định");
+//            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
+//
+//            // Hiển thị thông tin ngày
+//            lbngaynhan1.setText(pdp.getNgayDen() != null ? pdp.getNgayDen().toString() : "Chưa xác định");
+//            lbngaytra1.setText(pdp.getNgayDi() != null ? pdp.getNgayDi().toString() : "Chưa xác định");
+//        } catch (Exception ex) {
+//            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi khi lấy thông tin phiếu đặt phòng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            ex.printStackTrace();
+//        }
     }
 
 
     //load dữ liệu
     public Object[][] loadDataHD()  {
-        String sql = "SELECT hd.maHD, pdp.maPDP, p.maPhong, hd.ngayLapHD, kh.hoTen AS KhachHang, nv.hoTen AS NhanVien " +
-                "FROM HoaDon hd " +
-                "JOIN KhachHang kh ON hd.maKH = kh.maKH " +
-                "JOIN NhanVien nv ON hd.maNV = nv.maNV " +
-                "JOIN PhieuDatPhong pdp ON pdp.maKH = hd.maKH " +
-                "JOIN Phong p ON p.maPhong = pdp.maPhong";
-        List<Object[]> dataList = new ArrayList<>();
-        ConnectDB.getInstance().connect();
-        this.conn = ConnectDB.getConnection();
-        try (
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql)) {
-            int stt = 1;
-            while (rs.next()) {
-                String maHoaDon = rs.getString("maHD");
-                String maPDP = rs.getString("maPDP");
-                String maPhong = rs.getString("maPhong");
-                String ngayLap = rs.getString("ngayLapHD");
-                String tenKhachHang = rs.getString("KhachHang");
-                String tenNhanVien = rs.getString("NhanVien");
-                // Add the actual data to the list
-                dataList.add(new Object[]{maHoaDon, maPDP, maPhong, ngayLap, tenKhachHang, tenNhanVien, 400000, "Xem"});
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return dataList.toArray(new Object[0][]);
+//        String sql = "SELECT hd.maHD, pdp.maPDP, p.maPhong, hd.ngayLapHD, kh.hoTen AS KhachHang, nv.hoTen AS NhanVien " +
+//                "FROM HoaDon hd " +
+//                "JOIN KhachHang kh ON hd.maKH = kh.maKH " +
+//                "JOIN NhanVien nv ON hd.maNV = nv.maNV " +
+//                "JOIN PhieuDatPhong pdp ON pdp.maKH = hd.maKH " +
+//                "JOIN Phong p ON p.maPhong = pdp.maPhong";
+//        List<Object[]> dataList = new ArrayList<>();
+//        ConnectDB.getInstance().connect();
+//        this.conn = ConnectDB.getConnection();
+//        try (
+//                Statement stmt = conn.createStatement();
+//                ResultSet rs = stmt.executeQuery(sql)) {
+//            int stt = 1;
+//            while (rs.next()) {
+//                String maHoaDon = rs.getString("maHD");
+//                String maPDP = rs.getString("maPDP");
+//                String maPhong = rs.getString("maPhong");
+//                String ngayLap = rs.getString("ngayLapHD");
+//                String tenKhachHang = rs.getString("KhachHang");
+//                String tenNhanVien = rs.getString("NhanVien");
+//                // Add the actual data to the list
+//                dataList.add(new Object[]{maHoaDon, maPDP, maPhong, ngayLap, tenKhachHang, tenNhanVien, 400000, "Xem"});
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return dataList.toArray(new Object[0][]);
+        return null;
     }
 
     public Object[][] loadDV(String maPhong) {
-        String sql = "SELECT dv.tenDV, dv.donViTinh, ct.soLuongDV, ct.soLuongDV * dv.giaDV as donGia " +
-                "FROM DichVu dv " +
-                "JOIN ChiTietHoaDon ct ON dv.maDV = ct.maDV " +
-                "WHERE ct.maPhong = ? AND ct.soLuongDV > 0"; // Thêm điều kiện soLuongDV > 0
-
-        List<Object[]> dataList = new ArrayList<>();
-        ConnectDB.getInstance().connect();
-        this.conn = ConnectDB.getConnection();
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, maPhong);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                int stt = 1;
-                float tongTien = 0;
-                while (rs.next()) {
-                    String tenDV = rs.getString(1);
-                    String donViTinh = rs.getString(2);
-                    String soLuong = rs.getString(3);
-                    String donGia = rs.getString(4);
-                    float thanhTien = Float.parseFloat(soLuong) * Float.parseFloat(donGia);
-                    tongTien += thanhTien;
-                    dataList.add(new Object[]{stt++, tenDV, donViTinh, soLuong, donGia, thanhTien});
-                }
-//            totalLabel1.setText(String.format("%.0f", tongTien)); // Nếu cần, bạn có thể hiển thị tổng tiền
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return dataList.toArray(new Object[0][]);
+//        String sql = "SELECT dv.tenDV, dv.donViTinh, ct.soLuongDV, ct.soLuongDV * dv.giaDV as donGia " +
+//                "FROM DichVu dv " +
+//                "JOIN ChiTietHoaDon ct ON dv.maDV = ct.maDV " +
+//                "WHERE ct.maPhong = ? AND ct.soLuongDV > 0"; // Thêm điều kiện soLuongDV > 0
+//
+//        List<Object[]> dataList = new ArrayList<>();
+//        ConnectDB.getInstance().connect();
+//        this.conn = ConnectDB.getConnection();
+//        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//            pstmt.setString(1, maPhong);
+//            try (ResultSet rs = pstmt.executeQuery()) {
+//                int stt = 1;
+//                float tongTien = 0;
+//                while (rs.next()) {
+//                    String tenDV = rs.getString(1);
+//                    String donViTinh = rs.getString(2);
+//                    String soLuong = rs.getString(3);
+//                    String donGia = rs.getString(4);
+//                    float thanhTien = Float.parseFloat(soLuong) * Float.parseFloat(donGia);
+//                    tongTien += thanhTien;
+//                    dataList.add(new Object[]{stt++, tenDV, donViTinh, soLuong, donGia, thanhTien});
+//                }
+////            totalLabel1.setText(String.format("%.0f", tongTien)); // Nếu cần, bạn có thể hiển thị tổng tiền
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//
+//        return dataList.toArray(new Object[0][]);
+        return null;
     }
 
     //load DSKH
     public Object[][] loadDSKH() {
-        String sql = "SELECT pdp.maPDP, p.loaiPhong, p.tenPhong, p.maPhong, p.trangThai, kh.hoTen, pdp.ngayDen, pdp.ngayDi " +
-                "FROM PhieuDatPhong pdp " +
-                "JOIN KhachHang kh ON kh.maKH = pdp.maKH " +
-                "JOIN Phong p ON p.maPhong = pdp.maPhong ";
-        List<Object[]> dataList = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        try (Connection con = ConnectDB.getConnection();
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                String maDatPhong = rs.getString("maPDP");
-                String loaiPhong = rs.getString("loaiPhong");
-                String tenPhong = rs.getString("tenPhong");
-                String maPhong = rs.getString("maPhong");
-                String trangThai = rs.getString("trangThai");
-                String trangThaiHienThi = "1".equals(trangThai) ? "Đang sử dụng" : "không sử dụng";
-                String tenKhachHang = rs.getString("hoTen");
-                Date ngayDen = rs.getDate("ngayDen");
-                Date ngayDi = rs.getDate("ngayDi");
-                String ngayDenStr = ngayDen != null ? dateFormat.format(ngayDen) : "";
-                String ngayDiStr = ngayDi != null ? dateFormat.format(ngayDi) : "";
-                int soDem = 0;
-                if (ngayDen != null && ngayDi != null) {
-                    long diffInMillis = ngayDi.getTime() - ngayDen.getTime();
-                    soDem = (int) (diffInMillis / (1000 * 60 * 60 * 24));
-                }
-                dataList.add(new Object[]{maDatPhong, loaiPhong, tenPhong, maPhong, trangThaiHienThi, tenKhachHang, ngayDenStr, ngayDiStr, soDem});
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return dataList.toArray(new Object[0][]);
+//        String sql = "SELECT pdp.maPDP, p.loaiPhong, p.tenPhong, p.maPhong, p.trangThai, kh.hoTen, pdp.ngayDen, pdp.ngayDi " +
+//                "FROM PhieuDatPhong pdp " +
+//                "JOIN KhachHang kh ON kh.maKH = pdp.maKH " +
+//                "JOIN Phong p ON p.maPhong = pdp.maPhong ";
+//        List<Object[]> dataList = new ArrayList<>();
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//        try (Connection con = ConnectDB.getConnection();
+//             Statement stmt = con.createStatement();
+//             ResultSet rs = stmt.executeQuery(sql)) {
+//            while (rs.next()) {
+//                String maDatPhong = rs.getString("maPDP");
+//                String loaiPhong = rs.getString("loaiPhong");
+//                String tenPhong = rs.getString("tenPhong");
+//                String maPhong = rs.getString("maPhong");
+//                String trangThai = rs.getString("trangThai");
+//                String trangThaiHienThi = "1".equals(trangThai) ? "Đang sử dụng" : "không sử dụng";
+//                String tenKhachHang = rs.getString("hoTen");
+//                Date ngayDen = rs.getDate("ngayDen");
+//                Date ngayDi = rs.getDate("ngayDi");
+//                String ngayDenStr = ngayDen != null ? dateFormat.format(ngayDen) : "";
+//                String ngayDiStr = ngayDi != null ? dateFormat.format(ngayDi) : "";
+//                int soDem = 0;
+//                if (ngayDen != null && ngayDi != null) {
+//                    long diffInMillis = ngayDi.getTime() - ngayDen.getTime();
+//                    soDem = (int) (diffInMillis / (1000 * 60 * 60 * 24));
+//                }
+//                dataList.add(new Object[]{maDatPhong, loaiPhong, tenPhong, maPhong, trangThaiHienThi, tenKhachHang, ngayDenStr, ngayDiStr, soDem});
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//        return dataList.toArray(new Object[0][]);
+        return null;
     }
 
 

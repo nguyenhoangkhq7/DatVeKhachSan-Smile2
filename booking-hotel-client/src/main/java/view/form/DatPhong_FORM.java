@@ -14,9 +14,9 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
-import customElements.*;
+import utils.custom_element.*;
 import dao.*;
-import entity.*;
+import model.*;
 import org.jdesktop.swingx.JXDatePicker;
 
 import java.util.Random;
@@ -220,20 +220,20 @@ public class DatPhong_FORM extends JPanel implements Openable {
     }
 
     private void loadTableData() {
-        tableModel.setRowCount(0);
-        ArrayList<PhieuDatPhong> dsPDP = phieuDatPhongDAO.getDSPhieuDatPhong();
-        for (PhieuDatPhong pdp : dsPDP) {
-            tableModel.addRow(new Object[]{
-                    pdp.getMaPDP(),
-                    pdp.getPhong().getMaPhong(),
-                    pdp.getKhachHang().getHoTen(),
-                    pdp.getNgayDat(),
-                    pdp.getNgayDen(),
-                    pdp.getNgayDi(),
-                    pdp.getNhanVien().getHoTen(),
-                    pdp.getTinhTrangPDP()
-            });
-        }
+//        tableModel.setRowCount(0);
+//        ArrayList<PhieuDatPhong> dsPDP = phieuDatPhongDAO.getDSPhieuDatPhong();
+//        for (PhieuDatPhong pdp : dsPDP) {
+//            tableModel.addRow(new Object[]{
+//                    pdp.getMaPDP(),
+//                    pdp.getPhong().getMaPhong(),
+//                    pdp.getKhachHang().getHoTen(),
+//                    pdp.getNgayDat(),
+//                    pdp.getNgayDen(),
+//                    pdp.getNgayDi(),
+//                    pdp.getNhanVien().getHoTen(),
+//                    pdp.getTinhTrangPDP()
+//            });
+//        }
     }
 
     private void handleTimKiem() {
@@ -265,49 +265,49 @@ public class DatPhong_FORM extends JPanel implements Openable {
     }
 
     private void updateSoPhongList(String loaiPhong) {
-        Date ngayDen = dateTimeNgayDen.getDate();
-        Date ngayDi = dateTimeNgayDi.getDate();
-
-        cmbSoPhong.removeAllItems();
-        cmbSoPhong.addItem("Chọn");
-        ArrayList<String> dsSoPhong = phongDAO.getSoPhongByLoaiPhong(loaiPhong);
-
-        ArrayList<String> dsSoPhongDaDat = phieuDatPhongDAO.getSoPhongDaDat(ngayDen, ngayDi);
-
-        for (String soPhong : dsSoPhong) {
-            if (!dsSoPhongDaDat.contains(soPhong)) {
-                cmbSoPhong.addItem(soPhong);
-            }
-        }
+//        Date ngayDen = dateTimeNgayDen.getDate();
+//        Date ngayDi = dateTimeNgayDi.getDate();
+//
+//        cmbSoPhong.removeAllItems();
+//        cmbSoPhong.addItem("Chọn");
+//        ArrayList<String> dsSoPhong = phongDAO.getSoPhongByLoaiPhong(loaiPhong);
+//
+//        ArrayList<String> dsSoPhongDaDat = phieuDatPhongDAO.getSoPhongDaDat(ngayDen, ngayDi);
+//
+//        for (String soPhong : dsSoPhong) {
+//            if (!dsSoPhongDaDat.contains(soPhong)) {
+//                cmbSoPhong.addItem(soPhong);
+//            }
+//        }
     }
 
     private void updateTenPhong(String soPhong) {
-        Phong_DAO phongDAO = new Phong_DAO();
-        String tenPhong = phongDAO.getTenPhongBySoPhong(soPhong);
+//        Phong_DAO phongDAO = new Phong_DAO();
+//        String tenPhong = phongDAO.getTenPhongBySoPhong(soPhong);
     }
 
     private void handleSearchCustomer() {
-        String cccd = txtCCCD.getText().trim();
-        if (!cccd.isEmpty()) {
-            KhachHang khachHang = khachHangDAO.searchKhachHangBangCCCD(cccd);
-
-            if (khachHang != null) {
-                txtTenKhachHang.setText(khachHang.getHoTen());
-                txtDiaChi.setText(khachHang.getDiaChi());
-                txtEmail.setText(khachHang.getEmail());
-                txtSDT.setText(khachHang.getSdt());
-                dateNgaySinh.setDate(khachHang.getNgaySinh());
-            }
-        }
+//        String cccd = txtCCCD.getText().trim();
+//        if (!cccd.isEmpty()) {
+//            KhachHang khachHang = khachHangDAO.searchKhachHangBangCCCD(cccd);
+//
+//            if (khachHang != null) {
+//                txtTenKhachHang.setText(khachHang.getHoTen());
+//                txtDiaChi.setText(khachHang.getDiaChi());
+//                txtEmail.setText(khachHang.getEmail());
+//                txtSDT.setText(khachHang.getSdt());
+//                dateNgaySinh.setDate(khachHang.getNgaySinh());
+//            }
+//        }
     }
 
     private void loadLoaiPhong() {
-        LoaiPhong_DAO loaiPhongDAO = new LoaiPhong_DAO();
-        ArrayList<LoaiPhong> dsLoaiPhong = loaiPhongDAO.getDSLoaiPhong();
-
-        for (LoaiPhong loaiPhong : dsLoaiPhong) {
-            cmbLoaiPhong.addItem(loaiPhong.getTenLoaiPhong());
-        }
+//        LoaiPhong_DAO loaiPhongDAO = new LoaiPhong_DAO();
+//        ArrayList<LoaiPhong> dsLoaiPhong = loaiPhongDAO.getDSLoaiPhong();
+//
+//        for (LoaiPhong loaiPhong : dsLoaiPhong) {
+//            cmbLoaiPhong.addItem(loaiPhong.getTenLoaiPhong());
+//        }
 
     }
 
@@ -464,65 +464,65 @@ public class DatPhong_FORM extends JPanel implements Openable {
 
 
     private void handleSubmit() {
-        Date ngayDat = dateNgayDat.getDate();
-        Date ngayDen = dateTimeNgayDen.getDate();
-        Date ngayDi = dateTimeNgayDi.getDate();
-        String sdt = txtSDT.getText().trim();
-        Date ngaySinh = dateNgaySinh.getDate();
-        String tenKhachHang = txtTenKhachHang.getText().trim();
-        String email = txtEmail.getText().trim();
-        String diaChi = txtDiaChi.getText().trim();
-        String cccd = txtCCCD.getText().trim();
-        String loaiPhong = (String) cmbLoaiPhong.getSelectedItem();
-        String soPhong = (String) cmbSoPhong.getSelectedItem();
-        String soKhach = txtSoKhach.getText().trim();
-
-        if (ngayDat == null || ngayDen == null || ngayDi == null || ngaySinh == null || sdt.isEmpty() || tenKhachHang.isEmpty() || cccd.isEmpty() || loaiPhong.equals("Chọn") || soPhong.equals("Chọn") || soKhach.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng điền đủ thông tin.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (!ngayDi.after(ngayDen)) {
-            JOptionPane.showMessageDialog(this, "Ngày đi phải sau ngày đến.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        Phong p = new Phong(soPhong);
-        NhanVien nv = new NhanVien(taiKhoanDAO.getCurrentNhanVien().getMaNV(), taiKhoanDAO.getCurrentNhanVien().getHoTen());
-
-        KhachHang kh = null;
-        if (khachHangDAO.doesCustomerExist(cccd)) {
-            kh = khachHangDAO.searchKhachHangBangCCCD(cccd);
-            kh.setSdt(sdt);
-            kh.setEmail(email);
-            kh.setDiaChi(diaChi);
-        } else {
-            String maKH = getRandomMa();
-            while (khachHangDAO.doesCustomerIdExist(maKH)) {
-                maKH = getRandomMa();
-            }
-            kh = new KhachHang(maKH, tenKhachHang, diaChi, sdt, email, cccd, 1, ngaySinh);
-        }
-        String maPDP = getRandomMa();
-        while (phieuDatPhongDAO.doesPDPIdExist(maPDP)){
-            maPDP = getRandomMa();
-        }
-        PhieuDatPhong phieuDatPhong = new PhieuDatPhong(maPDP, p, nv, kh, ngayDi, ngayDen, ngayDat, 0);
-        if (phieuDatPhongDAO.datPhong(phieuDatPhong)) {
-            JOptionPane.showMessageDialog(this, "Đã đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            tableModel.insertRow(0, new Object[]{
-                    maPDP,
-                    soPhong,
-                    tenKhachHang,
-                    new java.sql.Date(ngayDat.getTime()),
-                    new Timestamp(ngayDen.getTime()),
-                    new Timestamp(ngayDi.getTime()),
-                    nv.getHoTen(),
-                    phieuDatPhong.getTinhTrangPDP()
-            });
-            handleRefresh();
-        } else {
-            JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-        }
+//        Date ngayDat = dateNgayDat.getDate();
+//        Date ngayDen = dateTimeNgayDen.getDate();
+//        Date ngayDi = dateTimeNgayDi.getDate();
+//        String sdt = txtSDT.getText().trim();
+//        Date ngaySinh = dateNgaySinh.getDate();
+//        String tenKhachHang = txtTenKhachHang.getText().trim();
+//        String email = txtEmail.getText().trim();
+//        String diaChi = txtDiaChi.getText().trim();
+//        String cccd = txtCCCD.getText().trim();
+//        String loaiPhong = (String) cmbLoaiPhong.getSelectedItem();
+//        String soPhong = (String) cmbSoPhong.getSelectedItem();
+//        String soKhach = txtSoKhach.getText().trim();
+//
+//        if (ngayDat == null || ngayDen == null || ngayDi == null || ngaySinh == null || sdt.isEmpty() || tenKhachHang.isEmpty() || cccd.isEmpty() || loaiPhong.equals("Chọn") || soPhong.equals("Chọn") || soKhach.isEmpty()) {
+//            JOptionPane.showMessageDialog(this, "Vui lòng điền đủ thông tin.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+//            return;
+//        }
+//
+//        if (!ngayDi.after(ngayDen)) {
+//            JOptionPane.showMessageDialog(this, "Ngày đi phải sau ngày đến.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+//            return;
+//        }
+//        Phong p = new Phong(soPhong);
+//        NhanVien nv = new NhanVien(taiKhoanDAO.getCurrentNhanVien().getMaNV(), taiKhoanDAO.getCurrentNhanVien().getHoTen());
+//
+//        KhachHang kh = null;
+//        if (khachHangDAO.doesCustomerExist(cccd)) {
+//            kh = khachHangDAO.searchKhachHangBangCCCD(cccd);
+//            kh.setSdt(sdt);
+//            kh.setEmail(email);
+//            kh.setDiaChi(diaChi);
+//        } else {
+//            String maKH = getRandomMa();
+//            while (khachHangDAO.doesCustomerIdExist(maKH)) {
+//                maKH = getRandomMa();
+//            }
+//            kh = new KhachHang(maKH, tenKhachHang, diaChi, sdt, email, cccd, 1, ngaySinh);
+//        }
+//        String maPDP = getRandomMa();
+//        while (phieuDatPhongDAO.doesPDPIdExist(maPDP)){
+//            maPDP = getRandomMa();
+//        }
+//        PhieuDatPhong phieuDatPhong = new PhieuDatPhong(maPDP, p, nv, kh, ngayDi, ngayDen, ngayDat, 0);
+//        if (phieuDatPhongDAO.datPhong(phieuDatPhong)) {
+//            JOptionPane.showMessageDialog(this, "Đã đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//            tableModel.insertRow(0, new Object[]{
+//                    maPDP,
+//                    soPhong,
+//                    tenKhachHang,
+//                    new java.sql.Date(ngayDat.getTime()),
+//                    new Timestamp(ngayDen.getTime()),
+//                    new Timestamp(ngayDi.getTime()),
+//                    nv.getHoTen(),
+//                    phieuDatPhong.getTinhTrangPDP()
+//            });
+//            handleRefresh();
+//        } else {
+//            JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+//        }
     }
 
     private void handleRefresh() {

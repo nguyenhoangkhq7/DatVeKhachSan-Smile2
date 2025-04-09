@@ -1,8 +1,8 @@
 package view.form;
 
-import customElements.*;
+import utils.custom_element.*;
 import dao.KhachHang_DAO;
-import entity.KhachHang;
+import model.KhachHang;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -243,17 +243,17 @@ public class TimKiemKhachHang_FORM extends JPanel  implements ActionListener {
 
 
     private void loadTableData() {
-        ArrayList<KhachHang> dsKhachHang = khachHangDAO.getDSKhachHang();
-        for (KhachHang kh : dsKhachHang) {
-            tableModel.addRow(new Object[]{
-                    kh.getMaKH(),
-                    kh.getHoTen(),
-                    kh.getDiaChi(),
-                    kh.getSdt(),
-                    kh.getcCCD(),
-                    kh.getEmail()
-            });
-        }
+//        ArrayList<KhachHang> dsKhachHang = khachHangDAO.getDSKhachHang();
+//        for (KhachHang kh : dsKhachHang) {
+//            tableModel.addRow(new Object[]{
+//                    kh.getMaKH(),
+//                    kh.getHoTen(),
+//                    kh.getDiaChi(),
+//                    kh.getSdt(),
+//                    kh.getcCCD(),
+//                    kh.getEmail()
+//            });
+//        }
     }
 
 

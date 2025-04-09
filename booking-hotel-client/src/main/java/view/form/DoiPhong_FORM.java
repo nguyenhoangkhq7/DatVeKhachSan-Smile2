@@ -1,8 +1,8 @@
 package view.form;
 
-import customElements.*;
+import utils.custom_element.*;
 import dao.PhieuDatPhong_DAO;
-import entity.PhieuDatPhong;
+import model.PhieuDatPhong;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -27,7 +27,7 @@ public class DoiPhong_FORM extends JPanel implements ActionListener, Openable {
     @Override
     public void open() {
         phieuDatPhongDAO = new PhieuDatPhong_DAO();
-        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDeDoi();
+//        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDeDoi();
         loadTableData();
     }
     public DoiPhong_FORM() {
@@ -147,39 +147,39 @@ public class DoiPhong_FORM extends JPanel implements ActionListener, Openable {
         add(b, BorderLayout.CENTER);
     }
     private void loadTableData(){
-        tableModel.setRowCount(0);
-        for (PhieuDatPhong pdp : dsPhieuDatPhong) {
-            System.out.println(pdp.getNhanVien().getHoTen()+" aaa");
-            tableModel.addRow(new Object[]{
-                    pdp.getMaPDP(),
-                    pdp.getPhong().getMaPhong(),
-                    pdp.getKhachHang().getHoTen(),
-                    pdp.getNgayDat(),
-                    pdp.getNgayDen(),
-                    pdp.getNgayDi(),
-                    pdp.getNhanVien().getHoTen(),
-                    pdp.getTinhTrangPDP()
-            });
-        }
+//        tableModel.setRowCount(0);
+//        for (PhieuDatPhong pdp : dsPhieuDatPhong) {
+//            System.out.println(pdp.getNhanVien().getHoTen()+" aaa");
+//            tableModel.addRow(new Object[]{
+//                    pdp.getMaPDP(),
+//                    pdp.getPhong().getMaPhong(),
+//                    pdp.getKhachHang().getHoTen(),
+//                    pdp.getNgayDat(),
+//                    pdp.getNgayDen(),
+//                    pdp.getNgayDi(),
+//                    pdp.getNhanVien().getHoTen(),
+//                    pdp.getTinhTrangPDP()
+//            });
+//        }
     }
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnHuyDatPhong) {
-            int selectedRow = table.getSelectedRow();
-
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu đặt phòng để hủy!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
-            if (phieuDatPhongDAO.huyDatPhong(maPDP)) {
-                JOptionPane.showMessageDialog(this, "Đã hủy đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                tableModel.removeRow(selectedRow);
-            } else {
-                JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi hủy đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-            }
-        }
+//        if (e.getSource() == btnHuyDatPhong) {
+//            int selectedRow = table.getSelectedRow();
+//
+//            if (selectedRow == -1) {
+//                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu đặt phòng để hủy!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+//                return;
+//            }
+//
+//            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
+//            if (phieuDatPhongDAO.huyDatPhong(maPDP)) {
+//                JOptionPane.showMessageDialog(this, "Đã hủy đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                tableModel.removeRow(selectedRow);
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi hủy đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+//            }
+//        }
     }
     private void handleTimKiem() {
         String tuKhoa = searchField.getText().trim().toLowerCase();

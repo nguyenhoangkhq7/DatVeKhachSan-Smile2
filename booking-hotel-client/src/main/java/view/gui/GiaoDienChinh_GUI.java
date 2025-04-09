@@ -21,11 +21,11 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
-import customElements.FontManager;
-import customElements.Openable;
-import customElements.RoundedButton;
-import customElements.SubMenuPanel;
-import form.*;
+import utils.custom_element.FontManager;
+import utils.custom_element.Openable;
+import utils.custom_element.RoundedButton;
+import utils.custom_element.SubMenuPanel;
+import view.form.*;
 
 import java.util.ArrayList;
 
@@ -186,19 +186,19 @@ public class GiaoDienChinh_GUI extends JFrame {
 
 			// Nếu có submenu, thêm SubMenuPanel vào dưới menu chính
 			if (subItems != null) {
-				SubMenuPanel subMenu = new SubMenuPanel(subItems, cardLayout, centerPanel, menuButton, this);
-				subMenu.setVisible(false); // Ban đầu submenu ẩn
-				sidebarMenu.add(menuButton);
-				sidebarMenu.add(subMenu);
-				menuButton.addMouseListener(new MouseAdapter() {
-					@Override
-					public void mouseClicked(MouseEvent e) {
-						subMenu.setVisible(!subMenu.isVisible()); // Toggle submenu
-						sidebar.revalidate();
-						sidebar.repaint();
-					}
-				});
-				dsSubMenuPanel.add(subMenu);
+//				SubMenuPanel subMenu = new SubMenuPanel(subItems, cardLayout, centerPanel, menuButton, this);
+//				subMenu.setVisible(false); // Ban đầu submenu ẩn
+//				sidebarMenu.add(menuButton);
+//				sidebarMenu.add(subMenu);
+//				menuButton.addMouseListener(new MouseAdapter() {
+//					@Override
+//					public void mouseClicked(MouseEvent e) {
+//						subMenu.setVisible(!subMenu.isVisible()); // Toggle submenu
+//						sidebar.revalidate();
+//						sidebar.repaint();
+//					}
+//				});
+//				dsSubMenuPanel.add(subMenu);
 			} else {
 				sidebarMenu.add(menuButton);
 			}

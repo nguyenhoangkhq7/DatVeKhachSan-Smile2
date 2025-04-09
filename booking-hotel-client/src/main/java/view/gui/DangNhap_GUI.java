@@ -1,11 +1,10 @@
 package view.gui;
 
-import connectDB.ConnectDB;
-import customElements.BackgroundPanel;
-import customElements.FontManager;
-import customElements.RoundedPanel;
+import utils.custom_element.BackgroundPanel;
+import utils.custom_element.FontManager;
+import utils.custom_element.RoundedPanel;
 import dao.TaiKhoan_DAO;
-import entity.TaiKhoan;
+import model.TaiKhoan;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -14,10 +13,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.*;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -33,7 +29,7 @@ public class DangNhap_GUI extends JFrame {
     private static final int BUTTON_HEIGHT = 55;
     private TaiKhoan_DAO taiKhoanDAO = new TaiKhoan_DAO();
     public DangNhap_GUI() {
-        ConnectDB.getInstance().connect();
+//        ConnectDB.getInstance().connect();
         buildUI();
         setVisible(true);
     }
@@ -180,25 +176,25 @@ public class DangNhap_GUI extends JFrame {
         passField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    String tenDN = userField.getText();
-                    String matKhau = new String(passField.getPassword());
-
-                    String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
-
-                    if (role != null) {
-                        if ("ADMIN".equals(role)) {
-                            // Hiển thị giao diện cho admin
-                            new GiaoDienChinh_GUI();
-                        } else {
-                            // Hiển thị giao diện cho nhân viên
-                            new GiaoDienNhanVien_GUI();
-                        }
-                        dispose();
-                    } else {
-                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
+//                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+//                    String tenDN = userField.getText();
+//                    String matKhau = new String(passField.getPassword());
+//
+//                    String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
+//
+//                    if (role != null) {
+//                        if ("ADMIN".equals(role)) {
+//                            // Hiển thị giao diện cho admin
+//                            new GiaoDienChinh_GUI();
+//                        } else {
+//                            // Hiển thị giao diện cho nhân viên
+//                            new GiaoDienNhanVien_GUI();
+//                        }
+//                        dispose();
+//                    } else {
+//                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+//                    }
+//                }
             }
         });
         rightPanel.addMouseListener(new MouseAdapter() {
@@ -248,23 +244,23 @@ public class DangNhap_GUI extends JFrame {
         submitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String tenDN = userField.getText();
-                String matKhau = new String(passField.getPassword());
-
-                String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
-
-                if (role != null) {
-                    if ("ADMIN".equals(role)) {
-                        // Hiển thị giao diện cho admin
-                        new GiaoDienChinh_GUI();
-                    } else {
-                        // Hiển thị giao diện cho nhân viên
-                        new GiaoDienNhanVien_GUI();
-                    }
-                    dispose();
-                } else {
-                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-                }
+//                String tenDN = userField.getText();
+//                String matKhau = new String(passField.getPassword());
+//
+//                String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
+//
+//                if (role != null) {
+//                    if ("ADMIN".equals(role)) {
+//                        // Hiển thị giao diện cho admin
+//                        new GiaoDienChinh_GUI();
+//                    } else {
+//                        // Hiển thị giao diện cho nhân viên
+//                        new GiaoDienNhanVien_GUI();
+//                    }
+//                    dispose();
+//                } else {
+//                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+//                }
             }
         });
         exitButton.addActionListener(new ActionListener() {

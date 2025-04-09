@@ -1,8 +1,8 @@
 package view.form;
 
-import customElements.*;
+import utils.custom_element.*;
 import dao.Phong_DAO;
-import entity.Phong;
+import model.Phong;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -232,17 +232,17 @@ public class TimKiemPhong_FORM extends JPanel  implements ActionListener, MouseL
     }
 
     private void loadTableData() {
-        ArrayList<Phong> dsPhong = phongDAO.getDSPhong();
-        for (Phong p : dsPhong) {
-            tableModel.addRow(new Object[]{
-                    p.getMaPhong(),
-                    p.getTenPhong(),
-                    p.getLoaiPhong(),
-                    p.getGiaPhong(),
-                    p.getSoNguoi(),
-                    p.getTrangThai()
-            });
-        }
+//        ArrayList<Phong> dsPhong = phongDAO.getDSPhong();
+//        for (Phong p : dsPhong) {
+//            tableModel.addRow(new Object[]{
+//                    p.getMaPhong(),
+//                    p.getTenPhong(),
+//                    p.getLoaiPhong(),
+//                    p.getGiaPhong(),
+//                    p.getSoNguoi(),
+//                    p.getTrangThai()
+//            });
+//        }
     }
 
     @Override

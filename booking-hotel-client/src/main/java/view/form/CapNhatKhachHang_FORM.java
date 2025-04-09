@@ -278,22 +278,22 @@ public class CapNhatKhachHang_FORM extends JPanel  implements ActionListener, Mo
 
 
     private void loadTableData() {
-        // Xóa tất cả các dòng trong bảng trước khi tải dữ liệu mới
-        tableModel.setRowCount(0);
-
-        ArrayList<KhachHang> dsKhachHang = khachHangDAO.getDSKhachHang();
-        for (KhachHang kh : dsKhachHang) {
-            if (kh.getTrangThai() == 1) { // Chỉ thêm khách hàng có trạng thái khác 0
-                tableModel.addRow(new Object[]{
-                        kh.getMaKH(),
-                        kh.getHoTen(),
-                        kh.getDiaChi(),
-                        kh.getSdt(),
-                        kh.getEmail(),
-                        kh.getcCCD()
-                });
-            }
-        }
+//        // Xóa tất cả các dòng trong bảng trước khi tải dữ liệu mới
+//        tableModel.setRowCount(0);
+//
+//        ArrayList<KhachHang> dsKhachHang = khachHangDAO.getDSKhachHang();
+//        for (KhachHang kh : dsKhachHang) {
+//            if (kh.getTrangThai() == 1) { // Chỉ thêm khách hàng có trạng thái khác 0
+//                tableModel.addRow(new Object[]{
+//                        kh.getMaKH(),
+//                        kh.getHoTen(),
+//                        kh.getDiaChi(),
+//                        kh.getSdt(),
+//                        kh.getEmail(),
+//                        kh.getcCCD()
+//                });
+//            }
+//        }
     }
 
 
@@ -307,120 +307,120 @@ public class CapNhatKhachHang_FORM extends JPanel  implements ActionListener, Mo
         loadTableData();
     }
     private void xoaKhachHang() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            String maKH = (String) tableModel.getValueAt(selectedRow, 0);
-            try {
-                if (khachHangDAO.xoaKH(maKH)) {
-                    tableModel.removeRow(selectedRow); // Xóa dòng khỏi bảng
-                    lamMoi();
-                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!");
-
-                    // Đặt lại trạng thái lựa chọn của bảng
-                    table.clearSelection();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thất bại!");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi xóa khách hàng!");
-            }
-        }else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa!");
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow != -1) {
+//            String maKH = (String) tableModel.getValueAt(selectedRow, 0);
+//            try {
+//                if (khachHangDAO.xoaKH(maKH)) {
+//                    tableModel.removeRow(selectedRow); // Xóa dòng khỏi bảng
+//                    lamMoi();
+//                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!");
+//
+//                    // Đặt lại trạng thái lựa chọn của bảng
+//                    table.clearSelection();
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thất bại!");
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi xóa khách hàng!");
+//            }
+//        }else {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa!");
+//        }
     }
 
 
 
     private void suaKhachHang() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            String maKH = (String) tableModel.getValueAt(selectedRow, 0);
-            String hoTen = txtTenKhachHang.getText();
-            String diaChi = txtDiaChi.getText();
-            String sdt = txtSDT.getText();
-            String email = txtEmail.getText();
-            String cccd = txtCCCD.getText();
-
-
-            if (!hoTen.isEmpty() && !diaChi.isEmpty() && !sdt.isEmpty() && !email.isEmpty() && !cccd.isEmpty()) {
-                try {
-                    KhachHang kh = new KhachHang(maKH, hoTen, diaChi, sdt, email, cccd,1, new Date());
-                    if (khachHangDAO.suaKhachHang(kh)) {
-                        // Update table values after successful update
-                        tableModel.setValueAt(hoTen, selectedRow, 1);
-                        tableModel.setValueAt(diaChi, selectedRow, 2);
-                        tableModel.setValueAt(sdt, selectedRow, 3);
-                        tableModel.setValueAt(email, selectedRow, 4);
-                        tableModel.setValueAt(cccd, selectedRow, 5);
-                        lamMoi();
-
-
-                        JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thành công!");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thất bại!");
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi cập nhật khách hàng!");
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin!");
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa!");
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow != -1) {
+//            String maKH = (String) tableModel.getValueAt(selectedRow, 0);
+//            String hoTen = txtTenKhachHang.getText();
+//            String diaChi = txtDiaChi.getText();
+//            String sdt = txtSDT.getText();
+//            String email = txtEmail.getText();
+//            String cccd = txtCCCD.getText();
+//
+//
+//            if (!hoTen.isEmpty() && !diaChi.isEmpty() && !sdt.isEmpty() && !email.isEmpty() && !cccd.isEmpty()) {
+//                try {
+//                    KhachHang kh = new KhachHang(maKH, hoTen, diaChi, sdt, email, cccd,1, new Date());
+//                    if (khachHangDAO.suaKhachHang(kh)) {
+//                        // Update table values after successful update
+//                        tableModel.setValueAt(hoTen, selectedRow, 1);
+//                        tableModel.setValueAt(diaChi, selectedRow, 2);
+//                        tableModel.setValueAt(sdt, selectedRow, 3);
+//                        tableModel.setValueAt(email, selectedRow, 4);
+//                        tableModel.setValueAt(cccd, selectedRow, 5);
+//                        lamMoi();
+//
+//
+//                        JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thành công!");
+//                    } else {
+//                        JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thất bại!");
+//                    }
+//                } catch (SQLException e) {
+//                    e.printStackTrace();
+//                    JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi cập nhật khách hàng!");
+//                }
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin!");
+//            }
+//        } else {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa!");
+//        }
     }
 
 
     private void timKiem(String keyword) {
-        table.clearSelection(); // Xóa lựa chọn cũ trên bảng
-
-        int foundRow = -1;
-
-        // Tìm dòng chứa từ khóa đầu tiên
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            boolean match = false;
-
-            // Kiểm tra từ khóa trong các cột
-            for (int j = 0; j < tableModel.getColumnCount(); j++) {
-                if (tableModel.getValueAt(i, j).toString().toLowerCase().contains(keyword.toLowerCase())) {
-                    match = true;
-                    break;
-                }
-            }
-
-            if (match) {
-                foundRow = i;
-                break; // Chỉ lấy dòng đầu tiên tìm thấy
-            }
-        }
-
-        if (foundRow != -1) {
-            // Di chuyển dòng tìm thấy lên đầu bảng
-            moveRowToTop(foundRow);
-
-            // Điền thông tin từ dòng được tìm thấy vào các ô nhập liệu
-            txtTenKhachHang.setText(tableModel.getValueAt(0, 1).toString());
-            txtDiaChi.setText(tableModel.getValueAt(0, 2).toString());
-            txtSDT.setText(tableModel.getValueAt(0, 3).toString());
-            txtEmail.setText(tableModel.getValueAt(0, 4).toString());
-            txtCCCD.setText(tableModel.getValueAt(0, 5).toString());
-
-            // Tạo hiệu ứng hover cho dòng đầu tiên
-            table.addRowSelectionInterval(0, 0);
-
-        } else {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy kết quả nào!");
-        }
+//        table.clearSelection(); // Xóa lựa chọn cũ trên bảng
+//
+//        int foundRow = -1;
+//
+//        // Tìm dòng chứa từ khóa đầu tiên
+//        for (int i = 0; i < tableModel.getRowCount(); i++) {
+//            boolean match = false;
+//
+//            // Kiểm tra từ khóa trong các cột
+//            for (int j = 0; j < tableModel.getColumnCount(); j++) {
+//                if (tableModel.getValueAt(i, j).toString().toLowerCase().contains(keyword.toLowerCase())) {
+//                    match = true;
+//                    break;
+//                }
+//            }
+//
+//            if (match) {
+//                foundRow = i;
+//                break; // Chỉ lấy dòng đầu tiên tìm thấy
+//            }
+//        }
+//
+//        if (foundRow != -1) {
+//            // Di chuyển dòng tìm thấy lên đầu bảng
+//            moveRowToTop(foundRow);
+//
+//            // Điền thông tin từ dòng được tìm thấy vào các ô nhập liệu
+//            txtTenKhachHang.setText(tableModel.getValueAt(0, 1).toString());
+//            txtDiaChi.setText(tableModel.getValueAt(0, 2).toString());
+//            txtSDT.setText(tableModel.getValueAt(0, 3).toString());
+//            txtEmail.setText(tableModel.getValueAt(0, 4).toString());
+//            txtCCCD.setText(tableModel.getValueAt(0, 5).toString());
+//
+//            // Tạo hiệu ứng hover cho dòng đầu tiên
+//            table.addRowSelectionInterval(0, 0);
+//
+//        } else {
+//            JOptionPane.showMessageDialog(this, "Không tìm thấy kết quả nào!");
+//        }
     }
     private void moveRowToTop(int rowIndex) {
-        Object[] rowData = new Object[tableModel.getColumnCount()];
-        for (int i = 0; i < tableModel.getColumnCount(); i++) {
-            rowData[i] = tableModel.getValueAt(rowIndex, i);
-        }
-        tableModel.removeRow(rowIndex); // Xóa dòng cũ
-        tableModel.insertRow(0, rowData); // Chèn dòng vào đầu bảng
+//        Object[] rowData = new Object[tableModel.getColumnCount()];
+//        for (int i = 0; i < tableModel.getColumnCount(); i++) {
+//            rowData[i] = tableModel.getValueAt(rowIndex, i);
+//        }
+//        tableModel.removeRow(rowIndex); // Xóa dòng cũ
+//        tableModel.insertRow(0, rowData); // Chèn dòng vào đầu bảng
     }
     private boolean isValidInput(String input, String regex) {
         return input.matches(regex);

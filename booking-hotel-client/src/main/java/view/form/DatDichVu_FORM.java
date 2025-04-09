@@ -1,10 +1,6 @@
 package view.form;
 
-import connectDB.ConnectDB;
-import customElements.CustomCellRenderer;
-import customElements.CustomHeaderRenderer;
-import customElements.FontManager;
-import customElements.RoundedPanel;
+import utils.custom_element.*;
 import dao.DichVu_DAO;
 
 
@@ -462,38 +458,38 @@ public class DatDichVu_FORM extends  JPanel implements ActionListener, MouseList
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            selectedMaPhong = tableModel.getValueAt(selectedRow, 3).toString(); // Lấy mã phòng
-             selectMaPDP = tableModel.getValueAt(selectedRow, 0).toString();
-            // Truy vấn SQL để lấy mã hóa đơn (maHD) từ mã phòng
-            Connection connection = ConnectDB.getConnection();
-            if (connection != null) {
-                try {
-                    String query = "SELECT hd.maHD\n" +
-                            "from ChiTietHoaDon ct join Phong p on ct.maPhong=p.maPhong join PhieuDatPhong pdp on p.maPhong=pdp.maPhong join HoaDon hd on ct.maHD=hd.maHD\n" +
-                            "where ct.maPhong =? and maPDP=?";
-                    var preparedStatement = connection.prepareStatement(query);
-                    preparedStatement.setString(1, selectedMaPhong);
-                    preparedStatement.setString(2, selectMaPDP);
-
-                    var resultSet = preparedStatement.executeQuery();
-                    if (resultSet.next()) {
-                        selectedMaHD = resultSet.getString("maHD");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn cho phòng đã chọn!");
-                        selectedMaHD = null;
-                    }
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Lỗi khi truy vấn mã hóa đơn!");
-                }
-            }
-
-
-            JOptionPane.showMessageDialog(this,
-                    "Đã chọn:\nMã phòng: " + selectedMaPhong + "\nMã phiếu đặt phòng:"+selectMaPDP );
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow != -1) {
+//            selectedMaPhong = tableModel.getValueAt(selectedRow, 3).toString(); // Lấy mã phòng
+//             selectMaPDP = tableModel.getValueAt(selectedRow, 0).toString();
+//            // Truy vấn SQL để lấy mã hóa đơn (maHD) từ mã phòng
+//            Connection connection = ConnectDB.getConnection();
+//            if (connection != null) {
+//                try {
+//                    String query = "SELECT hd.maHD\n" +
+//                            "from ChiTietHoaDon ct join Phong p on ct.maPhong=p.maPhong join PhieuDatPhong pdp on p.maPhong=pdp.maPhong join HoaDon hd on ct.maHD=hd.maHD\n" +
+//                            "where ct.maPhong =? and maPDP=?";
+//                    var preparedStatement = connection.prepareStatement(query);
+//                    preparedStatement.setString(1, selectedMaPhong);
+//                    preparedStatement.setString(2, selectMaPDP);
+//
+//                    var resultSet = preparedStatement.executeQuery();
+//                    if (resultSet.next()) {
+//                        selectedMaHD = resultSet.getString("maHD");
+//                    } else {
+//                        JOptionPane.showMessageDialog(this, "Không tìm thấy hóa đơn cho phòng đã chọn!");
+//                        selectedMaHD = null;
+//                    }
+//                } catch (SQLException ex) {
+//                    ex.printStackTrace();
+//                    JOptionPane.showMessageDialog(this, "Lỗi khi truy vấn mã hóa đơn!");
+//                }
+//            }
+//
+//
+//            JOptionPane.showMessageDialog(this,
+//                    "Đã chọn:\nMã phòng: " + selectedMaPhong + "\nMã phiếu đặt phòng:"+selectMaPDP );
+//        }
     }
 
     @Override
@@ -598,121 +594,121 @@ public class DatDichVu_FORM extends  JPanel implements ActionListener, MouseList
     }
 
     private void loadDichVuData() {
-        tableModel1.setRowCount(0);
-        Connection connection = ConnectDB.getConnection();
-        if (connection != null) {
-            try {
-                String query = "SELECT * FROM DichVu WHERE trangThai = 1";
-                var preparedStatement = connection.prepareStatement(query);
-                var resultSet = preparedStatement.executeQuery();
-
-                while (resultSet.next()) {
-                    String maDV = resultSet.getString("maDV");
-                    String tenDV = resultSet.getString("tenDV");
-                    double giaDV = resultSet.getDouble("giaDV");
-                    String donViTinh = resultSet.getString("donViTinh");
-                    int soLuongTon = resultSet.getInt("soLuongTon");
-
-                    tableModel1.addRow(new Object[]{maDV, tenDV, giaDV, donViTinh, soLuongTon});
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu dịch vụ!");
-            }
-        }
+//        tableModel1.setRowCount(0);
+//        Connection connection = ConnectDB.getConnection();
+//        if (connection != null) {
+//            try {
+//                String query = "SELECT * FROM DichVu WHERE trangThai = 1";
+//                var preparedStatement = connection.prepareStatement(query);
+//                var resultSet = preparedStatement.executeQuery();
+//
+//                while (resultSet.next()) {
+//                    String maDV = resultSet.getString("maDV");
+//                    String tenDV = resultSet.getString("tenDV");
+//                    double giaDV = resultSet.getDouble("giaDV");
+//                    String donViTinh = resultSet.getString("donViTinh");
+//                    int soLuongTon = resultSet.getInt("soLuongTon");
+//
+//                    tableModel1.addRow(new Object[]{maDV, tenDV, giaDV, donViTinh, soLuongTon});
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//                JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu dịch vụ!");
+//            }
+//        }
     }
 
 
 
     private void loadPhongData() {
-        Connection connection = ConnectDB.getConnection();
-        if (connection != null) {
-            try {
-                String query = """
-            SELECT PDP.maPDP, P.loaiPhong, P.tenPhong, P.maPhong, PDP.tinhTrangPDP, KH.hoTen, 
-                   PDP.ngayDen, PDP.ngayDi
-            FROM PhieuDatPhong PDP
-            JOIN Phong P ON PDP.maPhong = P.maPhong
-            JOIN KhachHang KH ON PDP.maKH = KH.maKH
-            WHERE P.trangThai = 1 AND PDP.tinhTrangPDP != 2
-            """;
-                var preparedStatement = connection.prepareStatement(query);
-                var resultSet = preparedStatement.executeQuery();
-
-                tableModel.setRowCount(0); // Xóa dữ liệu cũ
-                while (resultSet.next()) {
-                    // Lấy dữ liệu từ kết quả truy vấn
-                    String maPDP = resultSet.getString("maPDP");
-                    String loaiPhong = resultSet.getString("loaiPhong");
-                    String tenPhong = resultSet.getString("tenPhong");
-                    String maPhong = resultSet.getString("maPhong");
-                    int tinhTrang = resultSet.getInt("tinhTrangPDP");  // Lấy tình trạng dưới dạng số
-                    String tenKhach = resultSet.getString("hoTen");
-                    String ngayDen = resultSet.getString("ngayDen");
-                    String ngayDi = resultSet.getString("ngayDi");
-
-                    // Chuyển đổi tình trạng thành chuỗi tương ứng
-                    String tinhTrangString;
-                    switch (tinhTrang) {
-                        case 0:
-                            tinhTrangString = "Chờ nhận phòng";
-                            break;
-                        case 1:
-                            tinhTrangString = "Đã nhận phòng";
-                            break;
-                        default:
-                            tinhTrangString = "Không xác định";
-                            break;
-                    }
-
-                    // Thêm dữ liệu vào tableModel
-                    tableModel.addRow(new Object[]{maPDP, loaiPhong, tenPhong, maPhong, tinhTrangString, tenKhach, ngayDen, ngayDi});
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu phòng!");
-            }
-        }
+//        Connection connection = ConnectDB.getConnection();
+//        if (connection != null) {
+//            try {
+//                String query = """
+//            SELECT PDP.maPDP, P.loaiPhong, P.tenPhong, P.maPhong, PDP.tinhTrangPDP, KH.hoTen,
+//                   PDP.ngayDen, PDP.ngayDi
+//            FROM PhieuDatPhong PDP
+//            JOIN Phong P ON PDP.maPhong = P.maPhong
+//            JOIN KhachHang KH ON PDP.maKH = KH.maKH
+//            WHERE P.trangThai = 1 AND PDP.tinhTrangPDP != 2
+//            """;
+//                var preparedStatement = connection.prepareStatement(query);
+//                var resultSet = preparedStatement.executeQuery();
+//
+//                tableModel.setRowCount(0); // Xóa dữ liệu cũ
+//                while (resultSet.next()) {
+//                    // Lấy dữ liệu từ kết quả truy vấn
+//                    String maPDP = resultSet.getString("maPDP");
+//                    String loaiPhong = resultSet.getString("loaiPhong");
+//                    String tenPhong = resultSet.getString("tenPhong");
+//                    String maPhong = resultSet.getString("maPhong");
+//                    int tinhTrang = resultSet.getInt("tinhTrangPDP");  // Lấy tình trạng dưới dạng số
+//                    String tenKhach = resultSet.getString("hoTen");
+//                    String ngayDen = resultSet.getString("ngayDen");
+//                    String ngayDi = resultSet.getString("ngayDi");
+//
+//                    // Chuyển đổi tình trạng thành chuỗi tương ứng
+//                    String tinhTrangString;
+//                    switch (tinhTrang) {
+//                        case 0:
+//                            tinhTrangString = "Chờ nhận phòng";
+//                            break;
+//                        case 1:
+//                            tinhTrangString = "Đã nhận phòng";
+//                            break;
+//                        default:
+//                            tinhTrangString = "Không xác định";
+//                            break;
+//                    }
+//
+//                    // Thêm dữ liệu vào tableModel
+//                    tableModel.addRow(new Object[]{maPDP, loaiPhong, tenPhong, maPhong, tinhTrangString, tenKhach, ngayDen, ngayDi});
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//                JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu phòng!");
+//            }
+//        }
     }
 
 
     private void loadDichVuDaDat(String maHD, String maPhong) {
-        try {
-            Connection connection = ConnectDB.getConnection();
-            String query = """
-            SELECT tenDV, soLuongDV, giaDV 
-            FROM ChiTietHoaDon
-            INNER JOIN DichVu ON ChiTietHoaDon.maDV = DichVu.maDV
-            WHERE maHD = ? AND maPhong = ? AND soLuongDV > 0
-        """;
-            var preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, maHD);
-            preparedStatement.setString(2, maPhong);
-            var resultSet = preparedStatement.executeQuery();
-
-            // Xóa tất cả các hàng trong table trước khi load lại
-            tableModel2.setRowCount(0);
-
-            // Định dạng số
-            DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
-
-            // Thêm các dòng mới từ cơ sở dữ liệu
-            while (resultSet.next()) {
-                String tenDV = resultSet.getString("tenDV");
-                int soLuongDV = resultSet.getInt("soLuongDV");
-                double giaDV = resultSet.getDouble("giaDV"); // Lấy giá dịch vụ từ cơ sở dữ liệu
-                double thanhTien = soLuongDV * giaDV;       // Tính toán thành tiền
-
-                // Định dạng thành tiền
-                String thanhTienFormatted = decimalFormat.format(thanhTien);
-
-                // Thêm hàng vào bảng với giá trị đã định dạng
-                tableModel2.addRow(new Object[] { tenDV, soLuongDV, thanhTienFormatted });
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dịch vụ đã đặt! Lỗi SQL: " + ex.getMessage());
-        }
+//        try {
+//            Connection connection = ConnectDB.getConnection();
+//            String query = """
+//            SELECT tenDV, soLuongDV, giaDV
+//            FROM ChiTietHoaDon
+//            INNER JOIN DichVu ON ChiTietHoaDon.maDV = DichVu.maDV
+//            WHERE maHD = ? AND maPhong = ? AND soLuongDV > 0
+//        """;
+//            var preparedStatement = connection.prepareStatement(query);
+//            preparedStatement.setString(1, maHD);
+//            preparedStatement.setString(2, maPhong);
+//            var resultSet = preparedStatement.executeQuery();
+//
+//            // Xóa tất cả các hàng trong table trước khi load lại
+//            tableModel2.setRowCount(0);
+//
+//            // Định dạng số
+//            DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+//
+//            // Thêm các dòng mới từ cơ sở dữ liệu
+//            while (resultSet.next()) {
+//                String tenDV = resultSet.getString("tenDV");
+//                int soLuongDV = resultSet.getInt("soLuongDV");
+//                double giaDV = resultSet.getDouble("giaDV"); // Lấy giá dịch vụ từ cơ sở dữ liệu
+//                double thanhTien = soLuongDV * giaDV;       // Tính toán thành tiền
+//
+//                // Định dạng thành tiền
+//                String thanhTienFormatted = decimalFormat.format(thanhTien);
+//
+//                // Thêm hàng vào bảng với giá trị đã định dạng
+//                tableModel2.addRow(new Object[] { tenDV, soLuongDV, thanhTienFormatted });
+//            }
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi khi tải dịch vụ đã đặt! Lỗi SQL: " + ex.getMessage());
+//        }
     }
 
 
@@ -722,113 +718,113 @@ public class DatDichVu_FORM extends  JPanel implements ActionListener, MouseList
             }
 
     private void xacNhanDichVu() {
-        if (tableModel2.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Không có dịch vụ nào để xác nhận!");
-            return;
-        }
-
-        if (selectedMaHD == null || selectedMaPhong == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trước khi xác nhận dịch vụ!");
-            return;
-        }
-
-        Connection connection = ConnectDB.getConnection();
-        if (connection == null) {
-            JOptionPane.showMessageDialog(this, "Không thể kết nối cơ sở dữ liệu!");
-            return;
-        }
-
-        try {
-            // Truy vấn thông tin bổ sung từ bảng ChiTietHoaDon
-            String fetchQuery = """
-            SELECT thoiGianThuePhong, soLuongGiuongPhu, soLuongPhong 
-            FROM ChiTietHoaDon 
-            WHERE maHD = ? AND maPhong = ?
-        """;
-            var fetchStatement = connection.prepareStatement(fetchQuery);
-            fetchStatement.setString(1, selectedMaHD);
-            fetchStatement.setString(2, selectedMaPhong);
-
-            var resultSet = fetchStatement.executeQuery();
-            if (!resultSet.next()) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin hóa đơn và phòng phù hợp!");
-                return;
-            }
-
-            // Lấy giá trị từ kết quả truy vấn
-            java.sql.Date thoiGianThuePhong = resultSet.getDate("thoiGianThuePhong");
-            int soLuongGiuongPhu = resultSet.getInt("soLuongGiuongPhu");
-            int soLuongPhong = resultSet.getInt("soLuongPhong");
-
-            // Chuẩn bị câu lệnh kiểm tra và thêm mới
-            String getMaDVQuery = "SELECT maDV FROM DichVu WHERE tenDV = ?";
-            String checkQuery = """
-            SELECT COUNT(*) FROM ChiTietHoaDon 
-            WHERE maHD = ? AND maPhong = ? AND maDV = ?
-        """;
-            String insertQuery = """
-            INSERT INTO ChiTietHoaDon (maHD, maPhong, maDV, thoiGianThuePhong, soLuongGiuongPhu, soLuongDV, soLuongPhong) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """;
-            String updateSoLuongTonQuery = "UPDATE DichVu SET soLuongTon = soLuongTon - ? WHERE maDV = ?";
-
-            var getMaDVStatement = connection.prepareStatement(getMaDVQuery);
-            var checkStatement = connection.prepareStatement(checkQuery);
-            var insertStatement = connection.prepareStatement(insertQuery);
-            var updateStatement = connection.prepareStatement(updateSoLuongTonQuery);
-
-            // Lặp qua từng hàng trong table2
-            for (int i = 0; i < tableModel2.getRowCount(); i++) {
-                String tenDV = tableModel2.getValueAt(i, 0).toString(); // Lấy tên dịch vụ
-                int soLuongDV = Integer.parseInt(tableModel2.getValueAt(i, 1).toString()); // Lấy số lượng dịch vụ
-
-                // Truy vấn mã dịch vụ (maDV) từ tên dịch vụ
-                getMaDVStatement.setString(1, tenDV);
-                var maDVResult = getMaDVStatement.executeQuery();
-                if (!maDVResult.next()) {
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy mã dịch vụ cho: " + tenDV);
-                    return; // Dừng nếu không tìm thấy mã dịch vụ
-                }
-                String maDV = maDVResult.getString("maDV"); // Lấy mã dịch vụ
-
-                // Kiểm tra bản ghi đã tồn tại
-                checkStatement.setString(1, selectedMaHD);
-                checkStatement.setString(2, selectedMaPhong);
-                checkStatement.setString(3, maDV);
-
-                var checkResult = checkStatement.executeQuery();
-                checkResult.next();
-                int count = checkResult.getInt(1);
-
-                if (count == 0) {
-                    // Thêm mới bản ghi nếu chưa tồn tại
-                    insertStatement.setString(1, selectedMaHD);
-                    insertStatement.setString(2, selectedMaPhong);
-                    insertStatement.setString(3, maDV);
-                    insertStatement.setDate(4, thoiGianThuePhong);
-                    insertStatement.setInt(5, soLuongGiuongPhu);
-                    insertStatement.setInt(6, soLuongDV);
-                    insertStatement.setInt(7, soLuongPhong);
-
-                    insertStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
-                }
-
-                // Giảm số lượng tồn kho trong cơ sở dữ liệu
-                updateStatement.setInt(1, soLuongDV);
-                updateStatement.setString(2, maDV);
-                updateStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
-            }
-
-            // Thực thi batch
-            insertStatement.executeBatch();
-            updateStatement.executeBatch();
-            JOptionPane.showMessageDialog(this, "Đặt dịch vụ thành công!");
-            lamMoiDichVu(); // Làm mới bảng sau khi xác nhận
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi xác nhận dịch vụ! Lỗi SQL: " + ex.getMessage());
-        }
+//        if (tableModel2.getRowCount() == 0) {
+//            JOptionPane.showMessageDialog(this, "Không có dịch vụ nào để xác nhận!");
+//            return;
+//        }
+//
+//        if (selectedMaHD == null || selectedMaPhong == null) {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trước khi xác nhận dịch vụ!");
+//            return;
+//        }
+//
+//        Connection connection = ConnectDB.getConnection();
+//        if (connection == null) {
+//            JOptionPane.showMessageDialog(this, "Không thể kết nối cơ sở dữ liệu!");
+//            return;
+//        }
+//
+//        try {
+//            // Truy vấn thông tin bổ sung từ bảng ChiTietHoaDon
+//            String fetchQuery = """
+//            SELECT thoiGianThuePhong, soLuongGiuongPhu, soLuongPhong
+//            FROM ChiTietHoaDon
+//            WHERE maHD = ? AND maPhong = ?
+//        """;
+//            var fetchStatement = connection.prepareStatement(fetchQuery);
+//            fetchStatement.setString(1, selectedMaHD);
+//            fetchStatement.setString(2, selectedMaPhong);
+//
+//            var resultSet = fetchStatement.executeQuery();
+//            if (!resultSet.next()) {
+//                JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin hóa đơn và phòng phù hợp!");
+//                return;
+//            }
+//
+//            // Lấy giá trị từ kết quả truy vấn
+//            java.sql.Date thoiGianThuePhong = resultSet.getDate("thoiGianThuePhong");
+//            int soLuongGiuongPhu = resultSet.getInt("soLuongGiuongPhu");
+//            int soLuongPhong = resultSet.getInt("soLuongPhong");
+//
+//            // Chuẩn bị câu lệnh kiểm tra và thêm mới
+//            String getMaDVQuery = "SELECT maDV FROM DichVu WHERE tenDV = ?";
+//            String checkQuery = """
+//            SELECT COUNT(*) FROM ChiTietHoaDon
+//            WHERE maHD = ? AND maPhong = ? AND maDV = ?
+//        """;
+//            String insertQuery = """
+//            INSERT INTO ChiTietHoaDon (maHD, maPhong, maDV, thoiGianThuePhong, soLuongGiuongPhu, soLuongDV, soLuongPhong)
+//            VALUES (?, ?, ?, ?, ?, ?, ?)
+//        """;
+//            String updateSoLuongTonQuery = "UPDATE DichVu SET soLuongTon = soLuongTon - ? WHERE maDV = ?";
+//
+//            var getMaDVStatement = connection.prepareStatement(getMaDVQuery);
+//            var checkStatement = connection.prepareStatement(checkQuery);
+//            var insertStatement = connection.prepareStatement(insertQuery);
+//            var updateStatement = connection.prepareStatement(updateSoLuongTonQuery);
+//
+//            // Lặp qua từng hàng trong table2
+//            for (int i = 0; i < tableModel2.getRowCount(); i++) {
+//                String tenDV = tableModel2.getValueAt(i, 0).toString(); // Lấy tên dịch vụ
+//                int soLuongDV = Integer.parseInt(tableModel2.getValueAt(i, 1).toString()); // Lấy số lượng dịch vụ
+//
+//                // Truy vấn mã dịch vụ (maDV) từ tên dịch vụ
+//                getMaDVStatement.setString(1, tenDV);
+//                var maDVResult = getMaDVStatement.executeQuery();
+//                if (!maDVResult.next()) {
+//                    JOptionPane.showMessageDialog(this, "Không tìm thấy mã dịch vụ cho: " + tenDV);
+//                    return; // Dừng nếu không tìm thấy mã dịch vụ
+//                }
+//                String maDV = maDVResult.getString("maDV"); // Lấy mã dịch vụ
+//
+//                // Kiểm tra bản ghi đã tồn tại
+//                checkStatement.setString(1, selectedMaHD);
+//                checkStatement.setString(2, selectedMaPhong);
+//                checkStatement.setString(3, maDV);
+//
+//                var checkResult = checkStatement.executeQuery();
+//                checkResult.next();
+//                int count = checkResult.getInt(1);
+//
+//                if (count == 0) {
+//                    // Thêm mới bản ghi nếu chưa tồn tại
+//                    insertStatement.setString(1, selectedMaHD);
+//                    insertStatement.setString(2, selectedMaPhong);
+//                    insertStatement.setString(3, maDV);
+//                    insertStatement.setDate(4, thoiGianThuePhong);
+//                    insertStatement.setInt(5, soLuongGiuongPhu);
+//                    insertStatement.setInt(6, soLuongDV);
+//                    insertStatement.setInt(7, soLuongPhong);
+//
+//                    insertStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
+//                }
+//
+//                // Giảm số lượng tồn kho trong cơ sở dữ liệu
+//                updateStatement.setInt(1, soLuongDV);
+//                updateStatement.setString(2, maDV);
+//                updateStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
+//            }
+//
+//            // Thực thi batch
+//            insertStatement.executeBatch();
+//            updateStatement.executeBatch();
+//            JOptionPane.showMessageDialog(this, "Đặt dịch vụ thành công!");
+//            lamMoiDichVu(); // Làm mới bảng sau khi xác nhận
+//
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi khi xác nhận dịch vụ! Lỗi SQL: " + ex.getMessage());
+//        }
     }
 
 

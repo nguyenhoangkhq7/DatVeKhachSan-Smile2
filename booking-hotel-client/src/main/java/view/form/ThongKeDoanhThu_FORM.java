@@ -1,7 +1,6 @@
 package view.form;
 
-import connectDB.ConnectDB;
-import customElements.*;
+import utils.custom_element.*;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -318,76 +317,76 @@ private Box createFormBox1(String label, JRadioButton rad){
 
 
     private void loadRevenueDataByYear() {
-        String query = "SELECT YEAR(hd.ngayLapHD) AS Nam, " +
-                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
-                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
-                "FROM HoaDon hd " +
-                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
-                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
-                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
-                "GROUP BY YEAR(hd.ngayLapHD)";
-        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
-
-            tableModel.setRowCount(0); // Làm mới bảng
-            DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
-
-            while (rs.next()) {
-                int year = rs.getInt("Nam");
-                double revenueService = rs.getDouble("DoanhThuDichVu");
-                double revenueRoom = rs.getDouble("DoanhThuPhong");
-                double totalRevenue = revenueService + revenueRoom;
-
-                // Định dạng doanh thu để tránh giá trị "E"
-                String formattedRevenueService = df.format(revenueService);
-                String formattedRevenueRoom = df.format(revenueRoom);
-                String formattedTotalRevenue = df.format(totalRevenue);
-
-                tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, year, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
-            }
-            table.repaint(); // Cập nhật giao diện bảng
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
-        }
+//        String query = "SELECT YEAR(hd.ngayLapHD) AS Nam, " +
+//                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
+//                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
+//                "FROM HoaDon hd " +
+//                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
+//                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
+//                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
+//                "GROUP BY YEAR(hd.ngayLapHD)";
+//        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query);
+//             ResultSet rs = stmt.executeQuery()) {
+//
+//            tableModel.setRowCount(0); // Làm mới bảng
+//            DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
+//
+//            while (rs.next()) {
+//                int year = rs.getInt("Nam");
+//                double revenueService = rs.getDouble("DoanhThuDichVu");
+//                double revenueRoom = rs.getDouble("DoanhThuPhong");
+//                double totalRevenue = revenueService + revenueRoom;
+//
+//                // Định dạng doanh thu để tránh giá trị "E"
+//                String formattedRevenueService = df.format(revenueService);
+//                String formattedRevenueRoom = df.format(revenueRoom);
+//                String formattedTotalRevenue = df.format(totalRevenue);
+//
+//                tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, year, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
+//            }
+//            table.repaint(); // Cập nhật giao diện bảng
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
+//        }
     }
 
     private void loadRevenueDataByMonth(int year) {
-        String query = "SELECT MONTH(hd.ngayLapHD) AS Thang, " +
-                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
-                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
-                "FROM HoaDon hd " +
-                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
-                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
-                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
-                "WHERE YEAR(hd.ngayLapHD) = ? " +
-                "GROUP BY MONTH(hd.ngayLapHD)";
-        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query)) {
-
-            stmt.setInt(1, year);
-            try (ResultSet rs = stmt.executeQuery()) {
-                tableModel.setRowCount(0); // Làm mới bảng
-                DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
-
-                while (rs.next()) {
-                    int month = rs.getInt("Thang");
-                    double revenueService = rs.getDouble("DoanhThuDichVu");
-                    double revenueRoom = rs.getDouble("DoanhThuPhong");
-                    double totalRevenue = revenueService + revenueRoom;
-
-                    // Định dạng doanh thu để tránh giá trị "E"
-                    String formattedRevenueService = df.format(revenueService);
-                    String formattedRevenueRoom = df.format(revenueRoom);
-                    String formattedTotalRevenue = df.format(totalRevenue);
-
-                    tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, "Tháng " + month, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
-                }
-                table.repaint(); // Cập nhật giao diện bảng
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
-        }
+//        String query = "SELECT MONTH(hd.ngayLapHD) AS Thang, " +
+//                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
+//                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
+//                "FROM HoaDon hd " +
+//                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
+//                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
+//                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
+//                "WHERE YEAR(hd.ngayLapHD) = ? " +
+//                "GROUP BY MONTH(hd.ngayLapHD)";
+//        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query)) {
+//
+//            stmt.setInt(1, year);
+//            try (ResultSet rs = stmt.executeQuery()) {
+//                tableModel.setRowCount(0); // Làm mới bảng
+//                DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
+//
+//                while (rs.next()) {
+//                    int month = rs.getInt("Thang");
+//                    double revenueService = rs.getDouble("DoanhThuDichVu");
+//                    double revenueRoom = rs.getDouble("DoanhThuPhong");
+//                    double totalRevenue = revenueService + revenueRoom;
+//
+//                    // Định dạng doanh thu để tránh giá trị "E"
+//                    String formattedRevenueService = df.format(revenueService);
+//                    String formattedRevenueRoom = df.format(revenueRoom);
+//                    String formattedTotalRevenue = df.format(totalRevenue);
+//
+//                    tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, "Tháng " + month, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
+//                }
+//                table.repaint(); // Cập nhật giao diện bảng
+//            }
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
+//        }
     }
 
     private void resetForm() {

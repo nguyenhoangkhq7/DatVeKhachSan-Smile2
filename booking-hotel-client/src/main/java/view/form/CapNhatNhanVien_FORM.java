@@ -2,7 +2,6 @@ package view.form;
 
 import utils.custom_element.*;
 import dao.NhanVien_DAO;
-import model.KhachHang;
 import model.NhanVien;
 import org.jdesktop.swingx.JXDatePicker;
 
@@ -32,7 +31,7 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
     private static Set<String> danhSachMaNhanVien = new HashSet<>();
     public void open() {
         NhanVien_DAO = new NhanVien_DAO();
-        ArrayList<NhanVien> dsNV = NhanVien_DAO.getDSNhanVien();
+//        ArrayList<NhanVien> dsNV = NhanVien_DAO.getDSNhanVien();
         loadTableData();
 //        loadLoaiPhong();
     }
@@ -267,25 +266,25 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
 
     private void loadTableData() {
         // Xóa tất cả các dòng trong bảng trước khi tải dữ liệu mới
-        tableModel.setRowCount(0);
-
-        ArrayList<NhanVien> dsNhanVien = NhanVien_DAO.getDSNhanVien();
-        for (NhanVien nv : dsNhanVien) {
-            if (nv.getTrangThai() == 1) { // Chỉ thêm khách hàng có trạng thái khác 0
-                tableModel.addRow(new Object[]{
-                        nv.getMaNV(),
-                        nv.getHoTen(),
-                        nv.getChucVu(),
-                        nv.getNgaySinh(),
-                        nv.getNgayVaoLam(),
-                        nv.getSoDT(),
-                        nv.getDiaChi(),
-                        nv.getEmail(),
-                        nv.getLuongCoBan(),
-                        nv.getHeSoLuong()
-                });
-            }
-        }
+//        tableModel.setRowCount(0);
+//
+//        ArrayList<NhanVien> dsNhanVien = NhanVien_DAO.getDSNhanVien();
+//        for (NhanVien nv : dsNhanVien) {
+//            if (nv.getTrangThai() == 1) { // Chỉ thêm khách hàng có trạng thái khác 0
+//                tableModel.addRow(new Object[]{
+//                        nv.getMaNV(),
+//                        nv.getHoTen(),
+//                        nv.getChucVu(),
+//                        nv.getNgaySinh(),
+//                        nv.getNgayVaoLam(),
+//                        nv.getSoDT(),
+//                        nv.getDiaChi(),
+//                        nv.getEmail(),
+//                        nv.getLuongCoBan(),
+//                        nv.getHeSoLuong()
+//                });
+//            }
+//        }
     }
     private Box createFormBox(String label, JTextField txt) {
         Box b = Box.createVerticalBox();
@@ -460,196 +459,196 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
         dateNgayVaoLam.setDate(today);
     }
     private void xoaNhanVien() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            String maNV = (String) tableModel.getValueAt(selectedRow, 0);
-            try {
-                if (NhanVien_DAO.xoaNV(maNV)) {
-                    tableModel.removeRow(selectedRow); // Xóa dòng khỏi bảng
-                    lamMoi();
-                    JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
-
-                    // Đặt lại trạng thái lựa chọn của bảng
-                    table.clearSelection();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Xóa nhân viên thất bại!");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi xóa nhân viên!");
-            }
-        }else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa!");
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow != -1) {
+//            String maNV = (String) tableModel.getValueAt(selectedRow, 0);
+//            try {
+//                if (NhanVien_DAO.xoaNV(maNV)) {
+//                    tableModel.removeRow(selectedRow); // Xóa dòng khỏi bảng
+//                    lamMoi();
+//                    JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
+//
+//                    // Đặt lại trạng thái lựa chọn của bảng
+//                    table.clearSelection();
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "Xóa nhân viên thất bại!");
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi xóa nhân viên!");
+//            }
+//        }else {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa!");
+//        }
     }
     private void suaNhanVien() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            // Lấy thông tin từ các trường nhập liệu
-            String maNV = (String) tableModel.getValueAt(selectedRow, 0);
-            String hoTen = txtHoTen.getText().trim();
-            String chucVu = cmbChucVu.getSelectedItem().toString();
-            String soDT = txtSoDT.getText().trim();
-            String diaChi = txtDiaChi.getText().trim();
-            String email = txtEmail.getText().trim();
-            double hsl = Double.parseDouble(txtHSL.getText());
-            double luong = Double.parseDouble(txtLuong.getText());
-            Date ngaySinh = dateNgaySinh.getDate();
-            Date ngayVaoLam = dateNgayVaoLam.getDate();
-
-            // Kiểm tra dữ liệu đầu vào trước khi tiếp tục
-            if (!kiemTraDuLieu()) {
-                return; // Nếu kiểm tra không hợp lệ, dừng lại và không tiếp tục
-            }
-
-            // Định dạng lại ngày sinh và ngày vào làm
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            String formattedNgaySinh = ngaySinh != null ? dateFormat.format(ngaySinh) : "";
-            String formattedNgayVaoLam = ngayVaoLam != null ? dateFormat.format(ngayVaoLam) : "";
-
-            // Nếu dữ liệu hợp lệ, tiến hành cập nhật
-            try {
-                NhanVien nv = new NhanVien(maNV, hoTen, chucVu, soDT, diaChi, email, ngaySinh, ngayVaoLam, luong, hsl, 1);
-                if (NhanVien_DAO.suaNhanVien(nv)) {
-                    // Cập nhật lại thông tin trên bảng
-                    tableModel.setValueAt(hoTen, selectedRow, 1);
-                    tableModel.setValueAt(chucVu, selectedRow, 2);
-                    tableModel.setValueAt(soDT, selectedRow, 5);
-                    tableModel.setValueAt(diaChi, selectedRow, 6);
-                    tableModel.setValueAt(email, selectedRow, 7);
-                    tableModel.setValueAt(hsl, selectedRow, 9);
-                    tableModel.setValueAt(luong, selectedRow, 8);
-                    tableModel.setValueAt(ngaySinh, selectedRow, 3);
-                    tableModel.setValueAt(ngayVaoLam, selectedRow, 4);
-
-                    lamMoi(); // Làm mới giao diện
-
-                    JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thành công!");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thất bại!");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi cập nhật nhân viên!");
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa!");
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow != -1) {
+//            // Lấy thông tin từ các trường nhập liệu
+//            String maNV = (String) tableModel.getValueAt(selectedRow, 0);
+//            String hoTen = txtHoTen.getText().trim();
+//            String chucVu = cmbChucVu.getSelectedItem().toString();
+//            String soDT = txtSoDT.getText().trim();
+//            String diaChi = txtDiaChi.getText().trim();
+//            String email = txtEmail.getText().trim();
+//            double hsl = Double.parseDouble(txtHSL.getText());
+//            double luong = Double.parseDouble(txtLuong.getText());
+//            Date ngaySinh = dateNgaySinh.getDate();
+//            Date ngayVaoLam = dateNgayVaoLam.getDate();
+//
+//            // Kiểm tra dữ liệu đầu vào trước khi tiếp tục
+//            if (!kiemTraDuLieu()) {
+//                return; // Nếu kiểm tra không hợp lệ, dừng lại và không tiếp tục
+//            }
+//
+//            // Định dạng lại ngày sinh và ngày vào làm
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+//            String formattedNgaySinh = ngaySinh != null ? dateFormat.format(ngaySinh) : "";
+//            String formattedNgayVaoLam = ngayVaoLam != null ? dateFormat.format(ngayVaoLam) : "";
+//
+//            // Nếu dữ liệu hợp lệ, tiến hành cập nhật
+//            try {
+//                NhanVien nv = new NhanVien(maNV, hoTen, chucVu, soDT, diaChi, email, ngaySinh, ngayVaoLam, luong, hsl, 1);
+//                if (NhanVien_DAO.suaNhanVien(nv)) {
+//                    // Cập nhật lại thông tin trên bảng
+//                    tableModel.setValueAt(hoTen, selectedRow, 1);
+//                    tableModel.setValueAt(chucVu, selectedRow, 2);
+//                    tableModel.setValueAt(soDT, selectedRow, 5);
+//                    tableModel.setValueAt(diaChi, selectedRow, 6);
+//                    tableModel.setValueAt(email, selectedRow, 7);
+//                    tableModel.setValueAt(hsl, selectedRow, 9);
+//                    tableModel.setValueAt(luong, selectedRow, 8);
+//                    tableModel.setValueAt(ngaySinh, selectedRow, 3);
+//                    tableModel.setValueAt(ngayVaoLam, selectedRow, 4);
+//
+//                    lamMoi(); // Làm mới giao diện
+//
+//                    JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thành công!");
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thất bại!");
+//                }
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi cập nhật nhân viên!");
+//            }
+//        } else {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa!");
+//        }
     }
 
     private boolean kiemTraDuLieu() {
-        // Kiểm tra ngày sinh đủ 18 tuổi khi vào làm
-        Date ngaySinh = dateNgaySinh.getDate();
-        Date ngayVaoLam = dateNgayVaoLam.getDate();
-
-        // Kiểm tra nếu ngày vào làm trước ngày hiện tại
-        Date ngayHienTai = new Date();
-        if (ngayVaoLam.after(ngayHienTai)) {
-            JOptionPane.showMessageDialog(this, "Ngày vào làm phải trước ngày hiện tại!");
-            return false;
-        }
-
-        // Kiểm tra ngày sinh đủ 18 tuổi
-        long tuoi = (ngayVaoLam.getTime() - ngaySinh.getTime()) / (1000L * 60 * 60 * 24 * 365);
-        if (tuoi < 18) {
-            JOptionPane.showMessageDialog(this, "Ngày sinh phải đủ 18 tuổi khi vào làm!");
-            return false;
-        }
-
-        // Kiểm tra các ô còn lại bằng regex
-
-        // Kiểm tra số điện thoại
-        String soDT = txtSoDT.getText().trim();
-        String regexSoDT = "^(0)[0-9]{9}$"; // Số điện thoại bắt đầu bằng 0 và có 10 chữ số
-        if (!Pattern.matches(regexSoDT, soDT)) {
-            JOptionPane.showMessageDialog(this, "Số điện thoại không hợp lệ!");
-            return false;
-        }
-
-        // Kiểm tra email
-        String email = txtEmail.getText().trim();
-        String regexEmail = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"; // Kiểm tra email hợp lệ
-        if (!Pattern.matches(regexEmail, email)) {
-            JOptionPane.showMessageDialog(this, "Email không hợp lệ!");
-            return false;
-        }
-
-        // Kiểm tra email có bị trùng không
-        if (NhanVien_DAO.kiemTraTrungEmail(email)) {
-            JOptionPane.showMessageDialog(this, "Email đã tồn tại trong hệ thống. Vui lòng sử dụng email khác!");
-            return false;
-        }
-        // Kiểm tra tên đầy đủ (hoặc thêm các quy định khác)
-        String hoTen = txtHoTen.getText().trim();
-        if (hoTen.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Họ tên không được để trống!");
-            return false;
-        }
+//        // Kiểm tra ngày sinh đủ 18 tuổi khi vào làm
+//        Date ngaySinh = dateNgaySinh.getDate();
+//        Date ngayVaoLam = dateNgayVaoLam.getDate();
+//
+//        // Kiểm tra nếu ngày vào làm trước ngày hiện tại
+//        Date ngayHienTai = new Date();
+//        if (ngayVaoLam.after(ngayHienTai)) {
+//            JOptionPane.showMessageDialog(this, "Ngày vào làm phải trước ngày hiện tại!");
+//            return false;
+//        }
+//
+//        // Kiểm tra ngày sinh đủ 18 tuổi
+//        long tuoi = (ngayVaoLam.getTime() - ngaySinh.getTime()) / (1000L * 60 * 60 * 24 * 365);
+//        if (tuoi < 18) {
+//            JOptionPane.showMessageDialog(this, "Ngày sinh phải đủ 18 tuổi khi vào làm!");
+//            return false;
+//        }
+//
+//        // Kiểm tra các ô còn lại bằng regex
+//
+//        // Kiểm tra số điện thoại
+//        String soDT = txtSoDT.getText().trim();
+//        String regexSoDT = "^(0)[0-9]{9}$"; // Số điện thoại bắt đầu bằng 0 và có 10 chữ số
+//        if (!Pattern.matches(regexSoDT, soDT)) {
+//            JOptionPane.showMessageDialog(this, "Số điện thoại không hợp lệ!");
+//            return false;
+//        }
+//
+//        // Kiểm tra email
+//        String email = txtEmail.getText().trim();
+//        String regexEmail = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"; // Kiểm tra email hợp lệ
+//        if (!Pattern.matches(regexEmail, email)) {
+//            JOptionPane.showMessageDialog(this, "Email không hợp lệ!");
+//            return false;
+//        }
+//
+//        // Kiểm tra email có bị trùng không
+//        if (NhanVien_DAO.kiemTraTrungEmail(email)) {
+//            JOptionPane.showMessageDialog(this, "Email đã tồn tại trong hệ thống. Vui lòng sử dụng email khác!");
+//            return false;
+//        }
+//        // Kiểm tra tên đầy đủ (hoặc thêm các quy định khác)
+//        String hoTen = txtHoTen.getText().trim();
+//        if (hoTen.isEmpty()) {
+//            JOptionPane.showMessageDialog(this, "Họ tên không được để trống!");
+//            return false;
+//        }
 
         return true; // Nếu tất cả các kiểm tra đều hợp lệ
     }
 
     private void themNhanVien() {
-        try {
-            if (!kiemTraDuLieu()) {
-                return; // Nếu dữ liệu không hợp lệ, không thực hiện thêm nhân viên
-            }
-
-            // Lấy dữ liệu từ giao diện
-            String hoTen = txtHoTen.getText().trim();
-            String chucVu = cmbChucVu.getSelectedItem().toString().trim();
-
-            // Lấy ngày sinh và ngày vào làm từ giao diện
-            Date ngaySinh = dateNgaySinh.getDate(); // Lấy trực tiếp từ JDateChooser
-            Date ngayVaoLam = dateNgayVaoLam.getDate(); // Lấy trực tiếp từ JDateChooser
-
-            String soDT = txtSoDT.getText().trim();
-            String diaChi = txtDiaChi.getText().trim();
-            String email = txtEmail.getText().trim();
-            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
-            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
-
-            // Tạo mã nhân viên tự động
-            String maNV = taoMaNhanVien(ngayVaoLam);
-
-            // Tạo đối tượng NhanVien
-            NhanVien nv = new NhanVien(maNV, hoTen, chucVu, soDT, diaChi, email, ngaySinh, ngayVaoLam, luongCoBan, heSoLuong, 1);
-
-            // Gọi phương thức thêm nhân viên
-            NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
-            boolean kq = nhanVienDAO.themNhanVien(nv);
-
-            // Hiển thị thông báo
-            if (kq) {
-                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công! Mã nhân viên: " + maNV);
-                lamMoi();
-            } else {
-                JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại!");
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
-            e.printStackTrace();
-        }
+//        try {
+//            if (!kiemTraDuLieu()) {
+//                return; // Nếu dữ liệu không hợp lệ, không thực hiện thêm nhân viên
+//            }
+//
+//            // Lấy dữ liệu từ giao diện
+//            String hoTen = txtHoTen.getText().trim();
+//            String chucVu = cmbChucVu.getSelectedItem().toString().trim();
+//
+//            // Lấy ngày sinh và ngày vào làm từ giao diện
+//            Date ngaySinh = dateNgaySinh.getDate(); // Lấy trực tiếp từ JDateChooser
+//            Date ngayVaoLam = dateNgayVaoLam.getDate(); // Lấy trực tiếp từ JDateChooser
+//
+//            String soDT = txtSoDT.getText().trim();
+//            String diaChi = txtDiaChi.getText().trim();
+//            String email = txtEmail.getText().trim();
+//            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
+//            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
+//
+//            // Tạo mã nhân viên tự động
+//            String maNV = taoMaNhanVien(ngayVaoLam);
+//
+//            // Tạo đối tượng NhanVien
+//            NhanVien nv = new NhanVien(maNV, hoTen, chucVu, soDT, diaChi, email, ngaySinh, ngayVaoLam, luongCoBan, heSoLuong, 1);
+//
+//            // Gọi phương thức thêm nhân viên
+//            NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
+//            boolean kq = nhanVienDAO.themNhanVien(nv);
+//
+//            // Hiển thị thông báo
+//            if (kq) {
+//                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công! Mã nhân viên: " + maNV);
+//                lamMoi();
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại!");
+//            }
+//        } catch (Exception e) {
+//            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+//            e.printStackTrace();
+//        }
     }
 
     private String taoMaNhanVien(Date ngayVaoLam) {
-        String maNV;
-        do {
-            SimpleDateFormat sdf = new SimpleDateFormat("yy");
-            String nam = sdf.format(ngayVaoLam);
-            int soNgauNhien = 10 + (int) (Math.random() * 90);
-            String kyTuNgauNhien = "";
-            for (int i = 0; i < 2; i++) {
-                char kyTu = (char) ('A' + (int) (Math.random() * 26));
-                kyTuNgauNhien += kyTu;
-            }
-
-            // Ghép thành mã nhân viên
-            maNV = nam + "-" + soNgauNhien + kyTuNgauNhien;
-        } while (danhSachMaNhanVien.contains(maNV)); // Kiểm tra trùng lặp
-
-        // Thêm mã vào danh sách để tránh trùng lặp
-        danhSachMaNhanVien.add(maNV);
+        String maNV = "";
+//        do {
+//            SimpleDateFormat sdf = new SimpleDateFormat("yy");
+//            String nam = sdf.format(ngayVaoLam);
+//            int soNgauNhien = 10 + (int) (Math.random() * 90);
+//            String kyTuNgauNhien = "";
+//            for (int i = 0; i < 2; i++) {
+//                char kyTu = (char) ('A' + (int) (Math.random() * 26));
+//                kyTuNgauNhien += kyTu;
+//            }
+//
+//            // Ghép thành mã nhân viên
+//            maNV = nam + "-" + soNgauNhien + kyTuNgauNhien;
+//        } while (danhSachMaNhanVien.contains(maNV)); // Kiểm tra trùng lặp
+//
+//        // Thêm mã vào danh sách để tránh trùng lặp
+//        danhSachMaNhanVien.add(maNV);
 
         return maNV;
     }

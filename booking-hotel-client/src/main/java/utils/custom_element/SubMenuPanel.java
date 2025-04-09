@@ -1,7 +1,7 @@
 package utils.custom_element;
 
-import gui.GiaoDienChinh_GUI;
-import gui.GiaoDienNhanVien_GUI;
+import view.gui.GiaoDienChinh_GUI;
+import view.gui.GiaoDienNhanVien_GUI;
 
 import javax.swing.*;
 import java.awt.*;

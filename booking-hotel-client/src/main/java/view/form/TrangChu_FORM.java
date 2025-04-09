@@ -19,11 +19,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
-import connectDB.ConnectDB;
-import customElements.CustomCellRenderer;
-import customElements.CustomHeaderRenderer;
-import customElements.FontManager;
-import customElements.RoundedPanel;
+import utils.custom_element.CustomCellRenderer;
+import utils.custom_element.CustomHeaderRenderer;
+import utils.custom_element.FontManager;
+import utils.custom_element.RoundedPanel;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -232,37 +231,37 @@ public class TrangChu_FORM extends JPanel {
 	}
 
 	private void loadListThongKeHomNay() {
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try {
-			// Kết nối đến cơ sở dữ liệu
-			con = ConnectDB.getInstance().getConnection();
-			String sql = "SELECT * FROM PhieuDatPhong pdp " +
-					"JOIN KhachHang kh ON pdp.maKH = kh.maKH";
-			stmt = con.createStatement();
-			rs = stmt.executeQuery(sql);
-			while (rs.next()) {
-				String maPDP = rs.getString("maPDP");
-				String maPhong = rs.getString("maPhong");
-				String hoTen = rs.getString("hoTen");
-
-				// Lấy ngày từ ResultSet và chuyển sang LocalDate
-				Date ngayDenDate = rs.getDate("ngayDen");
-				Date ngayDiDate = rs.getDate("ngayDi");
-
-				// Chuyển đổi Date thành LocalDate
-				LocalDate ngayDen = ngayDenDate.toLocalDate();
-				LocalDate ngayDi = ngayDiDate.toLocalDate();
-
-				// Tính số ngày
-				long soNgay = ChronoUnit.DAYS.between(ngayDen, ngayDi);
-
-				Object[] rowData = {maPDP, maPhong, hoTen, ngayDen, ngayDi, soNgay, 0};
-				data.add(rowData);  // Thêm vào ArrayList
-			}
-		} catch (SQLException e){
-			e.printStackTrace();
-		}
+//		Connection con = null;
+//		Statement stmt = null;
+//		ResultSet rs = null;
+//		try {
+//			// Kết nối đến cơ sở dữ liệu
+//			con = ConnectDB.getInstance().getConnection();
+//			String sql = "SELECT * FROM PhieuDatPhong pdp " +
+//					"JOIN KhachHang kh ON pdp.maKH = kh.maKH";
+//			stmt = con.createStatement();
+//			rs = stmt.executeQuery(sql);
+//			while (rs.next()) {
+//				String maPDP = rs.getString("maPDP");
+//				String maPhong = rs.getString("maPhong");
+//				String hoTen = rs.getString("hoTen");
+//
+//				// Lấy ngày từ ResultSet và chuyển sang LocalDate
+//				Date ngayDenDate = rs.getDate("ngayDen");
+//				Date ngayDiDate = rs.getDate("ngayDi");
+//
+//				// Chuyển đổi Date thành LocalDate
+//				LocalDate ngayDen = ngayDenDate.toLocalDate();
+//				LocalDate ngayDi = ngayDiDate.toLocalDate();
+//
+//				// Tính số ngày
+//				long soNgay = ChronoUnit.DAYS.between(ngayDen, ngayDi);
+//
+//				Object[] rowData = {maPDP, maPhong, hoTen, ngayDen, ngayDi, soNgay, 0};
+//				data.add(rowData);  // Thêm vào ArrayList
+//			}
+//		} catch (SQLException e){
+//			e.printStackTrace();
+//		}
 	}
 }

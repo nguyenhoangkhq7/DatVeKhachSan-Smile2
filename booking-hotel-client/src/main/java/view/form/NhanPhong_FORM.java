@@ -1,8 +1,8 @@
 package view.form;
 
-import customElements.*;
+import utils.custom_element.*;
 import dao.PhieuDatPhong_DAO;
-import entity.PhieuDatPhong;
+import model.PhieuDatPhong;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -27,7 +27,7 @@ public class NhanPhong_FORM extends JPanel implements ActionListener, Openable {
     @Override
     public void open() {
         phieuDatPhongDAO = new PhieuDatPhong_DAO();
-        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDangCho();
+//        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDangCho();
         loadTableData();
     }
     public NhanPhong_FORM() {
@@ -147,42 +147,42 @@ public class NhanPhong_FORM extends JPanel implements ActionListener, Openable {
         add(b, BorderLayout.CENTER);
     }
     private void loadTableData(){
-        tableModel.setRowCount(0);
-        for (PhieuDatPhong pdp : dsPhieuDatPhong) {
-            tableModel.addRow(new Object[]{
-                    pdp.getMaPDP(),
-                    pdp.getPhong().getMaPhong(),
-                    pdp.getKhachHang().getHoTen(),
-                    pdp.getNgayDat(),
-                    pdp.getNgayDen(),
-                    pdp.getNgayDi(),
-                    pdp.getNhanVien().getHoTen()
-            });
-        }
+//        tableModel.setRowCount(0);
+//        for (PhieuDatPhong pdp : dsPhieuDatPhong) {
+//            tableModel.addRow(new Object[]{
+//                    pdp.getMaPDP(),
+//                    pdp.getPhong().getMaPhong(),
+//                    pdp.getKhachHang().getHoTen(),
+//                    pdp.getNgayDat(),
+//                    pdp.getNgayDen(),
+//                    pdp.getNgayDi(),
+//                    pdp.getNhanVien().getHoTen()
+//            });
+//        }
     }
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnNhanPhong) {
-            int selectedRow = table.getSelectedRow();
-
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu đặt phòng để nhận phòng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-
-            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
-            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn nhận phòng phiếu "+maPDP+" ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                if (phieuDatPhongDAO.nhanPhong(maPDP)) {
-                    JOptionPane.showMessageDialog(this, "Đã nhận phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                    tableModel.removeRow(selectedRow);
-                } else {
-                    JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi nhận phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-
-        }
+//        if (e.getSource() == btnNhanPhong) {
+//            int selectedRow = table.getSelectedRow();
+//
+//            if (selectedRow == -1) {
+//                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu đặt phòng để nhận phòng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+//                return;
+//            }
+//
+//
+//            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
+//            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn nhận phòng phiếu "+maPDP+" ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+//            if (confirm == JOptionPane.YES_OPTION) {
+//                if (phieuDatPhongDAO.nhanPhong(maPDP)) {
+//                    JOptionPane.showMessageDialog(this, "Đã nhận phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                    tableModel.removeRow(selectedRow);
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi nhận phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+//                }
+//            }
+//
+//        }
     }
     private void handleTimKiem() {
         String tuKhoa = searchField.getText().trim().toLowerCase();
