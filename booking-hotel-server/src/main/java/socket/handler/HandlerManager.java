@@ -1,0 +1,31 @@
+package socket.handler;
+
+import model.KhachHang;
+import model.Request;
+import model.Response;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class HandlerManager {
+
+    private static final Map<String, RequestHandler> handlers = new HashMap<>();
+
+    static {
+        // Đăng ký handler ứng với action
+        handlers.put("DANG_NHAP", new TaiKhoanHandler());
+
+    }
+
+    public static Response<?> handle(Request<?> request) {
+        String action = request.getAction();
+        RequestHandler handler = handlers.get(action);
+
+        if (handler != null) {
+            return handler.handle(request);
+        } else {
+            return new Response<>(false, null);
+        }
+    }
+}
+

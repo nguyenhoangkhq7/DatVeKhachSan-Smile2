@@ -13,6 +13,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.*;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 
 
 import javax.swing.*;
@@ -27,7 +30,9 @@ public class DangNhap_GUI extends JFrame {
     private static final Color BUTTON_COLOR_EXIT = new Color(151, 69, 35);
     private static final int FIELD_WIDTH = 600;
     private static final int BUTTON_HEIGHT = 55;
+
     private TaiKhoan_DAO taiKhoanDAO = new TaiKhoan_DAO();
+
     public DangNhap_GUI() {
 //        ConnectDB.getInstance().connect();
         buildUI();
@@ -173,30 +178,47 @@ public class DangNhap_GUI extends JFrame {
             }
         });
 
+
+        // thêm sự kiện cho mật khẩu
         passField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-//                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-//                    String tenDN = userField.getText();
-//                    String matKhau = new String(passField.getPassword());
-//
-//                    String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
-//
-//                    if (role != null) {
-//                        if ("ADMIN".equals(role)) {
-//                            // Hiển thị giao diện cho admin
-//                            new GiaoDienChinh_GUI();
-//                        } else {
-//                            // Hiển thị giao diện cho nhân viên
-//                            new GiaoDienNhanVien_GUI();
-//                        }
-//                        dispose();
-//                    } else {
-//                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-//                    }
-//                }
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    String tenDN = userField.getText();
+                    String matKhau = new String(passField.getPassword());
+
+                    try (Socket socket = new Socket("localhost", 1234);
+                         ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                         ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+
+                        // Gửi yêu cầu đăng nhập
+                        out.writeObject("dangNhap"); // bạn có thể dùng Enum hoặc class yêu cầu thay vì chuỗi
+                        out.writeObject(tenDN);
+                        out.writeObject(matKhau);
+                        out.flush();
+
+                        // Nhận kết quả: role (ADMIN, NHANVIEN hoặc null)
+                        String role = (String) in.readObject();
+
+                        if (role != null) {
+                            if ("ADMIN".equals(role)) {
+                                new GiaoDienChinh_GUI();
+                            } else {
+                                new GiaoDienNhanVien_GUI();
+                            }
+                            dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                        }
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Lỗi kết nối tới server!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             }
         });
+
         rightPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -263,13 +285,13 @@ public class DangNhap_GUI extends JFrame {
 //                }
             }
         });
+
         exitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
             }
         });
-        
         Box userBox = Box.createHorizontalBox();
         userBox.setMaximumSize(new Dimension(FIELD_WIDTH, 20));
         userBox.add(userLabel);
