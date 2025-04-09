@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+    <persistence-unit name="mariadb-pu">
+        <class>model.TaiKhoan</class>
+        <class>model.NhanVien</class>
+        <class>model.KhachHang</class>
+<!--        Thêm Object class vào-->
+        <class>model.Phong</class>
+        <class>model.LoaiPhong</class>
+        <class>model.PhieuGiamGia</class>
+        <class>model.DichVu</class>
+        <class>model.HoaDon</class>
+        <class>model.PhieuDatDichVu</class>
+        <class>model.PhieuDatPhong</class>
+
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mariadb://localhost:3306/bookinghotel"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="22718451"/>
+            <property name="jakarta.persistence.jdbc.dialect" value="org.hibernate.dialect.MariaDBDialect"/>
+
+            <!-- Cho đẹp-->
+             <property name="hibernate.show_sql" value="true" />
+             <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+        </properties>
+    </persistence-unit>
+</persistence>
