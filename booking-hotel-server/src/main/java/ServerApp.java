@@ -1,5 +1,3 @@
-package socket;
-
 import model.Request;
 import model.Response;
 import socket.handler.HandlerManager;
@@ -9,7 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class SocketServer {
+public class ServerApp {
 
     private static final int PORT = 12345;
     private static final Gson gson = new Gson();
@@ -33,22 +31,34 @@ public class SocketServer {
     private static void handleClient(Socket socket) {
         try (
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
         ) {
+            Gson gson = new Gson();
+
+            // Đọc chuỗi JSON từ client
             String requestJson = reader.readLine();
+            if (requestJson == null || requestJson.isEmpty()) {
+                System.out.println("Yêu cầu rỗng hoặc không hợp lệ từ client.");
+                return;
+            }
+
+            // Chuyển JSON thành đối tượng Request
             Request<?> request = gson.fromJson(requestJson, Request.class);
 
-            // xử lý dữ liêu
-            Response<?> response = HandlerManager.handle(request); // Chuyển xử lý đến Handler tương ứng
+            // Gọi HandlerManager để xử lý và nhận về Response tương ứng
+            Response<?> response = HandlerManager.handle(request);
 
+            // Chuyển Response thành JSON và gửi về lại client
             String responseJson = gson.toJson(response);
             writer.write(responseJson);
             writer.newLine();
             writer.flush();
 
         } catch (IOException e) {
+            System.err.println("Lỗi khi xử lý client: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 }
 

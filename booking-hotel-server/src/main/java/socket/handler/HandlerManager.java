@@ -1,9 +1,9 @@
 package socket.handler;
 
-import model.KhachHang;
 import model.Request;
 import model.Response;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,9 +17,10 @@ public class HandlerManager {
 
     }
 
-    public static Response<?> handle(Request<?> request) {
+    public static Response<?> handle(Request<?> request) throws IOException {
         String action = request.getAction();
         RequestHandler handler = handlers.get(action);
+
 
         if (handler != null) {
             return handler.handle(request);

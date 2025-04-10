@@ -1,42 +1,38 @@
-/*
-    *DatVeKhachSan-Smile2  day creative: 1/21/2025
-    version: 2023.2  IntelliJ IDEA
-    author: Nguyễn Hoàng Khang  */
-    /*
-       *class description:
-            write description right here   
-     */
-
-
 package dao;
-
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import utils.HibernateUtil; // bạn cần import đúng đường dẫn tới HibernateUtil
 
 import java.util.List;
+import java.util.function.Predicate;
+
 
 public class GenericCRUD_DAO<T> {
 
-    private EntityManager em;
-    private Class<T> entityType;
+    private final Class<T> entityType;
 
-    public GenericCRUD_DAO(EntityManager em, Class<T> entityType) {
-        this.em = em;
+    public GenericCRUD_DAO(Class<T> entityType) {
         this.entityType = entityType;
     }
 
     public List<T> findAll() {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<T> cq = cb.createQuery(entityType);
-        cq.from(entityType);
-        return em.createQuery(cq).getResultList();
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<T> cq = cb.createQuery(entityType);
+            cq.from(entityType);
+            return em.createQuery(cq).getResultList();
+        } finally {
+            em.close();
+        }
     }
 
-
-    public boolean create (T entity) {
+    public boolean create(T entity) {
+        EntityManager em = HibernateUtil.getEntityManager();
         EntityTransaction tr = em.getTransaction();
         try {
             tr.begin();
@@ -45,26 +41,24 @@ public class GenericCRUD_DAO<T> {
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            tr.rollback();
+            if (tr.isActive()) tr.rollback();
+        } finally {
+            em.close();
         }
         return false;
     }
 
-    public T read () {
-        EntityTransaction tr = em.getTransaction();
+    public T read(Object id) {
+        EntityManager em = HibernateUtil.getEntityManager();
         try {
-            tr.begin();
-            T entity = em.find(entityType, 1);
-            tr.commit();
-            return entity;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            tr.rollback();
+            return em.find(entityType, id);
+        } finally {
+            em.close();
         }
-        return null;
     }
 
-    public boolean update (T entity) {
+    public boolean update(T entity) {
+        EntityManager em = HibernateUtil.getEntityManager();
         EntityTransaction tr = em.getTransaction();
         try {
             tr.begin();
@@ -73,12 +67,15 @@ public class GenericCRUD_DAO<T> {
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            tr.rollback();
+            if (tr.isActive()) tr.rollback();
+        } finally {
+            em.close();
         }
         return false;
     }
 
-    public boolean delete (Object id) {
+    public boolean delete(Object id) {
+        EntityManager em = HibernateUtil.getEntityManager();
         EntityTransaction tr = em.getTransaction();
         try {
             tr.begin();
@@ -90,10 +87,25 @@ public class GenericCRUD_DAO<T> {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            tr.rollback();
+            if (tr.isActive()) tr.rollback();
+        } finally {
+            em.close();
         }
         return false;
     }
 
-}
+    public List<T> findByPredicate(Predicate<T> predicate) {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<T> cq = cb.createQuery(entityType);
+            Root<T> root = cq.from(entityType);
+            cq.select(root);
+            List<T> list = em.createQuery(cq).getResultList();
+            return list.stream().filter(predicate).toList();
+        } finally {
+            em.close();
+        }
+    }
 
+}

@@ -1,5 +1,7 @@
 package model;
 
+
+
 public class Request<T> {
     private String action;
     private T data;

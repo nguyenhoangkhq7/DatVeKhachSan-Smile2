@@ -1,40 +1,51 @@
 package socket.handler;
 
+import com.google.gson.Gson;
 import dao.GenericCRUD_DAO;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import dto.TaiKhoanDTO;
+import model.NhanVien;
+import model.TaiKhoan;
 import model.Request;
 import model.Response;
-import model.TaiKhoan;
-import utils.HibernateUtil;
+import socket.handler.RequestHandler;
+
+import java.io.*;
+import java.util.List;
 
 public class TaiKhoanHandler implements RequestHandler {
 
     @Override
     public Response<?> handle(Request<?> request) {
-        try {
-            EntityManager em = HibernateUtil.getEntityManager(); // Sử dụng HibernateUtil để lấy EntityManager
-            GenericCRUD_DAO<TaiKhoan> taiKhoanDAO = new GenericCRUD_DAO<>(em, TaiKhoan.class);
+        Gson gson = new Gson();
 
-            // Lấy thông tin từ request
-            TaiKhoan requestData = (TaiKhoan) request.getData();
+        String action = request.getAction();
+        switch (action) {
+            case "DANG_NHAP" -> {
+                TaiKhoanDTO dto = gson.fromJson(gson.toJson(request.getData()), TaiKhoanDTO.class);
 
-            // Tạo truy vấn để kiểm tra tài khoản
-            TypedQuery<TaiKhoan> query = em.createQuery(
-                    "SELECT t FROM TaiKhoan t WHERE t.tenDN = :tenDN AND t.matKhau = :matKhau", TaiKhoan.class);
-            query.setParameter("tenDN", requestData.getTenDN());
-            query.setParameter("matKhau", requestData.getMatKhau());
+                GenericCRUD_DAO<NhanVien> nhanVienDAO = new GenericCRUD_DAO<>(NhanVien.class);
+                List<NhanVien> result = nhanVienDAO.findByPredicate(nv -> {
+                    TaiKhoan tk = nv.getTaiKhoan();
+                    return tk != null &&
+                            tk.getTenDN().equals(dto.getTenDN()) &&
+                            tk.getMatKhau().equals(dto.getMatKhau());
+                });
 
-            TaiKhoan taiKhoan = query.getResultStream().findFirst().orElse(null);
-
-            if (taiKhoan != null) {
-                return new Response<>(true, taiKhoan);
-            } else {
-                return new Response<>(false, "Sai tên đăng nhập hoặc mật khẩu");
+                if (!result.isEmpty()) {
+                    int chucVu = result.get(0).getChucVu();
+                    String role = (chucVu == 1) ? "ADMIN" : "NHANVIEN";
+                    return new Response<>(true, role);
+                } else {
+                    return new Response<>(false, null);
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new Response<>(false, "Lỗi server");
+
+            // các case khác có thể thêm vào đây
         }
+
+        return new Response<>(false, null); // mặc định nếu không khớp action nào
     }
+
 }
+
+

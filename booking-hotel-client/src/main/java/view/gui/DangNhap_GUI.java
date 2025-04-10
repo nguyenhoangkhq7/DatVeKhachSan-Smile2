@@ -1,5 +1,9 @@
 package view.gui;
 
+import dto.TaiKhoanDTO;
+import model.Request;
+import model.Response;
+import socket.SocketManager;
 import utils.custom_element.BackgroundPanel;
 import utils.custom_element.FontManager;
 import utils.custom_element.RoundedPanel;
@@ -31,10 +35,7 @@ public class DangNhap_GUI extends JFrame {
     private static final int FIELD_WIDTH = 600;
     private static final int BUTTON_HEIGHT = 55;
 
-    private TaiKhoan_DAO taiKhoanDAO = new TaiKhoan_DAO();
-
     public DangNhap_GUI() {
-//        ConnectDB.getInstance().connect();
         buildUI();
         setVisible(true);
     }
@@ -241,50 +242,54 @@ public class DangNhap_GUI extends JFrame {
         submitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         exitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-//        submitButton.addActionListener(new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                String tenDN = userField.getText();
-//                String matKhau = new String(passField.getPassword());
-//
-//                TaiKhoan taiKhoan = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
-//
-//                if (taiKhoan != null) {
-//                    try {
-//                        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-//                    } catch (Exception ex) {
-//                        ex.printStackTrace();
-//                    }
-//                    new GiaoDienChinh_GUI();
-//                    dispose();
-//                } else {
-//                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-//                }
-//            }
-//        });
 
+        // xử lý sự kiện đnăg nhập
         submitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-//                String tenDN = userField.getText();
-//                String matKhau = new String(passField.getPassword());
-//
-//                String role = taiKhoanDAO.checkDangNhap(tenDN, matKhau);
-//
-//                if (role != null) {
-//                    if ("ADMIN".equals(role)) {
-//                        // Hiển thị giao diện cho admin
-//                        new GiaoDienChinh_GUI();
-//                    } else {
-//                        // Hiển thị giao diện cho nhân viên
-//                        new GiaoDienNhanVien_GUI();
-//                    }
-//                    dispose();
-//                } else {
-//                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-//                }
+                String tenDN = userField.getText();
+                String matKhau = new String(passField.getPassword());
+
+                // Gửi thông tin đăng nhập lên server
+                TaiKhoanDTO taiKhoanDTO = new TaiKhoanDTO(tenDN, matKhau);
+                Request<TaiKhoanDTO> request = new Request<>("DANG_NHAP", taiKhoanDTO);
+                SocketManager.send(request); // Gửi object Request
+
+                try {
+                    Response<String> response = SocketManager.receive(Response.class);
+
+                    if (response != null && response.isSuccess()) {
+                        String role = response.getData(); // ADMIN hoặc NHANVIEN
+
+                        if ("ADMIN".equals(role)) {
+                            new GiaoDienChinh_GUI();
+                        } else if ("NHANVIEN".equals(role)) {
+                            new GiaoDienNhanVien_GUI();
+                        } else {
+                            JOptionPane.showMessageDialog(DangNhap_GUI.this,
+                                    "Phân quyền không hợp lệ!",
+                                    "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+
+                        dispose(); // Đóng giao diện đăng nhập sau khi vào thành công
+
+                    } else {
+                        JOptionPane.showMessageDialog(DangNhap_GUI.this,
+                                "Tên đăng nhập hoặc mật khẩu không đúng!",
+                                "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                    }
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(DangNhap_GUI.this,
+                            "Lỗi kết nối đến server!",
+                            "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+                }
+
             }
         });
+
 
         exitButton.addActionListener(new ActionListener() {
             @Override

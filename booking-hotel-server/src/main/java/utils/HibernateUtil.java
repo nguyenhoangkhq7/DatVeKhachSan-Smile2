@@ -10,7 +10,7 @@ public class HibernateUtil {
 
     static {
         try {
-            emf = Persistence.createEntityManagerFactory("myPersistenceUnit"); // tên trong persistence.xml
+            emf = Persistence.createEntityManagerFactory("mariadb-pu"); // tên trong persistence.xml
         } catch (Throwable ex) {
             System.err.println("Initial EntityManagerFactory creation failed." + ex);
             throw new ExceptionInInitializerError(ex);
