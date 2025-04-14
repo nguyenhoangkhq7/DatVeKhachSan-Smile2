@@ -1,6 +1,15 @@
 package dto;
 
+import lombok.*;
+
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PhongDTO {
+    @EqualsAndHashCode.Include
     private String maPhong;
     private String tenPhong;
     private double giaPhong;
@@ -9,13 +18,4 @@ public class PhongDTO {
     private String moTa;
     private String maLoai;
 
-    public PhongDTO(String maPhong, String tenPhong, double giaPhong, int tinhTrang, int soNguoi, String moTa, String maLoai) {
-        this.maPhong = maPhong;
-        this.tenPhong = tenPhong;
-        this.giaPhong = giaPhong;
-        this.tinhTrang = tinhTrang;
-        this.soNguoi = soNguoi;
-        this.moTa = moTa;
-        this.maLoai = maLoai;
-    }
 }

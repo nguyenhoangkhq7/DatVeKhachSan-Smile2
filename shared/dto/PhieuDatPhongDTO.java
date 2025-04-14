@@ -2,8 +2,16 @@ package dto;
 
 import java.time.LocalDate;
 import java.util.List;
+import lombok.*;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PhieuDatPhongDTO {
+    @EqualsAndHashCode.Include
     private String maPDP;
     private String maKH;
     private String maNV;
@@ -11,14 +19,4 @@ public class PhieuDatPhongDTO {
     private LocalDate ngayDatPhong;
     private LocalDate ngayNhanPhongDuKien;
     private LocalDate ngayTraPhongDuKien;
-
-    public PhieuDatPhongDTO(String maPDP, String maKH, String maNV, List<String> dsMaPhong, LocalDate ngayDatPhong, LocalDate ngayNhanPhongDuKien, LocalDate ngayTraPhongDuKien) {
-        this.maPDP = maPDP;
-        this.maKH = maKH;
-        this.maNV = maNV;
-        this.dsMaPhong = dsMaPhong;
-        this.ngayDatPhong = ngayDatPhong;
-        this.ngayNhanPhongDuKien = ngayNhanPhongDuKien;
-        this.ngayTraPhongDuKien = ngayTraPhongDuKien;
-    }
 }

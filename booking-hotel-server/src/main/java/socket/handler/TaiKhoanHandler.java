@@ -1,15 +1,13 @@
 package socket.handler;
 
 import com.google.gson.Gson;
-import dao.GenericCRUD_DAO;
+import dao.GenericDAO;
 import dto.TaiKhoanDTO;
 import model.NhanVien;
 import model.TaiKhoan;
 import model.Request;
 import model.Response;
-import socket.handler.RequestHandler;
 
-import java.io.*;
 import java.util.List;
 
 public class TaiKhoanHandler implements RequestHandler {
@@ -23,8 +21,8 @@ public class TaiKhoanHandler implements RequestHandler {
             case "DANG_NHAP" -> {
                 TaiKhoanDTO dto = gson.fromJson(gson.toJson(request.getData()), TaiKhoanDTO.class);
 
-                GenericCRUD_DAO<NhanVien> nhanVienDAO = new GenericCRUD_DAO<>(NhanVien.class);
-                List<NhanVien> result = nhanVienDAO.findByPredicate(nv -> {
+                GenericDAO<NhanVien> nhanVienDAO = new GenericDAO<>(NhanVien.class);
+                List<NhanVien> result = nhanVienDAO.findByCondition(nv -> {
                     TaiKhoan tk = nv.getTaiKhoan();
                     return tk != null &&
                             tk.getTenDN().equals(dto.getTenDN()) &&

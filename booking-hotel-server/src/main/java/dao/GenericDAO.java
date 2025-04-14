@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.function.Predicate;
 
 
-public class GenericCRUD_DAO<T> {
+public class GenericDAO<T> {
 
     private final Class<T> entityType;
 
-    public GenericCRUD_DAO(Class<T> entityType) {
+    public GenericDAO(Class<T> entityType) {
         this.entityType = entityType;
     }
 
@@ -94,7 +94,7 @@ public class GenericCRUD_DAO<T> {
         return false;
     }
 
-    public List<T> findByPredicate(Predicate<T> predicate) {
+    public List<T> findByCondition(Predicate<T> predicate) {
         EntityManager em = HibernateUtil.getEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();

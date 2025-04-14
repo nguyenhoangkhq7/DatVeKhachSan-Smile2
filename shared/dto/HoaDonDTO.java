@@ -1,8 +1,16 @@
 package dto;
 
 import java.time.LocalDateTime;
+import lombok.*;
 
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class HoaDonDTO {
+    @EqualsAndHashCode.Include
     private String maHD;
     private String maKH;
     private String maNV;
@@ -12,14 +20,4 @@ public class HoaDonDTO {
     private LocalDateTime ngayTraPhong;
     private int soPhongDat;
 
-    public HoaDonDTO(String maHD, String maKH, String maNV, String maPDP, LocalDateTime ngayLapHD, LocalDateTime ngayNhanPhong, LocalDateTime ngayTraPhong, int soPhongDat) {
-        this.maHD = maHD;
-        this.maKH = maKH;
-        this.maNV = maNV;
-        this.maPDP = maPDP;
-        this.ngayLapHD = ngayLapHD;
-        this.ngayNhanPhong = ngayNhanPhong;
-        this.ngayTraPhong = ngayTraPhong;
-        this.soPhongDat = soPhongDat;
-    }
 }

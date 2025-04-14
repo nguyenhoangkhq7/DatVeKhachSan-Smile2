@@ -1,21 +1,15 @@
 package dto;
 
-import java.io.Serializable;
+import lombok.*;
 
-public class TaiKhoanDTO implements Serializable {
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class TaiKhoanDTO {
+    @EqualsAndHashCode.Include
     private String tenDN;
     private String matKhau;
-
-    public TaiKhoanDTO(String tenDN, String matKhau) {
-        this.tenDN = tenDN;
-        this.matKhau = matKhau;
-    }
-
-    public String getTenDN() {
-        return tenDN;
-    }
-
-    public String getMatKhau() {
-        return matKhau;
-    }
 }

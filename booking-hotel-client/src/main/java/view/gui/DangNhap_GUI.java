@@ -1,5 +1,6 @@
 package view.gui;
 
+import com.google.gson.Gson;
 import dto.TaiKhoanDTO;
 import model.Request;
 import model.Response;
@@ -16,10 +17,10 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.*;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 
 import javax.swing.*;
@@ -189,17 +190,22 @@ public class DangNhap_GUI extends JFrame {
                     String matKhau = new String(passField.getPassword());
 
                     try (Socket socket = new Socket("localhost", 1234);
-                         ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                         ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+                         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-                        // Gửi yêu cầu đăng nhập
-                        out.writeObject("dangNhap"); // bạn có thể dùng Enum hoặc class yêu cầu thay vì chuỗi
-                        out.writeObject(tenDN);
-                        out.writeObject(matKhau);
-                        out.flush();
+                        // Dùng Gson để tạo JSON yêu cầu đăng nhập
+                        Gson gson = new Gson();
+                        Map<String, String> request = new HashMap<>();
+                        request.put("action", "dangNhap");
+                        request.put("username", tenDN);
+                        request.put("password", matKhau);
+                        String jsonRequest = gson.toJson(request);
+                        out.println(jsonRequest);  // Gửi yêu cầu dưới dạng JSON
 
-                        // Nhận kết quả: role (ADMIN, NHANVIEN hoặc null)
-                        String role = (String) in.readObject();
+                        // Nhận phản hồi từ server (dạng JSON, chứa role)
+                        String jsonResponse = in.readLine();
+                        Map<String, String> response = gson.fromJson(jsonResponse, Map.class);
+                        String role = response.get("role");
 
                         if (role != null) {
                             if ("ADMIN".equals(role)) {
@@ -219,6 +225,7 @@ public class DangNhap_GUI extends JFrame {
                 }
             }
         });
+
 
         rightPanel.addMouseListener(new MouseAdapter() {
             @Override
