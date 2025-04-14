@@ -2,6 +2,8 @@ package dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Setter
 @Getter
 @AllArgsConstructor
@@ -12,8 +14,14 @@ public class NhanVienDTO {
     @EqualsAndHashCode.Include
     private String maNhanVien;
     private String hoTen;
+    private int chucVu;
+    private String SDT;
+    private String diaChi;
     private String email;
-    private String sdt;
+    private LocalDate ngaySinh;
+    private LocalDate ngayVaoLam;
+    private double luongCoBan;
+    private double heSoLuong;
 
 }
 
