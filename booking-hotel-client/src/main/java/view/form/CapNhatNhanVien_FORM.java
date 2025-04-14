@@ -1,11 +1,16 @@
 package view.form;
 
+import dto.NhanVienDTO;
+import model.Request;
+import model.Response;
+import socket.SocketManager;
 import utils.custom_element.*;
 import dao.NhanVien_DAO;
 import model.NhanVien;
 import org.jdesktop.swingx.JXDatePicker;
 
 import java.awt.event.*;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -17,6 +22,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionListener {
@@ -266,25 +272,49 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
 
     private void loadTableData() {
         // Xóa tất cả các dòng trong bảng trước khi tải dữ liệu mới
-//        tableModel.setRowCount(0);
-//
-//        ArrayList<NhanVien> dsNhanVien = NhanVien_DAO.getDSNhanVien();
-//        for (NhanVien nv : dsNhanVien) {
-//            if (nv.getTrangThai() == 1) { // Chỉ thêm khách hàng có trạng thái khác 0
-//                tableModel.addRow(new Object[]{
-//                        nv.getMaNV(),
-//                        nv.getHoTen(),
-//                        nv.getChucVu(),
-//                        nv.getNgaySinh(),
-//                        nv.getNgayVaoLam(),
-//                        nv.getSoDT(),
-//                        nv.getDiaChi(),
-//                        nv.getEmail(),
-//                        nv.getLuongCoBan(),
-//                        nv.getHeSoLuong()
-//                });
-//            }
-//        }
+        tableModel.setRowCount(0);
+
+        // Gửi yêu cầu đến server để lấy danh sách nhân viên
+        Request<Void> request = new Request<>("GET_ALL_NHAN_VIEN", null);
+        try {
+            SocketManager.send(request); // Gửi object Request
+            Response<List<NhanVienDTO>> response = SocketManager.receive(Response.class);
+
+            if (response != null && response.isSuccess()) {
+                List<NhanVienDTO> dsNhanVien = response.getData();
+                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không có dữ liệu nhân viên!",
+                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                // Load dữ liệu vào bảng
+                for (NhanVienDTO nv : dsNhanVien) {
+                    tableModel.addRow(new Object[]{
+                            nv.getMaNhanVien(),
+                            nv.getHoTen(),
+                            nv.getChucVu(),
+                            nv.getNgaySinh(),
+                            nv.getSDT(),
+                            nv.getDiaChi(),
+                            nv.getEmail(),
+                            nv.getNgayVaoLam(),
+                            nv.getLuongCoBan(),
+                            nv.getHeSoLuong()
+                    });
+                }
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể lấy dữ liệu nhân viên từ server!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        }
     }
     private Box createFormBox(String label, JTextField txt) {
         Box b = Box.createVerticalBox();

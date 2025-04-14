@@ -14,7 +14,7 @@ public class HandlerManager {
     static {
         // Đăng ký handler ứng với action
         handlers.put("DANG_NHAP", new TaiKhoanHandler());
-
+        handlers.put("GET_ALL_NHAN_VIEN", new NhanVienHandler());
     }
 
     public static Response<?> handle(Request<?> request) throws IOException {

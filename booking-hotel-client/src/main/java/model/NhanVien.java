@@ -18,6 +18,9 @@ public class NhanVien {
     private String diaChi;
     private String email;
     private LocalDate ngaySinh;
+    private LocalDate ngayVaoLam;
+    private double luongCoBan;
+    private double heSoLuong;
     private TaiKhoan taiKhoan;
 
 }
