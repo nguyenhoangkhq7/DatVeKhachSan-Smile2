@@ -1,5 +1,6 @@
 package view.form;
 
+import com.google.gson.reflect.TypeToken;
 import dto.NhanVienDTO;
 import model.Request;
 import model.Response;
@@ -11,6 +12,7 @@ import org.jdesktop.swingx.JXDatePicker;
 
 import java.awt.event.*;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -269,7 +271,6 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
 
     }
 
-
     private void loadTableData() {
         // Xóa tất cả các dòng trong bảng trước khi tải dữ liệu mới
         tableModel.setRowCount(0);
@@ -278,7 +279,9 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
         Request<Void> request = new Request<>("GET_ALL_NHAN_VIEN", null);
         try {
             SocketManager.send(request); // Gửi object Request
-            Response<List<NhanVienDTO>> response = SocketManager.receive(Response.class);
+            // Sử dụng TypeToken để chỉ định kiểu generic
+            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
+            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
 
             if (response != null && response.isSuccess()) {
                 List<NhanVienDTO> dsNhanVien = response.getData();
@@ -295,11 +298,11 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
                             nv.getMaNhanVien(),
                             nv.getHoTen(),
                             nv.getChucVu(),
-                            nv.getNgaySinh(),
+                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null, // Chuyển LocalDate thành Date
+                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null, // Chuyển LocalDate thành Date
                             nv.getSDT(),
                             nv.getDiaChi(),
                             nv.getEmail(),
-                            nv.getNgayVaoLam(),
                             nv.getLuongCoBan(),
                             nv.getHeSoLuong()
                     });
