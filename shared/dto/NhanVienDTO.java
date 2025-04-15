@@ -1,5 +1,6 @@
 package dto;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ public class NhanVienDTO {
     private String maNhanVien;
     private String hoTen;
     private int chucVu;
+    @SerializedName("soDienThoai")
     private String SDT;
     private String diaChi;
     private String email;
