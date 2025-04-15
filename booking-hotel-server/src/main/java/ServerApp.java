@@ -21,6 +21,8 @@ public class ServerApp {
                 System.out.println("Client đã kết nối: " + clientSocket.getInetAddress());
 
                 new Thread(() -> handleClient(clientSocket)).start(); // Mỗi client xử lý riêng 1 luồng
+                // Tạo một luồng để xử lý client
+                // handleClient(clientSocket); // Nếu không sử dụng luồng, sẽ chờ client xử lý xong mới tiếp tục
             }
 
         } catch (IOException e) {
