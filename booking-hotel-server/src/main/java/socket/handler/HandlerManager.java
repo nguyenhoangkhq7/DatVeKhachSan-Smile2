@@ -14,6 +14,7 @@ public class HandlerManager {
     static {
         // Đăng ký handler ứng với action
         handlers.put("DANG_NHAP", new TaiKhoanHandler());
+        handlers.put("READ_HOA_DON", new HoaDonHandler());
 
     }
 

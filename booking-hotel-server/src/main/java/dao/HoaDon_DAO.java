@@ -31,19 +31,19 @@ public class HoaDon_DAO extends GenericDAO<HoaDon> {
         return super.create(mapper.toEntity(hoaDonDTO));
     }
 
-    // DELETE
-    public boolean delete(String maHoaDon) {
-        if (maHoaDon == null || maHoaDon.isEmpty()) return false;
-        return super.delete(maHoaDon);
-    }
-
-    // UPDATE
-    public boolean update(HoaDonDTO hoaDonDTO) {
-        if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
-            return false;
-        }
-        return super.update(mapper.toEntity(hoaDonDTO));
-    }
+//    // DELETE
+//    public boolean delete(String maHoaDon) {
+//        if (maHoaDon == null || maHoaDon.isEmpty()) return false;
+//        return super.delete(maHoaDon);
+//    }
+//
+//    // UPDATE
+//    public boolean update(HoaDonDTO hoaDonDTO) {
+//        if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
+//            return false;
+//        }
+//        return super.update(mapper.toEntity(hoaDonDTO));
+//    }
 
     // READ (find by ID)
     public HoaDonDTO read(String maHoaDon) {

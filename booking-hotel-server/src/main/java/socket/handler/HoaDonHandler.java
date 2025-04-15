@@ -38,22 +38,22 @@ public class HoaDonHandler implements RequestHandler {
                 HoaDonDTO hoaDonDTO = hoaDonDao.read(maHD);
                 return new Response<>(true, hoaDonDTO != null ? hoaDonDTO : "Hóa đơn không tồn tại");
             }
-            case "UPDATE_HOA_DON" -> {
-                HoaDonDTO hoaDonDTO = gson.fromJson(gson.toJson(request.getData()), HoaDonDTO.class);
-                if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
-                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
-                }
-                boolean success = hoaDonDao.update(hoaDonDTO);
-                return new Response<>(success, success ? "Cập nhật hóa đơn thành công" : "Cập nhật hóa đơn thất bại");
-            }
-            case "DELETE_HOA_DON" -> {
-                String maHD = gson.fromJson(gson.toJson(request.getData()), String.class);
-                if (maHD == null || maHD.isEmpty()) {
-                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
-                }
-                boolean success = hoaDonDao.delete(maHD);
-                return new Response<>(success, success ? "Hóa đơn đã được xóa" : "Không thể xóa hóa đơn");
-            }
+//            case "UPDATE_HOA_DON" -> {
+//                HoaDonDTO hoaDonDTO = gson.fromJson(gson.toJson(request.getData()), HoaDonDTO.class);
+//                if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
+//                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
+//                }
+//                boolean success = hoaDonDao.update(hoaDonDTO);
+//                return new Response<>(success, success ? "Cập nhật hóa đơn thành công" : "Cập nhật hóa đơn thất bại");
+//            }
+//            case "DELETE_HOA_DON" -> {
+//                String maHD = gson.fromJson(gson.toJson(request.getData()), String.class);
+//                if (maHD == null || maHD.isEmpty()) {
+//                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
+//                }
+//                boolean success = hoaDonDao.delete(maHD);
+//                return new Response<>(success, success ? "Hóa đơn đã được xóa" : "Không thể xóa hóa đơn");
+//            }
             case "FIND_BY_MA_KH" -> {
                 String maKH = gson.fromJson(gson.toJson(request.getData()), String.class);
                 if (maKH == null || maKH.isEmpty()) {
