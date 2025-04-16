@@ -370,54 +370,54 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
     }
 
     private void loadTableData() {
-        tableModel.setRowCount(0);
-
-        Request<Void> request = new Request<>("GET_ALL_NHAN_VIEN", null);
-        try {
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
-            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
-
-            if (response != null && response.isSuccess()) {
-                List<NhanVienDTO> dsNhanVien = response.getData();
-                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
-                    JOptionPane.showMessageDialog(this,
-                            "Không có dữ liệu nhân viên!",
-                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-
-                danhSachMaNhanVien.clear();
-                for (NhanVienDTO nv : dsNhanVien) {
-                    danhSachMaNhanVien.add(nv.getMaNhanVien());
-                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
-                    tableModel.addRow(new Object[]{
-                            nv.getMaNhanVien(),
-                            nv.getHoTen(),
-                            chucVu,
-                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
-                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
-                            String.valueOf(nv.getSDT()),
-                            nv.getDiaChi(),
-                            nv.getEmail(),
-                            nv.getLuongCoBan(),
-                            nv.getHeSoLuong()
-                    });
-                }
-                System.out.println("Loaded " + dsNhanVien.size() + " employees into table");
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Không thể lấy dữ liệu nhân viên từ server!",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
-                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-        }
-        table.repaint();
-        table.revalidate();
+//        tableModel.setRowCount(0);
+//
+//        Request<Void> request = new Request<>("GET_ALL_NHAN_VIEN", null);
+//        try {
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
+//            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                List<NhanVienDTO> dsNhanVien = response.getData();
+//                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
+//                    JOptionPane.showMessageDialog(this,
+//                            "Không có dữ liệu nhân viên!",
+//                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                    return;
+//                }
+//
+//                danhSachMaNhanVien.clear();
+//                for (NhanVienDTO nv : dsNhanVien) {
+//                    danhSachMaNhanVien.add(nv.getMaNhanVien());
+//                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
+//                    tableModel.addRow(new Object[]{
+//                            nv.getMaNhanVien(),
+//                            nv.getHoTen(),
+//                            chucVu,
+//                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
+//                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
+//                            String.valueOf(nv.getSDT()),
+//                            nv.getDiaChi(),
+//                            nv.getEmail(),
+//                            nv.getLuongCoBan(),
+//                            nv.getHeSoLuong()
+//                    });
+//                }
+//                System.out.println("Loaded " + dsNhanVien.size() + " employees into table");
+//            } else {
+//                JOptionPane.showMessageDialog(this,
+//                        "Không thể lấy dữ liệu nhân viên từ server!",
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this,
+//                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
+//                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+//        }
+//        table.repaint();
+//        table.revalidate();
     }
 
     private Box createFormBox(String label, JTextField txt) {
@@ -524,101 +524,101 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
     }
 
     private void timKiemTheoTen(String keyword) {
-        try {
-            Request<String> request = new Request<>("TIM_NHAN_VIEN_THEO_TEN", keyword);
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
-            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
-
-            if (response != null && response.isSuccess()) {
-                List<NhanVienDTO> dsNhanVien = response.getData();
-                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên nào với tên \"" + keyword + "\"!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-
-                tableModel.setRowCount(0);
-                for (NhanVienDTO nv : dsNhanVien) {
-                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
-                    tableModel.addRow(new Object[]{
-                            nv.getMaNhanVien(),
-                            nv.getHoTen(),
-                            chucVu,
-                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
-                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
-                            String.valueOf(nv.getSDT()),
-                            nv.getDiaChi(),
-                            nv.getEmail(),
-                            nv.getLuongCoBan(),
-                            nv.getHeSoLuong()
-                    });
-                }
-                table.repaint();
-                table.revalidate();
-                JOptionPane.showMessageDialog(this, "Đã tìm thấy " + dsNhanVien.size() + " nhân viên!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                String errorMsg = response != null ? response.getData().toString() : "Lỗi không xác định từ server";
-                JOptionPane.showMessageDialog(this, "Không thể tìm kiếm nhân viên: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-        }
+//        try {
+//            Request<String> request = new Request<>("TIM_NHAN_VIEN_THEO_TEN", keyword);
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
+//            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                List<NhanVienDTO> dsNhanVien = response.getData();
+//                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
+//                    JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên nào với tên \"" + keyword + "\"!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                    return;
+//                }
+//
+//                tableModel.setRowCount(0);
+//                for (NhanVienDTO nv : dsNhanVien) {
+//                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
+//                    tableModel.addRow(new Object[]{
+//                            nv.getMaNhanVien(),
+//                            nv.getHoTen(),
+//                            chucVu,
+//                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
+//                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
+//                            String.valueOf(nv.getSDT()),
+//                            nv.getDiaChi(),
+//                            nv.getEmail(),
+//                            nv.getLuongCoBan(),
+//                            nv.getHeSoLuong()
+//                    });
+//                }
+//                table.repaint();
+//                table.revalidate();
+//                JOptionPane.showMessageDialog(this, "Đã tìm thấy " + dsNhanVien.size() + " nhân viên!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+//            } else {
+//                String errorMsg = response != null ? response.getData().toString() : "Lỗi không xác định từ server";
+//                JOptionPane.showMessageDialog(this, "Không thể tìm kiếm nhân viên: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+//        }
     }
 
     private void timKiemNangCao() {
-        String hoTen = txtSearchHoTen.getText().trim();
-        String email = txtSearchEmail.getText().trim();
-        String sdt = txtSearchSoDT.getText().trim();
-
-        if (hoTen.equals("Họ tên")) hoTen = "";
-        if (email.equals("Email")) email = "";
-        if (sdt.equals("Số điện thoại")) sdt = "";
-
-        if (hoTen.isEmpty() && email.isEmpty() && sdt.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập ít nhất một tiêu chí tìm kiếm!");
-            return;
-        }
-
-        try {
-            String[] criteria = new String[]{hoTen, email, sdt};
-            Request<String[]> request = new Request<>("TIM_NHAN_VIEN_NANG_CAO", criteria);
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
-            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
-
-            if (response != null && response.isSuccess()) {
-                List<NhanVienDTO> dsNhanVien = response.getData();
-                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên nào!");
-                    return;
-                }
-
-                tableModel.setRowCount(0);
-                for (NhanVienDTO nv : dsNhanVien) {
-                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
-                    tableModel.addRow(new Object[]{
-                            nv.getMaNhanVien(),
-                            nv.getHoTen(),
-                            chucVu,
-                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
-                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
-                            String.valueOf(nv.getSDT()),
-                            nv.getDiaChi(),
-                            nv.getEmail(),
-                            nv.getLuongCoBan(),
-                            nv.getHeSoLuong()
-                    });
-                }
-                table.repaint();
-                table.revalidate();
-            } else {
-                JOptionPane.showMessageDialog(this, "Không thể tìm kiếm nhân viên: " + (response != null ? response.getData() : "Lỗi không xác định"));
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
-        }
+//        String hoTen = txtSearchHoTen.getText().trim();
+//        String email = txtSearchEmail.getText().trim();
+//        String sdt = txtSearchSoDT.getText().trim();
+//
+//        if (hoTen.equals("Họ tên")) hoTen = "";
+//        if (email.equals("Email")) email = "";
+//        if (sdt.equals("Số điện thoại")) sdt = "";
+//
+//        if (hoTen.isEmpty() && email.isEmpty() && sdt.isEmpty()) {
+//            JOptionPane.showMessageDialog(this, "Vui lòng nhập ít nhất một tiêu chí tìm kiếm!");
+//            return;
+//        }
+//
+//        try {
+//            String[] criteria = new String[]{hoTen, email, sdt};
+//            Request<String[]> request = new Request<>("TIM_NHAN_VIEN_NANG_CAO", criteria);
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
+//            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                List<NhanVienDTO> dsNhanVien = response.getData();
+//                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
+//                    JOptionPane.showMessageDialog(this, "Không tìm thấy nhân viên nào!");
+//                    return;
+//                }
+//
+//                tableModel.setRowCount(0);
+//                for (NhanVienDTO nv : dsNhanVien) {
+//                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
+//                    tableModel.addRow(new Object[]{
+//                            nv.getMaNhanVien(),
+//                            nv.getHoTen(),
+//                            chucVu,
+//                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
+//                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
+//                            String.valueOf(nv.getSDT()),
+//                            nv.getDiaChi(),
+//                            nv.getEmail(),
+//                            nv.getLuongCoBan(),
+//                            nv.getHeSoLuong()
+//                    });
+//                }
+//                table.repaint();
+//                table.revalidate();
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Không thể tìm kiếm nhân viên: " + (response != null ? response.getData() : "Lỗi không xác định"));
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
+//        }
     }
 
     private void moveRowToTop(int rowIndex) {
@@ -655,104 +655,104 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
     }
 
     private void xoaNhanVien() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần xóa!");
-            return;
-        }
-
-        String maNhanVien = (String) tableModel.getValueAt(selectedRow, 0);
-        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa nhân viên " + maNhanVien + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        try {
-            Request<String> request = new Request<>("XOA_NHAN_VIEN", maNhanVien);
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive(responseType);
-
-            if (response != null && response.isSuccess()) {
-                tableModel.removeRow(selectedRow);
-                danhSachMaNhanVien.remove(maNhanVien);
-                JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
-            } else {
-                JOptionPane.showMessageDialog(this, "Xóa nhân viên thất bại: " + (response != null ? response.getData() : "Lỗi không xác định"));
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow == -1) {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần xóa!");
+//            return;
+//        }
+//
+//        String maNhanVien = (String) tableModel.getValueAt(selectedRow, 0);
+//        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa nhân viên " + maNhanVien + "?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+//        if (confirm != JOptionPane.YES_OPTION) {
+//            return;
+//        }
+//
+//        try {
+//            Request<String> request = new Request<>("XOA_NHAN_VIEN", maNhanVien);
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<String>>(){}.getType();
+//            Response<String> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                tableModel.removeRow(selectedRow);
+//                danhSachMaNhanVien.remove(maNhanVien);
+//                JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!");
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Xóa nhân viên thất bại: " + (response != null ? response.getData() : "Lỗi không xác định"));
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
+//        }
     }
 
     private void suaNhanVien() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần sửa!");
-            return;
-        }
-
-        if (!kiemTraDuLieu()) {
-            return;
-        }
-
-        try {
-            String maNhanVien = (String) tableModel.getValueAt(selectedRow, 0);
-            String hoTen = txtHoTen.getText().trim();
-            String chucVuStr = (String) cmbChucVu.getSelectedItem();
-            Integer chucVu = CHUC_VU_MAP_REVERSE.get(chucVuStr);
-            Date ngaySinh = dateNgaySinh.getDate();
-            LocalDate ngaySinhLD = new java.sql.Date(ngaySinh.getTime()).toLocalDate();
-            Date ngayVaoLam = dateNgayVaoLam.getDate();
-            LocalDate ngayVaoLamLD = new java.sql.Date(ngayVaoLam.getTime()).toLocalDate();
-            String soDT = txtSoDT.getText().trim();
-            String diaChi = txtDiaChi.getText().trim();
-            String email = txtEmail.getText().trim();
-            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
-            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
-
-            NhanVienDTO nv = new NhanVienDTO();
-            nv.setMaNhanVien(maNhanVien);
-            nv.setHoTen(hoTen);
-            nv.setChucVu(chucVu);
-            nv.setNgaySinh(ngaySinhLD);
-            nv.setNgayVaoLam(ngayVaoLamLD);
-            nv.setSDT(String.valueOf(Integer.parseInt(soDT)));
-            nv.setDiaChi(diaChi);
-            nv.setEmail(email);
-            nv.setLuongCoBan(luongCoBan);
-            nv.setHeSoLuong(heSoLuong);
-
-            Request<NhanVienDTO> request = new Request<>("CAP_NHAT_NHAN_VIEN", nv);
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive(responseType);
-
-            if (response != null && response.isSuccess()) {
-                tableModel.setValueAt(hoTen, selectedRow, 1);
-                tableModel.setValueAt(chucVuStr, selectedRow, 2);
-                tableModel.setValueAt(java.sql.Date.valueOf(ngaySinhLD), selectedRow, 3);
-                tableModel.setValueAt(java.sql.Date.valueOf(ngayVaoLamLD), selectedRow, 4);
-                tableModel.setValueAt(soDT, selectedRow, 5);
-                tableModel.setValueAt(diaChi, selectedRow, 6);
-                tableModel.setValueAt(email, selectedRow, 7);
-                tableModel.setValueAt(luongCoBan, selectedRow, 8);
-                tableModel.setValueAt(heSoLuong, selectedRow, 9);
-
-                table.repaint();
-                table.revalidate();
-                JOptionPane.showMessageDialog(this, "Sửa nhân viên thành công!");
-            } else {
-                JOptionPane.showMessageDialog(this, "Sửa nhân viên thất bại: " + (response != null ? response.getData() : "Lỗi không xác định"));
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi không mong muốn: " + ex.getMessage());
-        }
+//        int selectedRow = table.getSelectedRow();
+//        if (selectedRow == -1) {
+//            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần sửa!");
+//            return;
+//        }
+//
+//        if (!kiemTraDuLieu()) {
+//            return;
+//        }
+//
+//        try {
+//            String maNhanVien = (String) tableModel.getValueAt(selectedRow, 0);
+//            String hoTen = txtHoTen.getText().trim();
+//            String chucVuStr = (String) cmbChucVu.getSelectedItem();
+//            Integer chucVu = CHUC_VU_MAP_REVERSE.get(chucVuStr);
+//            Date ngaySinh = dateNgaySinh.getDate();
+//            LocalDate ngaySinhLD = new java.sql.Date(ngaySinh.getTime()).toLocalDate();
+//            Date ngayVaoLam = dateNgayVaoLam.getDate();
+//            LocalDate ngayVaoLamLD = new java.sql.Date(ngayVaoLam.getTime()).toLocalDate();
+//            String soDT = txtSoDT.getText().trim();
+//            String diaChi = txtDiaChi.getText().trim();
+//            String email = txtEmail.getText().trim();
+//            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
+//            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
+//
+//            NhanVienDTO nv = new NhanVienDTO();
+//            nv.setMaNhanVien(maNhanVien);
+//            nv.setHoTen(hoTen);
+//            nv.setChucVu(chucVu);
+//            nv.setNgaySinh(ngaySinhLD);
+//            nv.setNgayVaoLam(ngayVaoLamLD);
+//            nv.setSDT(String.valueOf(Integer.parseInt(soDT)));
+//            nv.setDiaChi(diaChi);
+//            nv.setEmail(email);
+//            nv.setLuongCoBan(luongCoBan);
+//            nv.setHeSoLuong(heSoLuong);
+//
+//            Request<NhanVienDTO> request = new Request<>("CAP_NHAT_NHAN_VIEN", nv);
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<String>>(){}.getType();
+//            Response<String> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                tableModel.setValueAt(hoTen, selectedRow, 1);
+//                tableModel.setValueAt(chucVuStr, selectedRow, 2);
+//                tableModel.setValueAt(java.sql.Date.valueOf(ngaySinhLD), selectedRow, 3);
+//                tableModel.setValueAt(java.sql.Date.valueOf(ngayVaoLamLD), selectedRow, 4);
+//                tableModel.setValueAt(soDT, selectedRow, 5);
+//                tableModel.setValueAt(diaChi, selectedRow, 6);
+//                tableModel.setValueAt(email, selectedRow, 7);
+//                tableModel.setValueAt(luongCoBan, selectedRow, 8);
+//                tableModel.setValueAt(heSoLuong, selectedRow, 9);
+//
+//                table.repaint();
+//                table.revalidate();
+//                JOptionPane.showMessageDialog(this, "Sửa nhân viên thành công!");
+//            } else {
+//                JOptionPane.showMessageDialog(this, "Sửa nhân viên thất bại: " + (response != null ? response.getData() : "Lỗi không xác định"));
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi không mong muốn: " + ex.getMessage());
+//        }
     }
 
     private boolean kiemTraDuLieu() {
@@ -855,84 +855,84 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
     }
 
     private void themNhanVien() {
-        try {
-            if (!kiemTraDuLieu()) {
-                return;
-            }
-
-            String hoTen = txtHoTen.getText().trim();
-            String chucVuStr = (String) cmbChucVu.getSelectedItem();
-            Integer chucVu = CHUC_VU_MAP_REVERSE.get(chucVuStr);
-            Date ngaySinh = dateNgaySinh.getDate();
-            LocalDate ngaySinhLD = new java.sql.Date(ngaySinh.getTime()).toLocalDate();
-            Date ngayVaoLam = dateNgayVaoLam.getDate();
-            LocalDate ngayVaoLamLD = new java.sql.Date(ngayVaoLam.getTime()).toLocalDate();
-            String soDT = txtSoDT.getText().trim();
-            String diaChi = txtDiaChi.getText().trim();
-            String email = txtEmail.getText().trim();
-            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
-            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
-
-            String maNV = taoMaNhanVien();
-
-            NhanVienDTO nv = new NhanVienDTO();
-            nv.setMaNhanVien(maNV);
-            nv.setHoTen(hoTen);
-            nv.setChucVu(chucVu);
-            nv.setNgaySinh(ngaySinhLD);
-            nv.setNgayVaoLam(ngayVaoLamLD);
-            nv.setSDT(String.valueOf(Integer.parseInt(soDT)));
-            nv.setDiaChi(diaChi);
-            nv.setEmail(email);
-            nv.setLuongCoBan(luongCoBan);
-            nv.setHeSoLuong(heSoLuong);
-
-            String jsonRequest = SocketManager.getGson().toJson(nv);
-            System.out.println("Preparing to send NhanVienDTO: " + jsonRequest);
-
-            Request<NhanVienDTO> request = new Request<>("THEM_NHAN_VIEN", nv);
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive(responseType);
-
-            System.out.println("Received response for THEM_NHAN_VIEN: " + (response != null ? SocketManager.getGson().toJson(response) : "null"));
-
-            if (response != null && response.isSuccess()) {
-                Object[] rowData = new Object[]{
-                        nv.getMaNhanVien(),
-                        nv.getHoTen(),
-                        CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định"),
-                        java.sql.Date.valueOf(nv.getNgaySinh()),
-                        java.sql.Date.valueOf(nv.getNgayVaoLam()),
-                        String.valueOf(nv.getSDT()),
-                        nv.getDiaChi(),
-                        nv.getEmail(),
-                        nv.getLuongCoBan(),
-                        nv.getHeSoLuong()
-                };
-                tableModel.insertRow(0, rowData);
-                System.out.println("Inserted row into tableModel: maNhanVien=" + maNV + ", rowCount=" + tableModel.getRowCount());
-
-                table.repaint();
-                table.revalidate();
-
-                lamMoi();
-                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công! Mã nhân viên: " + maNV);
-            } else {
-                danhSachMaNhanVien.remove(maNV);
-                String errorMsg = response != null ? response.getData() : "Lỗi không xác định từ server";
-                System.out.println("Server error for THEM_NHAN_VIEN: " + errorMsg);
-                JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại: " + errorMsg);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            System.out.println("IOException in themNhanVien: " + ex.getMessage());
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println("Unexpected error in themNhanVien: " + ex.getMessage());
-            JOptionPane.showMessageDialog(this, "Lỗi không mong muốn: " + ex.getMessage());
-        }
+//        try {
+//            if (!kiemTraDuLieu()) {
+//                return;
+//            }
+//
+//            String hoTen = txtHoTen.getText().trim();
+//            String chucVuStr = (String) cmbChucVu.getSelectedItem();
+//            Integer chucVu = CHUC_VU_MAP_REVERSE.get(chucVuStr);
+//            Date ngaySinh = dateNgaySinh.getDate();
+//            LocalDate ngaySinhLD = new java.sql.Date(ngaySinh.getTime()).toLocalDate();
+//            Date ngayVaoLam = dateNgayVaoLam.getDate();
+//            LocalDate ngayVaoLamLD = new java.sql.Date(ngayVaoLam.getTime()).toLocalDate();
+//            String soDT = txtSoDT.getText().trim();
+//            String diaChi = txtDiaChi.getText().trim();
+//            String email = txtEmail.getText().trim();
+//            double luongCoBan = Double.parseDouble(txtLuong.getText().trim());
+//            double heSoLuong = Double.parseDouble(txtHSL.getText().trim());
+//
+//            String maNV = taoMaNhanVien();
+//
+//            NhanVienDTO nv = new NhanVienDTO();
+//            nv.setMaNhanVien(maNV);
+//            nv.setHoTen(hoTen);
+//            nv.setChucVu(chucVu);
+//            nv.setNgaySinh(ngaySinhLD);
+//            nv.setNgayVaoLam(ngayVaoLamLD);
+//            nv.setSDT(String.valueOf(Integer.parseInt(soDT)));
+//            nv.setDiaChi(diaChi);
+//            nv.setEmail(email);
+//            nv.setLuongCoBan(luongCoBan);
+//            nv.setHeSoLuong(heSoLuong);
+//
+//            String jsonRequest = SocketManager.getGson().toJson(nv);
+//            System.out.println("Preparing to send NhanVienDTO: " + jsonRequest);
+//
+//            Request<NhanVienDTO> request = new Request<>("THEM_NHAN_VIEN", nv);
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<String>>(){}.getType();
+//            Response<String> response = SocketManager.receive(responseType);
+//
+//            System.out.println("Received response for THEM_NHAN_VIEN: " + (response != null ? SocketManager.getGson().toJson(response) : "null"));
+//
+//            if (response != null && response.isSuccess()) {
+//                Object[] rowData = new Object[]{
+//                        nv.getMaNhanVien(),
+//                        nv.getHoTen(),
+//                        CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định"),
+//                        java.sql.Date.valueOf(nv.getNgaySinh()),
+//                        java.sql.Date.valueOf(nv.getNgayVaoLam()),
+//                        String.valueOf(nv.getSDT()),
+//                        nv.getDiaChi(),
+//                        nv.getEmail(),
+//                        nv.getLuongCoBan(),
+//                        nv.getHeSoLuong()
+//                };
+//                tableModel.insertRow(0, rowData);
+//                System.out.println("Inserted row into tableModel: maNhanVien=" + maNV + ", rowCount=" + tableModel.getRowCount());
+//
+//                table.repaint();
+//                table.revalidate();
+//
+//                lamMoi();
+//                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công! Mã nhân viên: " + maNV);
+//            } else {
+//                danhSachMaNhanVien.remove(maNV);
+//                String errorMsg = response != null ? response.getData() : "Lỗi không xác định từ server";
+//                System.out.println("Server error for THEM_NHAN_VIEN: " + errorMsg);
+//                JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại: " + errorMsg);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            System.out.println("IOException in themNhanVien: " + ex.getMessage());
+//            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + ex.getMessage());
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            System.out.println("Unexpected error in themNhanVien: " + ex.getMessage());
+//            JOptionPane.showMessageDialog(this, "Lỗi không mong muốn: " + ex.getMessage());
+//        }
     }
 
     private String taoMaNhanVien() {

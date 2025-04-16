@@ -2,7 +2,6 @@ import com.google.gson.Gson;
 import model.Request;
 import model.Response;
 import socket.handler.HandlerManager;
-import socket.SocketManager;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -11,7 +10,7 @@ import java.net.Socket;
 public class ServerApp {
 
     private static final int PORT = 12345;
-    private static final Gson gson = SocketManager.getGson(); // Sử dụng Gson từ SocketManager
+    private static final Gson gson = new Gson();
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
