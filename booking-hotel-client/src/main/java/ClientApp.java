@@ -16,7 +16,7 @@ public class ClientApp {
        } catch (Exception e) {
            e.printStackTrace();
        }
-//		new DangNhap_GUI();
-		new GiaoDienChinh_GUI();
+		new DangNhap_GUI();
+//		new GiaoDienChinh_GUI();
 	}
 }
