@@ -47,9 +47,15 @@ public class DataGenerator {
         nv.setDiaChi(faker.address().fullAddress());
         nv.setEmail(faker.internet().emailAddress());
         nv.setNgaySinh(faker.date().birthday(20, 60).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        nv.setNgayVaoLam(LocalDate.now().minusDays(faker.number().numberBetween(30, 365)));
+        nv.setLuongCoBan(faker.number().randomDouble(2, 5000000, 15000000));
+        nv.setHeSoLuong(faker.number().randomDouble(2, 1, 3));
+        nv.setTrangThai(faker.number().numberBetween(0, 2)); // ví dụ: 0 - nghỉ, 1 - đang làm, 2 - tạm nghỉ
         nv.setTaiKhoan(tk);
         return nv;
     }
+
+
 
     private LoaiPhong generateLoaiPhong() {
         LoaiPhong lp = new LoaiPhong();
