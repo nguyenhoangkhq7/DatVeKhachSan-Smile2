@@ -15,6 +15,12 @@ public class HandlerManager {
         // Đăng ký handler ứng với action
         handlers.put("DANG_NHAP", new TaiKhoanHandler());
         handlers.put("GET_ALL_NHAN_VIEN", new NhanVienHandler());
+        handlers.put("THEM_NHAN_VIEN", new NhanVienHandler());
+        handlers.put("CAP_NHAT_NHAN_VIEN", new NhanVienHandler());
+        handlers.put("XOA_NHAN_VIEN", new NhanVienHandler());
+        handlers.put("TIM_NHAN_VIEN_THEO_TEN", new NhanVienHandler());
+        handlers.put("TIM_NHAN_VIEN_NANG_CAO", new NhanVienHandler());
+
     }
 
     public static Response<?> handle(Request<?> request) throws IOException {

@@ -16,6 +16,9 @@ public class SocketManager {
     private static PrintWriter out;
     private static BufferedReader in;
     private static final Gson gson;
+    private static String host;
+    private static int port;
+    private static final int MAX_RETRIES = 3;
 
     static {
         GsonBuilder builder = new GsonBuilder();
@@ -38,31 +41,50 @@ public class SocketManager {
     }
 
     public static void connect(String host, int port) throws IOException {
+        SocketManager.host = host;
+        SocketManager.port = port;
+        reconnect();
+    }
+
+    private static void reconnect() throws IOException {
+        close();
+        System.out.println("Attempting to connect to " + host + ":" + port);
         socket = new Socket(host, port);
         socket.setSoTimeout(30000);
         socket.setKeepAlive(true);
         out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        System.out.println("Connected to server at " + host + ":" + port);
     }
 
-    public static <T> void send(Object request) {
+    public static <T> void send(Object request) throws IOException {
+        if (socket == null || socket.isClosed() || !socket.isConnected()) {
+            reconnect();
+        }
         String json = gson.toJson(request);
+        System.out.println("Sending request: " + json);
         out.println(json);
+        out.flush();
     }
 
     public static <T> T receive(Type responseType) throws IOException {
-        int retries = 3;
+        int retries = MAX_RETRIES;
         while (retries > 0) {
             try {
+                if (socket == null || socket.isClosed() || !socket.isConnected()) {
+                    reconnect();
+                }
                 String json = in.readLine();
                 if (json == null) {
                     throw new IOException("Server closed connection unexpectedly");
                 }
+                System.out.println("Received response: " + json);
                 return gson.fromJson(json, responseType);
             } catch (IOException e) {
                 retries--;
+                System.out.println("Receive attempt " + (MAX_RETRIES - retries) + " failed: " + e.getMessage());
                 if (retries == 0) {
-                    throw new IOException("Failed to receive data after retries: " + e.getMessage(), e);
+                    throw new IOException("Failed to receive data after " + MAX_RETRIES + " retries: " + e.getMessage(), e);
                 }
                 try {
                     Thread.sleep(1000);
