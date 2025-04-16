@@ -369,6 +369,57 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
         add(southPanel, BorderLayout.SOUTH);
     }
 
+//    private void loadTableData() {
+//        tableModel.setRowCount(0);
+//
+//        Request<Void> request = new Request<>("GET_ALL_NHAN_VIEN", null);
+//        try {
+//            SocketManager.send(request);
+//            Type responseType = new TypeToken<Response<List<NhanVienDTO>>>(){}.getType();
+//            Response<List<NhanVienDTO>> response = SocketManager.receive(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                List<NhanVienDTO> dsNhanVien = response.getData();
+//                if (dsNhanVien == null || dsNhanVien.isEmpty()) {
+//                    JOptionPane.showMessageDialog(this,
+//                            "Không có dữ liệu nhân viên!",
+//                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                    return;
+//                }
+//
+//                danhSachMaNhanVien.clear();
+//                for (NhanVienDTO nv : dsNhanVien) {
+//                    danhSachMaNhanVien.add(nv.getMaNhanVien());
+//                    String chucVu = CHUC_VU_MAP.getOrDefault(nv.getChucVu(), "Không xác định");
+//                    tableModel.addRow(new Object[]{
+//                            nv.getMaNhanVien(),
+//                            nv.getHoTen(),
+//                            chucVu,
+//                            nv.getNgaySinh() != null ? java.sql.Date.valueOf(nv.getNgaySinh()) : null,
+//                            nv.getNgayVaoLam() != null ? java.sql.Date.valueOf(nv.getNgayVaoLam()) : null,
+//                            String.valueOf(nv.getSDT()),
+//                            nv.getDiaChi(),
+//                            nv.getEmail(),
+//                            nv.getLuongCoBan(),
+//                            nv.getHeSoLuong()
+//                    });
+//                }
+//                System.out.println("Loaded " + dsNhanVien.size() + " employees into table");
+//            } else {
+//                JOptionPane.showMessageDialog(this,
+//                        "Không thể lấy dữ liệu nhân viên từ server!",
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this,
+//                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
+//                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+//        }
+//        table.repaint();
+//        table.revalidate();
+//    }
+
     private void loadTableData() {
         tableModel.setRowCount(0);
 
@@ -412,14 +463,16 @@ public class CapNhatNhanVien_FORM extends JPanel implements Openable, ActionList
             }
         } catch (IOException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
-                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
+                    "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+            if (option == JOptionPane.YES_OPTION) {
+                loadTableData(); // Thử lại
+            }
         }
         table.repaint();
         table.revalidate();
     }
-
     private Box createFormBox(String label, JTextField txt) {
         Box b = Box.createVerticalBox();
         b.setPreferredSize(new Dimension(331, 106));

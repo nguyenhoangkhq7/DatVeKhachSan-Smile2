@@ -20,6 +20,11 @@ public class HandlerManager {
         handlers.put("XOA_NHAN_VIEN", new NhanVienHandler());
         handlers.put("TIM_NHAN_VIEN_THEO_TEN", new NhanVienHandler());
         handlers.put("TIM_NHAN_VIEN_NANG_CAO", new NhanVienHandler());
+        handlers.put("THEM_DICH_VU", new DichVuHandler());
+        handlers.put("SUA_DICH_VU", new DichVuHandler());
+        handlers.put("TIM_DICH_VU_THEO_TEN", new DichVuHandler());
+        handlers.put("TIM_DICH_VU_NANG_CAO", new DichVuHandler());
+
 
     }
 
