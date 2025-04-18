@@ -14,16 +14,13 @@ import dao.DichVu_DAO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -32,6 +29,113 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+
+class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
+    private JPanel panel;
+    private JLabel quantityLabel;
+    private JButton minusButton;
+    private JButton plusButton;
+    private int currentValue;
+    private JTable table2; // Bảng dịch vụ đã chọn
+    private JTable table1; // Bảng danh sách dịch vụ
+
+    public QuantityCellEditor(JTable table2, JTable table1) {
+        this.table2 = table2;
+        this.table1 = table1;
+
+        panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        panel.setBackground(new Color(50, 50, 54));
+
+        minusButton = new JButton(new ImageIcon("booking-hotel-client/src/main/resources/imgs/MinusIcon.png"));
+        minusButton.addActionListener(e -> changeQuantity(-1));
+
+        quantityLabel = new JLabel("1", SwingConstants.CENTER);
+        quantityLabel.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        quantityLabel.setForeground(Color.WHITE);
+
+        plusButton = new JButton(new ImageIcon("booking-hotel-client/src/main/resources/imgs/PlusIcon.png"));
+        plusButton.addActionListener(e -> changeQuantity(1));
+
+        panel.add(minusButton);
+        panel.add(quantityLabel);
+        panel.add(plusButton);
+    }
+
+    private void changeQuantity(int delta) {
+        currentValue = Math.max(1, currentValue + delta); // Đảm bảo số lượng >= 1
+        quantityLabel.setText(String.valueOf(currentValue));
+
+        // Lấy tên dịch vụ từ dòng hiện tại trong table2
+        int row = table2.getEditingRow();
+        String tenDichVu = (String) table2.getValueAt(row, 0); // Cột 0: Tên dịch vụ
+
+        // Lấy giá dịch vụ từ table1
+        double giaDichVu = getGiaDichVu(tenDichVu);
+
+        // Tính thành tiền mới
+        double thanhTien = currentValue * giaDichVu;
+        DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+        String thanhTienFormatted = decimalFormat.format(thanhTien) + " VNĐ";
+
+        // Cập nhật số lượng và thành tiền vào table2
+        DefaultTableModel model = (DefaultTableModel) table2.getModel();
+        model.setValueAt(currentValue, row, 1); // Cột 1: Số lượng
+        model.setValueAt(thanhTienFormatted, row, 2); // Cột 2: Thành tiền
+
+        fireEditingStopped(); // Kết thúc chỉnh sửa
+    }
+
+    // Hàm lấy giá dịch vụ từ table1 dựa trên tên dịch vụ
+    private double getGiaDichVu(String tenDichVu) {
+        for (int i = 0; i < table1.getRowCount(); i++) {
+            if (table1.getValueAt(i, 1).equals(tenDichVu)) { // Cột 1: Tên dịch vụ
+                String giaStr = table1.getValueAt(i, 2).toString() // Cột 2: Giá dịch vụ
+                        .replace(" VNĐ", "")
+                        .replace(",", "");
+                return Double.parseDouble(giaStr);
+            }
+        }
+        return 0.0; // Trả về 0 nếu không tìm thấy
+    }
+
+    @Override
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        currentValue = (value != null) ? Integer.parseInt(value.toString()) : 1;
+        quantityLabel.setText(String.valueOf(currentValue));
+        return panel;
+    }
+
+    @Override
+    public Object getCellEditorValue() {
+        return currentValue;
+    }
+}
+    class QuantityCellRenderer extends JPanel implements TableCellRenderer {
+        private JLabel quantityLabel;
+
+        public QuantityCellRenderer() {
+            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            setBackground(new Color(50, 50, 54));
+            quantityLabel = new JLabel("", SwingConstants.CENTER);
+            quantityLabel.setFont(FontManager.getManrope(Font.PLAIN, 16));
+            quantityLabel.setForeground(Color.WHITE);
+            add(quantityLabel);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            quantityLabel.setText(value != null ? value.toString() : "1");
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+                quantityLabel.setForeground(table.getSelectionForeground());
+            } else {
+                setBackground(new Color(50, 50, 54));
+                quantityLabel.setForeground(Color.WHITE);
+            }
+            return this;
+        }
+    }
 
 public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListener {
     private JButton btnDatDV;
@@ -52,6 +156,11 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     private String selectMaPDP;
     private String selectedTenKhach;
     private JButton btnXoa;
+    Color backgroundColor = new Color(31, 31, 32);
+    Color panelColor = new Color(40, 40, 44);
+    Color primaryColor = new Color(27, 112, 213);
+    Color textColor = Color.WHITE;
+    private final Font normalFont = FontManager.getManrope(Font.PLAIN, 16);
 
     public DatDichVu_FORM() {
         dichVuDao = new DichVu_DAO();
@@ -59,7 +168,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         Box b = Box.createVerticalBox();
         b.add(Box.createVerticalStrut(10));
 
-        // Tim kiem
+        // Tìm kiếm
         JTextField searchField = new JTextField("Tìm kiếm mã phòng");
         Border emptyBorder = BorderFactory.createEmptyBorder(13, 52, 12, 0);
         searchField.setBounds(0, 0, 280, 45);
@@ -98,27 +207,10 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 }
             }
         });
-        JLabel searchIcon = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
+        JLabel searchIcon = new JLabel(new ImageIcon("booking-hotel-client/src/main/resources/imgs/TimKiemIcon.png"));
         searchIcon.setBounds(12, 12, 24, 24);
 
-        JPanel searchPanel = new JPanel();
-        searchPanel.setOpaque(false);
-        searchPanel.setLayout(null);
-        Dimension searchPanelSize = new Dimension(280, 45);
-        searchPanel.setPreferredSize(searchPanelSize);
-        searchPanel.setMinimumSize(searchPanelSize);
-        searchPanel.setMaximumSize(searchPanelSize);
-
-        searchPanel.add(searchIcon);
-        searchPanel.add(searchField);
-        Box bsearch = Box.createHorizontalBox();
-        bsearch.add(Box.createHorizontalStrut(0));
-        bsearch.add(searchPanel);
-        bsearch.add(Box.createGlue());
-        b.add(bsearch);
-        b.add(Box.createVerticalStrut(20));
-
-        // Tieu de
+        // Tiêu đề
         b.add(Box.createVerticalStrut(20));
         JLabel titleLabel = new JLabel("Danh sách phòng đã đặt");
         titleLabel.setFont(FontManager.getManrope(Font.BOLD, 16));
@@ -137,7 +229,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         b.add(titlePanel);
         b.add(Box.createVerticalStrut(5));
 
-        // Tạo bang
+        // Tạo bảng
         Box b2 = Box.createHorizontalBox();
         String[] colName = {"Mã đặt phòng", "Loại phòng", "Tên phòng", "Phòng", "Trạng thái", "Tên khách", "Ngày đến", "Ngày đi"};
         tableModel = new DefaultTableModel(colName, 0);
@@ -166,7 +258,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         b.add(b2);
         b.add(Box.createVerticalStrut(300));
 
-        // Tạo nut
+        // Tạo nút
         Box bbutton = Box.createHorizontalBox();
         bbutton.add(Box.createHorizontalStrut(1400));
         bbutton.add(btnDatDV = new JButton("Đặt dịch vụ"));
@@ -181,7 +273,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         b.add(bbutton);
         add(b, BorderLayout.CENTER);
 
-        // Trong constructor hoặc phương thức khởi tạo
         btnDatDV.addActionListener(e -> {
             if (table.getRowCount() == 0) {
                 JOptionPane.showMessageDialog(null,
@@ -196,21 +287,21 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             } else {
                 int selectedRow = table.getSelectedRow();
                 selectedMaHD = table.getValueAt(selectedRow, 0).toString();
-                selectedMaPhong = table.getValueAt(selectedRow, 1).toString();
+                selectedMaPhong = table.getValueAt(selectedRow, 3).toString();
                 selectedTenKhach = table.getValueAt(selectedRow, 5).toString();
                 phieuDatDichVu();
             }
         });
-//        table.addMouseListener(this);
+
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int selectedRow = table.getSelectedRow();
                 if (selectedRow != -1) {
-                    selectedMaHD = table.getValueAt(selectedRow, 0).toString(); // Cột mã hóa đơn
-                    selectedMaPhong = table.getValueAt(selectedRow, 3).toString(); // Cột Phòng (chỉ số 3)
-                    selectedTenKhach = table.getValueAt(selectedRow, 5).toString(); // Cột Tên khách (chỉ số 5)
-                    System.out.println("Selected MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong + ", TenKhach: " + selectedTenKhach); // Debug
+                    selectedMaHD = table.getValueAt(selectedRow, 0).toString();
+                    selectedMaPhong = table.getValueAt(selectedRow, 3).toString();
+                    selectedTenKhach = table.getValueAt(selectedRow, 5).toString();
+                    System.out.println("Selected MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong + ", TenKhach: " + selectedTenKhach);
                 }
             }
         });
@@ -223,16 +314,15 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         dialog.setLayout(new BorderLayout());
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        // Màu sắc chủ đạo
         Color backgroundColor = new Color(31, 31, 32);
         Color panelColor = new Color(40, 40, 44);
         Color primaryColor = new Color(27, 112, 213);
         Color textColor = Color.WHITE;
 
-        // Thiết lập font
         Font titleFont = FontManager.getManrope(Font.BOLD, 24);
         Font headerFont = FontManager.getManrope(Font.BOLD, 16);
         Font normalFont = FontManager.getManrope(Font.PLAIN, 16);
+        Font italicFont = FontManager.getManrope(Font.ITALIC, 16);
         Font buttonFont = FontManager.getManrope(Font.BOLD, 16);
 
         dialog.getContentPane().setBackground(backgroundColor);
@@ -246,7 +336,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         titleLabel.setFont(titleFont);
         titleLabel.setForeground(textColor);
 
-        // Nút đóng với hiệu ứng hover
         JButton btnClose = createStyledButton("X", new Color(255, 69, 58), 45, 45);
         btnClose.addActionListener(e -> dialog.dispose());
 
@@ -270,24 +359,71 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 
         JTextField searchField = new JTextField();
-        searchField.setBorder(BorderFactory.createCompoundBorder(
+        Border emptyBorder = BorderFactory.createEmptyBorder(10, 40, 10, 10);
+        Border focusBorder = BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 2, 0, primaryColor),
-                BorderFactory.createEmptyBorder(10, 40, 10, 10)
-        ));
+                emptyBorder
+        );
+        searchField.setBorder(emptyBorder);
         searchField.setBackground(panelColor);
-        searchField.setForeground(textColor);
-        searchField.setFont(normalFont);
+        searchField.setForeground(new Color(255, 255, 255, 125));
+        searchField.setFont(italicFont);
+        searchField.setText("Tìm kiếm dịch vụ");
         searchField.setToolTipText("Nhập tên dịch vụ để tìm kiếm...");
 
-        // Search icon
-        JLabel searchIcon = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
+        searchField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                searchField.setBorder(focusBorder);
+                if (searchField.getText().equals("Tìm kiếm dịch vụ")) {
+                    searchField.setText("");
+                    searchField.setForeground(textColor);
+                    searchField.setFont(normalFont);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                searchField.setBorder(emptyBorder);
+                if (searchField.getText().isEmpty()) {
+                    searchField.setText("Tìm kiếm dịch vụ");
+                    searchField.setForeground(new Color(255, 255, 255, 125));
+                    searchField.setFont(italicFont);
+                }
+            }
+        });
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateField();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateField();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateField();
+            }
+
+            private void updateField() {
+                if (searchField.getText().isEmpty() && !searchField.hasFocus()) {
+                    searchField.setText("Tìm kiếm dịch vụ");
+                    searchField.setForeground(new Color(255, 255, 255, 125));
+                    searchField.setFont(italicFont);
+                }
+            }
+        });
+
+        JLabel searchIcon = new JLabel(new ImageIcon("booking-hotel-client/src/main/resources/imgs/TimKiemIcon.png"));
         searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         searchPanel.add(searchIcon, BorderLayout.WEST);
         searchPanel.add(searchField, BorderLayout.CENTER);
 
-        leftPanel.add(searchPanel, BorderLayout.NORTH);
-
-        // Info panel (hiển thị mã đặt phòng, tên khách, tên phòng)
+        // Info panel
         JPanel infoPanel = new JPanel(new GridLayout(3, 2, 10, 5));
         infoPanel.setBackground(panelColor);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -320,7 +456,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         infoPanel.add(lblTenPhong);
         infoPanel.add(lblTenPhongValue);
 
-        // Thêm infoPanel vào leftPanel, dưới searchPanel
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(panelColor);
         topPanel.add(searchPanel, BorderLayout.NORTH);
@@ -332,11 +467,10 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         tableModel1 = new DefaultTableModel(colNames, 0);
         table1 = new JTable(tableModel1);
 
-//        customizeTable(table1);
-        table1.setRowSelectionAllowed(true); // Cho phép chọn hàng
-        table1.setCellSelectionEnabled(false); // Tắt chọn từng ô
-        table1.setShowVerticalLines(false); // Ẩn đường lưới dọc (theo yêu cầu trước)
-        table1.setRowHeight(55); // Chiều cao hàng
+        table1.setRowSelectionAllowed(true);
+        table1.setCellSelectionEnabled(false);
+        table1.setShowVerticalLines(false);
+        table1.setRowHeight(55);
         table1.setBackground(panelColor);
         table1.setForeground(textColor);
         table1.setFont(normalFont);
@@ -344,7 +478,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = table1.getSelectedRow();
                 System.out.println("Selected row in table1: " + selectedRow);
-                table1.repaint(); // Làm mới giao diện để đảm bảo màu nền cập nhật
+                table1.repaint();
             }
         });
         table1.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
@@ -358,7 +492,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         buttonPanel.setBackground(panelColor);
 
         btnThem = createStyledButton("THÊM DỊCH VỤ", primaryColor, 180, 45);
-        btnThem.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        btnThem.setFont(buttonFont);
         btnThem.setForeground(Color.WHITE);
         btnThem.setBackground(new Color(74, 74, 66, 100));
         btnThem.setOpaque(false);
@@ -366,13 +500,14 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         btnThem.setMinimumSize(new Dimension(150, 40));
         btnThem.setMaximumSize(new Dimension(150, 40));
         btnThem.addActionListener(this);
+
         btnLamMoi = createStyledButton("LÀM MỚI", new Color(100, 100, 100), 180, 45);
-        btnLamMoi.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        btnLamMoi.setFont(buttonFont);
         btnLamMoi.setForeground(Color.WHITE);
         btnLamMoi.setBackground(new Color(74, 74, 66, 100));
+        btnLamMoi.setOpaque(false);
         btnLamMoi.setPreferredSize(new Dimension(150, 40));
         btnLamMoi.setMinimumSize(new Dimension(150, 40));
-        btnLamMoi.setOpaque(false);
         btnLamMoi.setMaximumSize(new Dimension(150, 40));
         btnLamMoi.addActionListener(this);
 
@@ -385,23 +520,26 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         rightPanel.setBackground(panelColor);
         rightPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Selected services table
         String[] colNames2 = {"Tên dịch vụ", "Số lượng", "Thành tiền"};
         tableModel2 = new DefaultTableModel(colNames2, 0);
         table2 = new JTable(tableModel2);
         customizeTable(table2);
+
+        TableColumn quantityColumn = table2.getColumnModel().getColumn(1);
+        // Đặt Renderer và Editor cho cột số lượng (cột 1)
+        table2.getColumnModel().getColumn(1).setCellRenderer(new QuantityCellRenderer());
+        table2.getColumnModel().getColumn(1).setCellEditor(new QuantityCellEditor(table2, table1));
 
         JScrollPane scrollPane2 = new JScrollPane(table2);
         scrollPane2.setBorder(null);
         scrollPane2.getViewport().setBackground(panelColor);
         rightPanel.add(scrollPane2, BorderLayout.CENTER);
 
-        // Action buttons
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
         actionPanel.setBackground(panelColor);
 
         btnXoa = createStyledButton("XÓA", new Color(200, 60, 60), 180, 45);
-        btnXoa.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        btnXoa.setFont(buttonFont);
         btnXoa.setForeground(Color.WHITE);
         btnXoa.setBackground(new Color(151, 69, 35, 100));
         btnXoa.setOpaque(false);
@@ -409,8 +547,9 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         btnXoa.setMinimumSize(new Dimension(150, 40));
         btnXoa.setMaximumSize(new Dimension(150, 40));
         btnXoa.addActionListener(this);
+
         btnXacNhan = createStyledButton("XÁC NHẬN", new Color(60, 180, 60), 180, 45);
-        btnXacNhan.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        btnXacNhan.setFont(buttonFont);
         btnXacNhan.setForeground(Color.WHITE);
         btnXacNhan.setBackground(new Color(51, 70, 50, 100));
         btnXacNhan.setOpaque(false);
@@ -423,33 +562,21 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         actionPanel.add(btnXacNhan);
         rightPanel.add(actionPanel, BorderLayout.SOUTH);
 
-        // Add panels to main content
         mainPanel.add(leftPanel);
         mainPanel.add(rightPanel);
         dialog.add(mainPanel, BorderLayout.CENTER);
 
-        // ========== FINAL TOUCHES ==========
         dialog.setLocationRelativeTo(null);
         dialog.setResizable(false);
         dialog.setUndecorated(true);
 
-        // Shadow effect
         dialog.setBackground(new Color(0, 0, 0, 0));
-        ((JComponent)dialog.getContentPane()).setBorder(
+        ((JComponent) dialog.getContentPane()).setBorder(
                 BorderFactory.createLineBorder(new Color(80, 80, 80), 1)
         );
 
         dialog.setVisible(true);
 
-        System.out.println("MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong); // Debug
-        if (selectedMaHD == null || selectedMaPhong == null) {
-            JOptionPane.showMessageDialog(dialog,
-                    "Vui lòng chọn một phòng trước khi đặt dịch vụ!",
-                    "Thông báo", JOptionPane.WARNING_MESSAGE);
-            return; // Không đóng dialog
-        }
-        // Load data
-        loadDichVuData();
         if (selectedMaHD == null || selectedMaPhong == null) {
             JOptionPane.showMessageDialog(dialog,
                     "Vui lòng chọn một phòng trước khi đặt dịch vụ!",
@@ -457,36 +584,35 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             dialog.dispose();
             return;
         }
+
+        loadDichVuData();
         loadDichVuDaDat(selectedMaHD, selectedMaPhong);
     }
 
-    // ========== HELPER METHODS ==========
+    private JButton createStyledButton(String text, Color bgColor, int width, int height) {
+        JButton button = new JButton(text);
+        button.setFont(FontManager.getManrope(Font.BOLD, 16));
+        button.setForeground(Color.WHITE);
+        button.setBackground(bgColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setPreferredSize(new Dimension(width, height));
 
-        private JButton createStyledButton(String text, Color bgColor, int width, int height) {
-            JButton button = new JButton(text);
-            button.setFont(FontManager.getManrope(Font.BOLD, 16));
-            button.setForeground(Color.WHITE);
-            button.setBackground(bgColor);
-            button.setFocusPainted(false);
-            button.setBorderPainted(false);
-            button.setOpaque(true);
-            button.setPreferredSize(new Dimension(width, height));
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(bgColor.brighter());
+            }
 
-            // Hover effect
-            button.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    button.setBackground(bgColor.brighter());
-                }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(bgColor);
+            }
+        });
 
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    button.setBackground(bgColor);
-                }
-            });
-
-            return button;
-        }
+        return button;
+    }
 
     private void customizeTable(JTable table) {
         table.setBackground(new Color(50, 50, 54));
@@ -499,33 +625,15 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         table.setDefaultRenderer(Object.class, new CustomCellRenderer());
         table.setIntercellSpacing(new Dimension(5, 5));
         table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(5, 5)); // Tăng khoảng cách ngang và dọc
 
-        // Header styling
         JTableHeader header = table.getTableHeader();
         header.setBackground(new Color(60, 60, 64));
         header.setForeground(Color.WHITE);
         header.setFont(FontManager.getManrope(Font.BOLD, 16));
         header.setPreferredSize(new Dimension(header.getWidth(), 45));
         header.setReorderingAllowed(false);
-
-        // Cell renderer
-//        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
-//            @Override
-//            public Component getTableCellRendererComponent(JTable table, Object value,
-//                                                           boolean isSelected, boolean hasFocus, int row, int column) {
-//                Component c = super.getTableCellRendererComponent(table, value,
-//                        isSelected, hasFocus, row, column);
-//                c.setBackground(row % 2 == 0 ? new Color(50, 50, 54) : new Color(45, 45, 49));
-//                return c;
-//            }
-//        };
-//        renderer.setHorizontalAlignment(SwingConstants.CENTER);
-//
-//        for (int i = 0; i < table.getColumnCount(); i++) {
-//            table.getColumnModel().getColumn(i).setCellRenderer(renderer);
-//        }
     }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
@@ -544,12 +652,11 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        // (Giữ nguyên phần code hiện tại hoặc tích hợp với server nếu cần)
         if (e.getSource() == table) {
             int row = table.getSelectedRow();
             if (row != -1) {
-                selectedMaHD = table.getValueAt(row, 0).toString(); // Cột mã hóa đơn
-                selectedMaPhong = table.getValueAt(row, 1).toString(); // Cột mã phòng
+                selectedMaHD = table.getValueAt(row, 0).toString();
+                selectedMaPhong = table.getValueAt(row, 3).toString();
                 System.out.println("Selected MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong);
             }
         }
@@ -623,7 +730,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                     tableModel1.addRow(new Object[]{
                             dv.getMaDV(),
                             dv.getTenDV(),
-                            decimalFormat.format(dv.getDonGia()),
+                            decimalFormat.format(dv.getDonGia()) + " VNĐ",
                             dv.getDonViTinh(),
                             dv.getMoTa()
                     });
@@ -647,18 +754,14 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     }
 
     private void loadDichVuData() {
-        // Xóa dữ liệu cũ trong bảng
         tableModel1.setRowCount(0);
-        // Tạo yêu cầu gửi đến server
         Request<Void> request = new Request<>("GET_ALL_DICH_VU", null);
 
         try {
-            // Gửi yêu cầu và nhận phản hồi
             SocketManager.send(request);
             Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
             Response<List<DichVuDTO>> response = SocketManager.receiveType(responseType);
 
-            // Xử lý phản hồi từ server
             if (response == null) {
                 JOptionPane.showMessageDialog(this,
                         "Không nhận được phản hồi từ server!",
@@ -683,23 +786,18 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 return;
             }
 
-            // Định dạng số tiền
             DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
-
-            // Thêm dữ liệu vào bảng
             for (DichVuDTO dv : dsDichVu) {
                 tableModel1.addRow(new Object[]{
-                        dv.getMaDV(),               // Mã dịch vụ
-                        dv.getTenDV(),              // Tên dịch vụ
-                        decimalFormat.format(dv.getDonGia()) + " VNĐ", // Giá dịch vụ
-                        dv.getDonViTinh(),          // Đơn vị tính
-                        dv.getMoTa()                // Mô tả
+                        dv.getMaDV(),
+                        dv.getTenDV(),
+                        decimalFormat.format(dv.getDonGia()) + " VNĐ",
+                        dv.getDonViTinh(),
+                        dv.getMoTa()
                 });
             }
 
-            // Cập nhật giao diện bảng
             customizeTableAppearance();
-
             System.out.println("Đã tải " + dsDichVu.size() + " dịch vụ vào bảng");
 
         } catch (IOException ex) {
@@ -712,7 +810,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         }
     }
 
-    // Hàm tùy chỉnh giao diện bảng (giữ nguyên)
     private void customizeTableAppearance() {
         table1.setBackground(new Color(24, 24, 28));
         table1.setForeground(Color.WHITE);
@@ -721,11 +818,9 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         table1.getTableHeader().setFont(FontManager.getManrope(Font.BOLD, 16));
         table1.getTableHeader().setBackground(new Color(40, 40, 45));
         table1.getTableHeader().setForeground(Color.WHITE);
-//        table1.setShowHorizontalLines(false);
         table1.setSelectionBackground(new Color(60, 60, 70));
     }
 
-    // Hàm xử lý lỗi kết nối (giữ nguyên)
     private void handleConnectionError(IOException ex) {
         ex.printStackTrace();
         int option = JOptionPane.showConfirmDialog(this,
@@ -736,7 +831,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 JOptionPane.ERROR_MESSAGE);
 
         if (option == JOptionPane.YES_OPTION) {
-            loadDichVuData(); // Thử lại nếu người dùng chọn Yes
+            loadDichVuData();
         }
     }
 
@@ -744,10 +839,9 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         tableModel.setRowCount(0);
 
         try {
-            // 1. Lấy danh sách phiếu đặt phòng
             Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
             SocketManager.send(request);
-            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>() {}.getType();
+            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>(){}.getType();
             Response<List<PhieuDatPhongDTO>> response = SocketManager.receiveType(phieuResponseType);
 
             if (response == null || !response.isSuccess() || response.getData() == null) {
@@ -766,11 +860,10 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 return;
             }
 
-            // 2. Lấy danh sách phòng
             Map<String, PhongDTO> phongMap = new HashMap<>();
             Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
             SocketManager.send(phongRequest);
-            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>() {}.getType();
+            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>(){}.getType();
             Response<List<PhongDTO>> phongResponse = SocketManager.receiveType(phongResponseType);
 
             if (phongResponse != null && phongResponse.isSuccess() && phongResponse.getData() != null) {
@@ -787,11 +880,10 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
-            // 3. Lấy danh sách khách hàng
             Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
             Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
             SocketManager.send(khachHangRequest);
-            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>() {}.getType();
+            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>(){}.getType();
             Response<List<KhachHangDTO>> khachHangResponse = SocketManager.receiveType(khachHangResponseType);
 
             if (khachHangResponse != null && khachHangResponse.isSuccess() && khachHangResponse.getData() != null) {
@@ -805,19 +897,16 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
-            // 4. Xử lý dữ liệu và hiển thị
             StringBuilder errorMessages = new StringBuilder();
             int errorCount = 0;
 
             for (PhieuDatPhongDTO pdp : dsPhieuDatPhong) {
-                // Xử lý thông tin khách hàng
                 String tenKhachHang = "Không xác định";
                 if (pdp.getMaKH() != null) {
                     KhachHangDTO kh = khachHangMap.get(pdp.getMaKH());
                     tenKhachHang = kh != null ? kh.getHoTen() : "Khách hàng không tồn tại";
                 }
 
-                // Xử lý danh sách phòng
                 List<String> dsMaPhong = pdp.getDsMaPhong();
                 if (dsMaPhong == null || dsMaPhong.isEmpty()) {
                     tableModel.addRow(new Object[]{
@@ -830,7 +919,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                     continue;
                 }
 
-                // Thêm từng phòng vào bảng
                 for (String maPhong : dsMaPhong) {
                     PhongDTO phong = phongMap.get(maPhong);
                     if (phong == null) {
@@ -855,7 +943,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 }
             }
 
-            // Hiển thị lỗi nếu có
             if (errorCount > 0) {
                 JOptionPane.showMessageDialog(this,
                         "Có " + errorCount + " lỗi xảy ra:\n" + errorMessages.toString(),
@@ -873,7 +960,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         }
     }
 
-    // Hàm hỗ trợ
     private String formatDate(LocalDate date) {
         return date != null ? date.toString() : "N/A";
     }
@@ -888,7 +974,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     }
 
     private void loadDichVuDaDat(String maHD, String maPhong) {
-        // (Giữ nguyên hoặc tích hợp với server nếu cần)
+        // Giữ nguyên hoặc tích hợp với server nếu cần
     }
 
     private void lamMoiDichVu() {
@@ -896,7 +982,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     }
 
     private void xacNhanDichVu() {
-        // (Giữ nguyên hoặc tích hợp với server nếu cần)
+        // Giữ nguyên hoặc tích hợp với server nếu cần
     }
 
     private void themDichVu() {
@@ -908,84 +994,46 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
 
         String maDV = tableModel1.getValueAt(selectedRow, 0).toString();
         String tenDichVu = tableModel1.getValueAt(selectedRow, 1).toString();
-        int soLuongTon = Integer.parseInt(tableModel1.getValueAt(selectedRow, 4).toString());
-        if (soLuongTon <= 0) {
-            JOptionPane.showMessageDialog(this, "Dịch vụ này đã hết hàng!");
-            return;
-        }
-
         int soLuong = 1;
         NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
         double gia = 0.0;
         try {
-            gia = format.parse(tableModel1.getValueAt(selectedRow, 2).toString()).doubleValue();
+            String giaStr = tableModel1.getValueAt(selectedRow, 2).toString().replace(" VNĐ", "");
+            gia = format.parse(giaStr).doubleValue();
         } catch (ParseException e) {
             JOptionPane.showMessageDialog(this, "Lỗi chuyển đổi giá trị số tiền!");
             return;
         }
 
-        DichVuDTO dichVuDTO = new DichVuDTO();
-        dichVuDTO.setMaDV(maDV);
-        dichVuDTO.setTenDV(tenDichVu);
-        dichVuDTO.setDonGia(gia);
-        dichVuDTO.setDonViTinh(tableModel1.getValueAt(selectedRow, 3).toString());
-        dichVuDTO.setMoTa(tableModel1.getValueAt(selectedRow, 4).toString());
-
-        Request<DichVuDTO> request = new Request<>("SUA_DICH_VU", dichVuDTO);
-        try {
-            SocketManager.send(request);
-            Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive(Response.class);
-
-            if (response != null && response.isSuccess()) {
-                tableModel1.setValueAt(soLuongTon - soLuong, selectedRow, 4);
-                double thanhTien = soLuong * gia;
+        boolean isExist = false;
+        for (int i = 0; i < tableModel2.getRowCount(); i++) {
+            if (tableModel2.getValueAt(i, 0).toString().equals(tenDichVu)) {
+                int currentSoLuong = Integer.parseInt(tableModel2.getValueAt(i, 1).toString());
+                int newSoLuong = currentSoLuong + soLuong;
+                double newThanhTien = newSoLuong * gia;
                 DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
-                String thanhTienFormatted = decimalFormat.format(thanhTien);
-
-                boolean isExist = false;
-                for (int i = 0; i < tableModel2.getRowCount(); i++) {
-                    if (tableModel2.getValueAt(i, 0).toString().equals(tenDichVu)) {
-                        int currentSoLuong = Integer.parseInt(tableModel2.getValueAt(i, 1).toString());
-                        int newSoLuong = currentSoLuong + soLuong;
-                        double newThanhTien = newSoLuong * gia;
-                        tableModel2.setValueAt(newSoLuong, i, 1);
-                        tableModel2.setValueAt(decimalFormat.format(newThanhTien), i, 2);
-                        isExist = true;
-                        break;
-                    }
-                }
-
-                if (!isExist) {
-                    tableModel2.addRow(new Object[]{tenDichVu, soLuong, thanhTienFormatted});
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Không thể cập nhật số lượng tồn trên server!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            int option = JOptionPane.showConfirmDialog(this,
-                    "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
-                    "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
-            if (option == JOptionPane.YES_OPTION) {
-                themDichVu();
+                tableModel2.setValueAt(newSoLuong, i, 1);
+                tableModel2.setValueAt(decimalFormat.format(newThanhTien) + " VNĐ", i, 2);
+                isExist = true;
+                break;
             }
         }
+
+        if (!isExist) {
+            double thanhTien = soLuong * gia;
+            DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+            String thanhTienFormatted = decimalFormat.format(thanhTien) + " VNĐ";
+            tableModel2.addRow(new Object[]{tenDichVu, soLuong, thanhTienFormatted});
+        }
+
+        table2.repaint();
+        table1.repaint();
     }
 
     private void xoaDichVu() {
         int selectedRow = table2.getSelectedRow();
         if (selectedRow != -1) {
-            String tenDichVu = tableModel2.getValueAt(selectedRow, 0).toString();
-            int soLuongXoa = Integer.parseInt(tableModel2.getValueAt(selectedRow, 1).toString());
             tableModel2.removeRow(selectedRow);
-            for (int i = 0; i < tableModel1.getRowCount(); i++) {
-                if (tableModel1.getValueAt(i, 1).toString().equals(tenDichVu)) {
-                    int soLuongTon = Integer.parseInt(tableModel1.getValueAt(i, 4).toString());
-                    tableModel1.setValueAt(soLuongTon + soLuongXoa, i, 4);
-                    break;
-                }
-            }
         }
     }
 }
