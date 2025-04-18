@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class DataGenerator {
     private final Faker faker = new Faker();
@@ -127,9 +128,29 @@ public class DataGenerator {
         return dv;
     }
 
+//    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv) {
+//        PhieuDatDichVu pddv = new PhieuDatDichVu();
+//        pddv.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
+//        pddv.setNgayDatDichVu(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
+//        pddv.setSoLuongDichVu(faker.number().numberBetween(1, 5));
+//        pddv.setMoTa(faker.lorem().sentence());
+//        pddv.setNhanVien(nv);
+//        pddv.setKhachHang(kh);
+//
+//        Set<DichVu> dsDV = new HashSet<>();
+//        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
+//            DichVu dv = generateDichVu();
+//            dv.setPhieuDatDichVu(pddv);
+//            dsDV.add(dv);
+//        }
+//        pddv.setDsDichVu(dsDV);
+//        return pddv;
+//    }
+
     private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv) {
         PhieuDatDichVu pddv = new PhieuDatDichVu();
-        pddv.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
+//        pddv.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
+        pddv.setMaPDDV("PDDV" + UUID.randomUUID().toString().substring(0, 8));
         pddv.setNgayDatDichVu(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
         pddv.setSoLuongDichVu(faker.number().numberBetween(1, 5));
         pddv.setMoTa(faker.lorem().sentence());
@@ -231,41 +252,44 @@ public class DataGenerator {
 //            }
 //        }
 //    }
-public void generateAndPersistSampleData() {
-    for (int i = 0; i < 10; i++) {
-        try {
-            tr.begin();
+    public void generateAndPersistSampleData() {
+        for (int i = 0; i < 10; i++) {
+            try {
+                tr.begin();
 
-            // Tạo các entity độc lập trước
-            TaiKhoan tk = generateTaiKhoan();
-            em.persist(tk);
+                // Tạo các entity độc lập trước
+                TaiKhoan tk = generateTaiKhoan();
+                em.persist(tk);
 
-            NhanVien nv = generateNhanVien(tk);
-            em.persist(nv);
+                NhanVien nv = generateNhanVien(tk);
+                em.persist(nv);
 
-            KhachHang kh = generateKhachHang();
-            em.persist(kh);
+                KhachHang kh = generateKhachHang();
+                em.persist(kh);
 
-            LoaiPhong lp = generateLoaiPhong();
-            em.persist(lp);
+                LoaiPhong lp = generateLoaiPhong();
+                em.persist(lp);
 
-            // Tạo phiếu đặt phòng và các phòng liên quan
-            PhieuDatPhong pdp = generatePhieuDatPhong(kh, nv, lp);
-            em.persist(pdp);
+                // Tạo phiếu đặt phòng và các phòng liên quan
+                PhieuDatPhong pdp = generatePhieuDatPhong(kh, nv, lp);
+                em.persist(pdp);
 
-            // Persist các phòng (đã được persist tự động do cascade)
+                // Persist các phòng (đã được persist tự động do cascade)
 
-            // Tạo hóa đơn và các dịch vụ liên quan
-            HoaDon hd = generateHoaDon(kh, pdp, nv);
-            em.persist(hd);
-
-            tr.commit();
-        } catch (Exception e) {
-            if (tr.isActive()) tr.rollback();
-            e.printStackTrace();
+                // Tạo hóa đơn và các dịch vụ liên quan
+                HoaDon hd = generateHoaDon(kh, pdp, nv);
+                for (PhieuDatDichVu pddv : hd.getDsPhieuDatDichVu()) {
+                    for (DichVu dv : pddv.getDsDichVu()) em.persist(dv);
+                    em.persist(pddv);
+                }
+                em.persist(hd);
+                tr.commit();
+            } catch (Exception e) {
+                if (tr.isActive()) tr.rollback();
+                e.printStackTrace();
+            }
         }
     }
-}
 
     public static void main(String[] args) {
         new DataGenerator().generateAndPersistSampleData();

@@ -1,17 +1,20 @@
 package view.form;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import dto.*;
 import model.Request;
 import model.Response;
 import socket.SocketManager;
 import utils.custom_element.*;
+import utils.custom_element.CustomTableCellRenderer;
 import dao.DichVu_DAO;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
@@ -47,6 +50,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     private String selectedMaHD;
     private String selectedMaPhong;
     private String selectMaPDP;
+    private String selectedTenKhach;
     private JButton btnXoa;
 
     public DatDichVu_FORM() {
@@ -177,8 +181,39 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         b.add(bbutton);
         add(b, BorderLayout.CENTER);
 
-        btnDatDV.addActionListener(this);
-        table.addMouseListener(this);
+        // Trong constructor hoặc phương thức khởi tạo
+        btnDatDV.addActionListener(e -> {
+            if (table.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(null,
+                        "Không có phòng nào để chọn!",
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE);
+            } else if (table.getSelectedRow() == -1) {
+                JOptionPane.showMessageDialog(null,
+                        "Vui lòng chọn một phòng trước khi đặt dịch vụ!",
+                        "Thông báo",
+                        JOptionPane.WARNING_MESSAGE);
+            } else {
+                int selectedRow = table.getSelectedRow();
+                selectedMaHD = table.getValueAt(selectedRow, 0).toString();
+                selectedMaPhong = table.getValueAt(selectedRow, 1).toString();
+                selectedTenKhach = table.getValueAt(selectedRow, 5).toString();
+                phieuDatDichVu();
+            }
+        });
+//        table.addMouseListener(this);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow != -1) {
+                    selectedMaHD = table.getValueAt(selectedRow, 0).toString(); // Cột mã hóa đơn
+                    selectedMaPhong = table.getValueAt(selectedRow, 3).toString(); // Cột Phòng (chỉ số 3)
+                    selectedTenKhach = table.getValueAt(selectedRow, 5).toString(); // Cột Tên khách (chỉ số 5)
+                    System.out.println("Selected MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong + ", TenKhach: " + selectedTenKhach); // Debug
+                }
+            }
+        });
         loadPhongData();
     }
 
@@ -187,141 +222,142 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         dialog.setSize(1564, 880);
         dialog.setLayout(new BorderLayout());
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        f1 = new Font("Montserrat", Font.PLAIN, 16);
-        dialog.getContentPane().setBackground(new Color(31, 31, 32, 255));
 
-        JButton btnClose = new JButton("X");
-        btnClose.setForeground(Color.WHITE);
-        btnClose.setFont(new Font("Arial", Font.BOLD, 16));
-        btnClose.setBackground(new Color(255, 69, 58));
-        btnClose.setFocusPainted(false);
-        btnClose.setBorderPainted(false);
-        btnClose.setContentAreaFilled(false);
-        btnClose.setOpaque(true);
-        btnClose.setPreferredSize(new Dimension(45, 45));
+        // Màu sắc chủ đạo
+        Color backgroundColor = new Color(31, 31, 32);
+        Color panelColor = new Color(40, 40, 44);
+        Color primaryColor = new Color(27, 112, 213);
+        Color textColor = Color.WHITE;
 
+        // Thiết lập font
+        Font titleFont = FontManager.getManrope(Font.BOLD, 24);
+        Font headerFont = FontManager.getManrope(Font.BOLD, 16);
+        Font normalFont = FontManager.getManrope(Font.PLAIN, 16);
+        Font buttonFont = FontManager.getManrope(Font.BOLD, 16);
+
+        dialog.getContentPane().setBackground(backgroundColor);
+
+        // ========== HEADER SECTION ==========
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(panelColor);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        JLabel titleLabel = new JLabel("PHIẾU ĐẶT DỊCH VỤ");
+        titleLabel.setFont(titleFont);
+        titleLabel.setForeground(textColor);
+
+        // Nút đóng với hiệu ứng hover
+        JButton btnClose = createStyledButton("X", new Color(255, 69, 58), 45, 45);
         btnClose.addActionListener(e -> dialog.dispose());
 
-        JPanel closePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        closePanel.setOpaque(false);
-        closePanel.add(btnClose);
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(btnClose, BorderLayout.EAST);
+        dialog.add(headerPanel, BorderLayout.NORTH);
 
-        dialog.add(closePanel, BorderLayout.NORTH);
+        // ========== MAIN CONTENT SECTION ==========
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        mainPanel.setBackground(backgroundColor);
 
-        Box bdialog = Box.createHorizontalBox();
-        Box bLeft = Box.createVerticalBox();
-        bLeft.add(Box.createVerticalStrut(10));
-        bLeft.setPreferredSize(new Dimension(950, 880));
-        bLeft.setMinimumSize(new Dimension(950, 880));
-        bLeft.setMaximumSize(new Dimension(950, 880));
-        JTextField searchField1 = new JTextField("Tìm kiếm tên dịch vụ");
-        Border emptyBorder = BorderFactory.createEmptyBorder(13, 52, 12, 0);
-        searchField1.setBounds(0, 0, 280, 45);
-        searchField1.setBorder(emptyBorder);
-        searchField1.setBackground(new Color(40, 40, 44));
-        searchField1.setForeground(new Color(255, 255, 255, 125));
-        searchField1.setFont(FontManager.getManrope(Font.PLAIN, 15));
-        CompoundBorder combinedBorder = BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(83, 152, 255)), emptyBorder);
-        searchField1.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                searchField1.setBorder(combinedBorder);
-                if (searchField1.getText().equals("Tìm kiếm tên dịch vụ")) {
-                    searchField1.setText("");
-                    searchField1.setForeground(Color.WHITE);
-                }
-            }
+        // ===== LEFT PANEL - DANH SÁCH DỊCH VỤ =====
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBackground(panelColor);
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-            @Override
-            public void focusLost(FocusEvent e) {
-                searchField1.setBorder(emptyBorder);
-                if (searchField1.getText().isEmpty()) {
-                    searchField1.setForeground(new Color(255, 255, 255, 125));
-                    searchField1.setText("Tìm kiếm tên dịch vụ");
-                }
+        // Search panel
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setBackground(panelColor);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+
+        JTextField searchField = new JTextField();
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, primaryColor),
+                BorderFactory.createEmptyBorder(10, 40, 10, 10)
+        ));
+        searchField.setBackground(panelColor);
+        searchField.setForeground(textColor);
+        searchField.setFont(normalFont);
+        searchField.setToolTipText("Nhập tên dịch vụ để tìm kiếm...");
+
+        // Search icon
+        JLabel searchIcon = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
+        searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        searchPanel.add(searchIcon, BorderLayout.WEST);
+        searchPanel.add(searchField, BorderLayout.CENTER);
+
+        leftPanel.add(searchPanel, BorderLayout.NORTH);
+
+        // Info panel (hiển thị mã đặt phòng, tên khách, tên phòng)
+        JPanel infoPanel = new JPanel(new GridLayout(3, 2, 10, 5));
+        infoPanel.setBackground(panelColor);
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel lblMaDatPhong = new JLabel("Mã đặt phòng:");
+        lblMaDatPhong.setFont(normalFont);
+        lblMaDatPhong.setForeground(textColor);
+        JLabel lblMaDatPhongValue = new JLabel(selectedMaHD != null ? selectedMaHD : "N/A");
+        lblMaDatPhongValue.setFont(normalFont);
+        lblMaDatPhongValue.setForeground(textColor);
+
+        JLabel lblTenKhach = new JLabel("Tên khách:");
+        lblTenKhach.setFont(normalFont);
+        lblTenKhach.setForeground(textColor);
+        JLabel lblTenKhachValue = new JLabel(selectedTenKhach != null ? selectedTenKhach : "N/A");
+        lblTenKhachValue.setFont(normalFont);
+        lblTenKhachValue.setForeground(textColor);
+
+        JLabel lblTenPhong = new JLabel("Tên phòng:");
+        lblTenPhong.setFont(normalFont);
+        lblTenPhong.setForeground(textColor);
+        JLabel lblTenPhongValue = new JLabel(selectedMaPhong != null ? selectedMaPhong : "N/A");
+        lblTenPhongValue.setFont(normalFont);
+        lblTenPhongValue.setForeground(textColor);
+
+        infoPanel.add(lblMaDatPhong);
+        infoPanel.add(lblMaDatPhongValue);
+        infoPanel.add(lblTenKhach);
+        infoPanel.add(lblTenKhachValue);
+        infoPanel.add(lblTenPhong);
+        infoPanel.add(lblTenPhongValue);
+
+        // Thêm infoPanel vào leftPanel, dưới searchPanel
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(panelColor);
+        topPanel.add(searchPanel, BorderLayout.NORTH);
+        topPanel.add(infoPanel, BorderLayout.CENTER);
+        leftPanel.add(topPanel, BorderLayout.NORTH);
+
+        // Table panel
+        String[] colNames = {"Mã dịch vụ", "Tên dịch vụ", "Giá dịch vụ", "Đơn vị tính", "Mô tả"};
+        tableModel1 = new DefaultTableModel(colNames, 0);
+        table1 = new JTable(tableModel1);
+
+//        customizeTable(table1);
+        table1.setRowSelectionAllowed(true); // Cho phép chọn hàng
+        table1.setCellSelectionEnabled(false); // Tắt chọn từng ô
+        table1.setShowVerticalLines(false); // Ẩn đường lưới dọc (theo yêu cầu trước)
+        table1.setRowHeight(55); // Chiều cao hàng
+        table1.setBackground(panelColor);
+        table1.setForeground(textColor);
+        table1.setFont(normalFont);
+        table1.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = table1.getSelectedRow();
+                System.out.println("Selected row in table1: " + selectedRow);
+                table1.repaint(); // Làm mới giao diện để đảm bảo màu nền cập nhật
             }
         });
-        searchField1.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    String keyword = searchField1.getText().trim();
-                    if (!keyword.equals("") && !keyword.equals("Tìm kiếm tên dịch vụ")) {
-                        timKiem1(keyword);
-                    }
-                }
-            }
-        });
-        JLabel searchIcon1 = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
-        searchIcon1.setBounds(12, 12, 24, 24);
+        table1.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        JScrollPane scrollPane1 = new JScrollPane(table1);
+        scrollPane1.setBorder(null);
+        scrollPane1.getViewport().setBackground(panelColor);
+        leftPanel.add(scrollPane1, BorderLayout.CENTER);
 
-        JPanel searchPanel1 = new JPanel();
-        searchPanel1.setOpaque(false);
-        searchPanel1.setLayout(null);
-        Dimension searchPanelSize = new Dimension(280, 45);
-        searchPanel1.setPreferredSize(searchPanelSize);
-        searchPanel1.setMinimumSize(searchPanelSize);
-        searchPanel1.setMaximumSize(searchPanelSize);
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        buttonPanel.setBackground(panelColor);
 
-        searchPanel1.add(searchIcon1);
-        searchPanel1.add(searchField1);
-        Box bsearch = Box.createHorizontalBox();
-        bsearch.add(Box.createHorizontalStrut(0));
-        bsearch.add(searchPanel1);
-        bsearch.add(Box.createGlue());
-        bLeft.add(bsearch);
-        bLeft.add(Box.createVerticalStrut(20));
-
-        bLeft.add(Box.createVerticalStrut(10));
-        JLabel titleLabel1 = new JLabel("Danh sách dịch vụ");
-        titleLabel1.setFont(FontManager.getManrope(Font.BOLD, 16));
-        titleLabel1.setForeground(Color.white);
-
-        RoundedPanel titlePanel1 = new RoundedPanel(10, 0, new Color(27, 112, 213));
-        titlePanel1.setPreferredSize(new Dimension(950, 50));
-        titlePanel1.setMinimumSize(new Dimension(950, 50));
-        titlePanel1.setMaximumSize(new Dimension(950, 50));
-        titlePanel1.setOpaque(false);
-        titlePanel1.setLayout(new BoxLayout(titlePanel1, BoxLayout.X_AXIS));
-
-        titlePanel1.add(Box.createHorizontalStrut(15));
-        titlePanel1.add(titleLabel1);
-        titlePanel1.add(Box.createHorizontalGlue());
-        bLeft.add(titlePanel1);
-        bLeft.add(Box.createVerticalStrut(5));
-
-        bLeft.add(Box.createVerticalStrut(10));
-        Box bTable1 = Box.createHorizontalBox();
-        String[] colName1 = {"Mã dịch vụ", "Tên dịch vụ", "Giá dịch vụ", "Đơn vị tính", "Tồn kho"};
-        tableModel1 = new DefaultTableModel(colName1, 0);
-        JScrollPane scroll1;
-        bTable1.add(scroll1 = new JScrollPane(table1 = new JTable(tableModel1), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-        table1.setBackground(new Color(24, 24, 28));
-        table1.setForeground(Color.WHITE);
-        table1.setFont(FontManager.getManrope(Font.PLAIN, 16));
-        table1.setRowHeight(55);
-
-        JTableHeader header1 = table1.getTableHeader();
-        header1.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
-        header1.setPreferredSize(new Dimension(header1.getPreferredSize().width, 55));
-        header1.setReorderingAllowed(false);
-
-        CustomCellRenderer cellRenderer1 = new CustomCellRenderer();
-        for (int i = 0; i < table1.getColumnCount(); i++) {
-            TableColumn column = table1.getColumnModel().getColumn(i);
-            column.setCellRenderer(cellRenderer1);
-        }
-
-        scroll1.setBounds(30, 380, 940, 700);
-        scroll1.setBorder(null);
-        scroll1.getViewport().setOpaque(false);
-        scroll1.setViewportBorder(null);
-        bLeft.add(bTable1);
-        bLeft.add(Box.createVerticalStrut(300));
-
-        Box bbutton1 = Box.createHorizontalBox();
-        bbutton1.add(Box.createHorizontalStrut(500));
-        bbutton1.add(btnThem = new JButton("Thêm"));
+        btnThem = createStyledButton("THÊM DỊCH VỤ", primaryColor, 180, 45);
         btnThem.setFont(FontManager.getManrope(Font.PLAIN, 16));
         btnThem.setForeground(Color.WHITE);
         btnThem.setBackground(new Color(74, 74, 66, 100));
@@ -330,69 +366,41 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         btnThem.setMinimumSize(new Dimension(150, 40));
         btnThem.setMaximumSize(new Dimension(150, 40));
         btnThem.addActionListener(this);
-        bbutton1.add(Box.createHorizontalStrut(20));
-        bbutton1.add(btnLamMoi = new JButton("Làm mới"));
+        btnLamMoi = createStyledButton("LÀM MỚI", new Color(100, 100, 100), 180, 45);
         btnLamMoi.setFont(FontManager.getManrope(Font.PLAIN, 16));
         btnLamMoi.setForeground(Color.WHITE);
         btnLamMoi.setBackground(new Color(74, 74, 66, 100));
-        btnLamMoi.setOpaque(false);
         btnLamMoi.setPreferredSize(new Dimension(150, 40));
         btnLamMoi.setMinimumSize(new Dimension(150, 40));
+        btnLamMoi.setOpaque(false);
         btnLamMoi.setMaximumSize(new Dimension(150, 40));
         btnLamMoi.addActionListener(this);
-        bLeft.add(Box.createVerticalStrut(10));
-        bLeft.add(bbutton1);
 
-        Box bRight = Box.createVerticalBox();
-        bRight.add(Box.createVerticalStrut(65));
-        bRight.setPreferredSize(new Dimension(563, 880));
-        bRight.setMinimumSize(new Dimension(563, 880));
-        bRight.setMaximumSize(new Dimension(563, 880));
-        JPanel pheader = new JPanel();
-        pheader.setLayout(new BoxLayout(pheader, BoxLayout.Y_AXIS));
-        pheader.setBackground(new Color(16, 16, 20));
-        pheader.setBackground(new Color(40, 40, 44));
+        buttonPanel.add(btnThem);
+        buttonPanel.add(btnLamMoi);
+        leftPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        JLabel titleDialog = new JLabel("Phiếu đặt dịch vụ");
-        titleDialog.setForeground(Color.WHITE);
-        titleDialog.setFont(new Font("Montserrat", Font.BOLD, 24));
+        // ===== RIGHT PANEL - DỊCH VỤ ĐÃ CHỌN =====
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBackground(panelColor);
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        Box bheader = Box.createHorizontalBox();
-        pheader.add(titleDialog);
-        bheader.add(pheader);
-        bRight.add(bheader);
-        bRight.add(Box.createVerticalStrut(50));
-        Box bTable2 = Box.createHorizontalBox();
-        String[] colName2 = {"Tên dịch vụ", "Số lượng", "Thành tiền"};
-        tableModel2 = new DefaultTableModel(colName2, 0);
-        JScrollPane scroll2;
-        bTable2.add(scroll2 = new JScrollPane(table2 = new JTable(tableModel2), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-        table2.setBackground(new Color(24, 24, 28));
-        table2.setForeground(Color.WHITE);
-        table2.setFont(FontManager.getManrope(Font.PLAIN, 16));
-        table2.setRowHeight(55);
+        // Selected services table
+        String[] colNames2 = {"Tên dịch vụ", "Số lượng", "Thành tiền"};
+        tableModel2 = new DefaultTableModel(colNames2, 0);
+        table2 = new JTable(tableModel2);
+        customizeTable(table2);
 
-        JTableHeader header2 = table2.getTableHeader();
-        header2.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
-        header2.setPreferredSize(new Dimension(header1.getPreferredSize().width, 55));
-        header2.setReorderingAllowed(false);
+        JScrollPane scrollPane2 = new JScrollPane(table2);
+        scrollPane2.setBorder(null);
+        scrollPane2.getViewport().setBackground(panelColor);
+        rightPanel.add(scrollPane2, BorderLayout.CENTER);
 
-        CustomCellRenderer cellRenderer2 = new CustomCellRenderer();
-        for (int i = 0; i < table2.getColumnCount(); i++) {
-            TableColumn column = table2.getColumnModel().getColumn(i);
-            column.setCellRenderer(cellRenderer2);
-        }
+        // Action buttons
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        actionPanel.setBackground(panelColor);
 
-        scroll2.setBounds(30, 380, 563, 700);
-        scroll2.setBorder(null);
-        scroll2.getViewport().setOpaque(false);
-        scroll2.setViewportBorder(null);
-        bRight.add(bTable2);
-        bRight.add(Box.createVerticalStrut(300));
-
-        Box bbutton2 = Box.createHorizontalBox();
-        bbutton2.add(Box.createHorizontalStrut(200));
-        bbutton2.add(btnXoa = new JButton("Xóa"));
+        btnXoa = createStyledButton("XÓA", new Color(200, 60, 60), 180, 45);
         btnXoa.setFont(FontManager.getManrope(Font.PLAIN, 16));
         btnXoa.setForeground(Color.WHITE);
         btnXoa.setBackground(new Color(151, 69, 35, 100));
@@ -401,8 +409,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         btnXoa.setMinimumSize(new Dimension(150, 40));
         btnXoa.setMaximumSize(new Dimension(150, 40));
         btnXoa.addActionListener(this);
-        bbutton2.add(Box.createHorizontalStrut(20));
-        bbutton2.add(btnXacNhan = new JButton("Xác nhận"));
+        btnXacNhan = createStyledButton("XÁC NHẬN", new Color(60, 180, 60), 180, 45);
         btnXacNhan.setFont(FontManager.getManrope(Font.PLAIN, 16));
         btnXacNhan.setForeground(Color.WHITE);
         btnXacNhan.setBackground(new Color(51, 70, 50, 100));
@@ -411,29 +418,114 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         btnXacNhan.setMinimumSize(new Dimension(150, 40));
         btnXacNhan.setMaximumSize(new Dimension(150, 40));
         btnXacNhan.addActionListener(this);
-        bRight.add(Box.createVerticalStrut(10));
-        bRight.add(bbutton2);
 
-        bdialog.add(Box.createHorizontalStrut(10));
-        bdialog.add(bLeft);
-        bdialog.add(Box.createHorizontalStrut(20));
-        bdialog.add(bRight);
-        dialog.add(bdialog, BorderLayout.CENTER);
+        actionPanel.add(btnXoa);
+        actionPanel.add(btnXacNhan);
+        rightPanel.add(actionPanel, BorderLayout.SOUTH);
 
+        // Add panels to main content
+        mainPanel.add(leftPanel);
+        mainPanel.add(rightPanel);
+        dialog.add(mainPanel, BorderLayout.CENTER);
+
+        // ========== FINAL TOUCHES ==========
         dialog.setLocationRelativeTo(null);
         dialog.setResizable(false);
         dialog.setUndecorated(true);
+
+        // Shadow effect
+        dialog.setBackground(new Color(0, 0, 0, 0));
+        ((JComponent)dialog.getContentPane()).setBorder(
+                BorderFactory.createLineBorder(new Color(80, 80, 80), 1)
+        );
+
         dialog.setVisible(true);
 
+        System.out.println("MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong); // Debug
+        if (selectedMaHD == null || selectedMaPhong == null) {
+            JOptionPane.showMessageDialog(dialog,
+                    "Vui lòng chọn một phòng trước khi đặt dịch vụ!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return; // Không đóng dialog
+        }
+        // Load data
         loadDichVuData();
         if (selectedMaHD == null || selectedMaPhong == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trước khi đặt dịch vụ!");
+            JOptionPane.showMessageDialog(dialog,
+                    "Vui lòng chọn một phòng trước khi đặt dịch vụ!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            dialog.dispose();
             return;
         }
-
         loadDichVuDaDat(selectedMaHD, selectedMaPhong);
     }
 
+    // ========== HELPER METHODS ==========
+
+        private JButton createStyledButton(String text, Color bgColor, int width, int height) {
+            JButton button = new JButton(text);
+            button.setFont(FontManager.getManrope(Font.BOLD, 16));
+            button.setForeground(Color.WHITE);
+            button.setBackground(bgColor);
+            button.setFocusPainted(false);
+            button.setBorderPainted(false);
+            button.setOpaque(true);
+            button.setPreferredSize(new Dimension(width, height));
+
+            // Hover effect
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    button.setBackground(bgColor.brighter());
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    button.setBackground(bgColor);
+                }
+            });
+
+            return button;
+        }
+
+    private void customizeTable(JTable table) {
+        table.setBackground(new Color(50, 50, 54));
+        table.setForeground(Color.WHITE);
+        table.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        table.setRowHeight(40);
+        table.setSelectionBackground(new Color(27, 112, 213));
+        table.setSelectionForeground(Color.WHITE);
+        table.setGridColor(new Color(80, 80, 80));
+        table.setDefaultRenderer(Object.class, new CustomCellRenderer());
+        table.setIntercellSpacing(new Dimension(5, 5));
+        table.setShowGrid(true);
+        table.setIntercellSpacing(new Dimension(5, 5)); // Tăng khoảng cách ngang và dọc
+
+        // Header styling
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(new Color(60, 60, 64));
+        header.setForeground(Color.WHITE);
+        header.setFont(FontManager.getManrope(Font.BOLD, 16));
+        header.setPreferredSize(new Dimension(header.getWidth(), 45));
+        header.setReorderingAllowed(false);
+
+        // Cell renderer
+//        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+//            @Override
+//            public Component getTableCellRendererComponent(JTable table, Object value,
+//                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+//                Component c = super.getTableCellRendererComponent(table, value,
+//                        isSelected, hasFocus, row, column);
+//                c.setBackground(row % 2 == 0 ? new Color(50, 50, 54) : new Color(45, 45, 49));
+//                return c;
+//            }
+//        };
+//        renderer.setHorizontalAlignment(SwingConstants.CENTER);
+//
+//        for (int i = 0; i < table.getColumnCount(); i++) {
+//            table.getColumnModel().getColumn(i).setCellRenderer(renderer);
+//        }
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
@@ -453,6 +545,14 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     @Override
     public void mouseClicked(MouseEvent e) {
         // (Giữ nguyên phần code hiện tại hoặc tích hợp với server nếu cần)
+        if (e.getSource() == table) {
+            int row = table.getSelectedRow();
+            if (row != -1) {
+                selectedMaHD = table.getValueAt(row, 0).toString(); // Cột mã hóa đơn
+                selectedMaPhong = table.getValueAt(row, 1).toString(); // Cột mã phòng
+                System.out.println("Selected MaHD: " + selectedMaHD + ", MaPhong: " + selectedMaPhong);
+            }
+        }
     }
 
     @Override
@@ -547,45 +647,97 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     }
 
     private void loadDichVuData() {
+        // Xóa dữ liệu cũ trong bảng
         tableModel1.setRowCount(0);
+        // Tạo yêu cầu gửi đến server
         Request<Void> request = new Request<>("GET_ALL_DICH_VU", null);
+
         try {
+            // Gửi yêu cầu và nhận phản hồi
             SocketManager.send(request);
             Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
             Response<List<DichVuDTO>> response = SocketManager.receiveType(responseType);
 
-            if (response != null && response.isSuccess()) {
-                List<DichVuDTO> dsDichVu = response.getData();
-                if (dsDichVu == null || dsDichVu.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Không có dữ liệu dịch vụ!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
+            // Xử lý phản hồi từ server
+            if (response == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không nhận được phản hồi từ server!",
+                        "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-                DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
-                for (DichVuDTO dv : dsDichVu) {
-                    tableModel1.addRow(new Object[]{
-                            dv.getMaDV(),
-                            dv.getTenDV(),
-                            decimalFormat.format(dv.getDonGia()),
-                            dv.getDonViTinh(),
-                            dv.getMoTa()
-                    });
-                }
-                System.out.println("Loaded " + dsDichVu.size() + " services into table1");
-            } else {
-                JOptionPane.showMessageDialog(this, "Không thể lấy dữ liệu dịch vụ từ server!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            if (!response.isSuccess()) {
+                String errorMsg = response.getData() != null ?
+                        response.getData().toString() : "Lỗi không xác định";
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi từ server: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            List<DichVuDTO> dsDichVu = response.getData();
+            if (dsDichVu == null || dsDichVu.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Không có dữ liệu dịch vụ!",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Định dạng số tiền
+            DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+
+            // Thêm dữ liệu vào bảng
+            for (DichVuDTO dv : dsDichVu) {
+                tableModel1.addRow(new Object[]{
+                        dv.getMaDV(),               // Mã dịch vụ
+                        dv.getTenDV(),              // Tên dịch vụ
+                        decimalFormat.format(dv.getDonGia()) + " VNĐ", // Giá dịch vụ
+                        dv.getDonViTinh(),          // Đơn vị tính
+                        dv.getMoTa()                // Mô tả
+                });
+            }
+
+            // Cập nhật giao diện bảng
+            customizeTableAppearance();
+
+            System.out.println("Đã tải " + dsDichVu.size() + " dịch vụ vào bảng");
+
         } catch (IOException ex) {
+            handleConnectionError(ex);
+        } catch (JsonSyntaxException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Dữ liệu nhận được không hợp lệ: " + ex.getMessage(),
+                    "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
-            int option = JOptionPane.showConfirmDialog(this,
-                    "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
-                    "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
-            if (option == JOptionPane.YES_OPTION) {
-                loadDichVuData();
-            }
         }
-        table1.repaint();
-        table1.revalidate();
+    }
+
+    // Hàm tùy chỉnh giao diện bảng (giữ nguyên)
+    private void customizeTableAppearance() {
+        table1.setBackground(new Color(24, 24, 28));
+        table1.setForeground(Color.WHITE);
+        table1.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        table1.setRowHeight(55);
+        table1.getTableHeader().setFont(FontManager.getManrope(Font.BOLD, 16));
+        table1.getTableHeader().setBackground(new Color(40, 40, 45));
+        table1.getTableHeader().setForeground(Color.WHITE);
+//        table1.setShowHorizontalLines(false);
+        table1.setSelectionBackground(new Color(60, 60, 70));
+    }
+
+    // Hàm xử lý lỗi kết nối (giữ nguyên)
+    private void handleConnectionError(IOException ex) {
+        ex.printStackTrace();
+        int option = JOptionPane.showConfirmDialog(this,
+                "Lỗi kết nối đến server: " + ex.getMessage() +
+                        "\nBạn có muốn thử lại không?",
+                "Lỗi hệ thống",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.ERROR_MESSAGE);
+
+        if (option == JOptionPane.YES_OPTION) {
+            loadDichVuData(); // Thử lại nếu người dùng chọn Yes
+        }
     }
 
     private void loadPhongData() {
@@ -635,7 +787,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
-// 3. Lấy danh sách khách hàng
+            // 3. Lấy danh sách khách hàng
             Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
             Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
             SocketManager.send(khachHangRequest);
@@ -688,16 +840,18 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         continue;
                     }
 
-                    tableModel.addRow(new Object[]{
-                            pdp.getMaPDP(),
-                            phong.getMaLoai() != null ? phong.getMaLoai() : "N/A",
-                            phong.getTenPhong() != null ? phong.getTenPhong() : "N/A",
-                            phong.getMaPhong() != null ? phong.getMaPhong() : "N/A",
-                            getTrangThaiPhong(phong.getTinhTrang()),
-                            tenKhachHang,
-                            formatDate(pdp.getNgayNhanPhongDuKien()),
-                            formatDate(pdp.getNgayTraPhongDuKien())
-                    });
+                    if (phong.getTinhTrang() != 0) {
+                        tableModel.addRow(new Object[]{
+                                pdp.getMaPDP(),
+                                phong.getMaLoai() != null ? phong.getMaLoai() : "N/A",
+                                phong.getTenPhong() != null ? phong.getTenPhong() : "N/A",
+                                phong.getMaPhong() != null ? phong.getMaPhong() : "N/A",
+                                getTrangThaiPhong(phong.getTinhTrang()),
+                                tenKhachHang,
+                                formatDate(pdp.getNgayNhanPhongDuKien()),
+                                formatDate(pdp.getNgayTraPhongDuKien())
+                        });
+                    }
                 }
             }
 
