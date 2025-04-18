@@ -41,7 +41,7 @@ public class PhieuDatPhong {
     private NhanVien nhanVien;
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "phieuDatPhong") // Thêm mappedBy để chỉ định mối quan hệ
+    @OneToMany(mappedBy = "phieuDatPhong", cascade = CascadeType.ALL, orphanRemoval = true) // Thêm mappedBy để chỉ định mối quan hệ
     private Set<Phong> dsPhong;
 
     @ToString.Exclude

@@ -573,7 +573,7 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
             try {
                 SocketManager.send(requestFind);
                 Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
-                Response<java.util.List<DichVuDTO>> responseFind = SocketManager.receive(responseType);
+                Response<java.util.List<DichVuDTO>> responseFind = SocketManager.receive((Class<Response<List<DichVuDTO>>>) responseType);
 
                 if (responseFind != null && responseFind.isSuccess() && !responseFind.getData().isEmpty()) {
                     DichVuDTO dichVuDTO = responseFind.getData().get(0); // Lấy dịch vụ đầu tiên
@@ -582,7 +582,7 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
                     // Gửi yêu cầu cập nhật số lượng tồn
                     Request<DichVuDTO> requestUpdate = new Request<>("SUA_DICH_VU", dichVuDTO);
                     SocketManager.send(requestUpdate);
-                    Response<String> responseUpdate = SocketManager.receive(new TypeToken<Response<String>>(){}.getType());
+                    Response<String> responseUpdate = SocketManager.receive((Class<Response<String>>) new TypeToken<Response<String>>(){}.getType());
 
                     if (responseUpdate == null || !responseUpdate.isSuccess()) {
                         JOptionPane.showMessageDialog(this, "Không thể cập nhật số lượng tồn trên server!");

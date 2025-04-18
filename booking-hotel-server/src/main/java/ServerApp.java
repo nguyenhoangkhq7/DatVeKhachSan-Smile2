@@ -1,16 +1,22 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import model.Request;
 import model.Response;
 import socket.handler.HandlerManager;
+import utils.custom_element.LocalDateAdapter;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
 
 public class ServerApp {
 
     private static final int PORT = 12345;
-    private static final Gson gson = new Gson();
+//    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {

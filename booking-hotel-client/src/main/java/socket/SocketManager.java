@@ -1,16 +1,23 @@
 package socket;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import utils.custom_element.LocalDateAdapter;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.Socket;
+import java.time.LocalDate;
 
 public class SocketManager {
 
     private static Socket socket;
     private static PrintWriter out;
     private static BufferedReader in;
-    private static final Gson gson = new Gson();
+//    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
 
     public static void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -32,5 +39,13 @@ public class SocketManager {
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }
+    }
+    public static String receiveRaw() throws IOException {
+        return in.readLine();
+    }
+    public static <T> T receiveType(Type responseType) throws IOException {
+        String json = in.readLine();
+        System.out.println("RECEIVED JSON: " + json);
+        return gson.fromJson(json, responseType);
     }
 }

@@ -24,6 +24,19 @@ public class HandlerManager {
         handlers.put("SUA_DICH_VU", new DichVuHandler());
         handlers.put("TIM_DICH_VU_THEO_TEN", new DichVuHandler());
         handlers.put("TIM_DICH_VU_NANG_CAO", new DichVuHandler());
+        handlers.put("GET_ALL_KHACH_HANG", new KhachHangHandler());
+        handlers.put("SUA_KHACH_HANG", new KhachHangHandler());
+        handlers.put("TIM_KHACH_HANG_NANG_CAO", new KhachHangHandler());
+        handlers.put("GET_KHACH_HANG_BY_MA_KH", new KhachHangHandler());
+        handlers.put("GET_ALL_PHONG", new PhongHandler());
+        handlers.put("TIM_PHONG_NANG_CAO", new PhongHandler());
+        handlers.put("CREATE_PHIEU_DAT_PHONG", new PhieuDatPhongHandler());
+        handlers.put("READ_PHIEU_DAT_PHONG", new PhieuDatPhongHandler());
+        handlers.put("GET_ALL_PHIEU_DAT_PHONG", new PhieuDatPhongHandler());
+        handlers.put("FIND_PHIEU_BY_CRITERIA", new PhieuDatPhongHandler());
+        handlers.put("FIND_PHIEU_BY_MA_KH", new PhieuDatPhongHandler());
+        handlers.put("GET_PHONG_BY_MA_PHONG", new PhongHandler());
+
 
 
     }

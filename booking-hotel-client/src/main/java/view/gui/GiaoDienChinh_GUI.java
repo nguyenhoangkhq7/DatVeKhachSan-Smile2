@@ -131,7 +131,7 @@ public class GiaoDienChinh_GUI extends JFrame {
 			String[] item = menuItems[i];
 			String[][] subItems = subMenuItems[i];
 
-			RoundedButton menuButton = new RoundedButton(item[0], new ImageIcon("imgs/" + item[2] + "Icon.png"), 5);
+			RoundedButton menuButton = new RoundedButton(item[0], new ImageIcon("booking-hotel-client/src/main/resources/imgs/" + item[2] + "Icon.png"), 5);
 			menuButton.setHorizontalAlignment(SwingConstants.LEFT);
 			menuButton.setIconTextGap(19);
 			menuButton.setFont(FontManager.getManrope(Font.PLAIN, 16));
@@ -205,7 +205,7 @@ public class GiaoDienChinh_GUI extends JFrame {
 			sidebarMenu.add(Box.createVerticalStrut(20));
 		}
 
-		JLabel sidebarLogo = new JLabel(new ImageIcon("imgs/SidebarLogo.png"));
+		JLabel sidebarLogo = new JLabel(new ImageIcon("booking-hotel-client/src/main/resources/imgs/SidebarLogo.png"));
 		sidebarLogo.setAlignmentX(CENTER_ALIGNMENT);
 		sidebar.add(Box.createVerticalStrut(15));
 		sidebar.add(sidebarLogo);
@@ -221,7 +221,7 @@ public class GiaoDienChinh_GUI extends JFrame {
 
 		sidebarMenu.add(Box.createVerticalGlue());
 
-		RoundedButton logoutButton = new RoundedButton("Đăng xuất", new ImageIcon("imgs/LogoutIcon.png"), 5);
+		RoundedButton logoutButton = new RoundedButton("Đăng xuất", new ImageIcon("booking-hotel-client/src/main/resources/imgs/LogoutIcon.png"), 5);
 		logoutButton.setHorizontalAlignment(SwingConstants.LEFT);
 		logoutButton.setIconTextGap(19);
 		logoutButton.setFont(FontManager.getManrope(Font.PLAIN, 16));
@@ -267,7 +267,7 @@ public class GiaoDienChinh_GUI extends JFrame {
 		leftHeader.setBackground(new Color(24, 24, 28));
 		leftHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(45, 45, 48)));
 
-		JLabel phoneIcon = new JLabel(new ImageIcon("imgs/PhoneIcon.png"));
+		JLabel phoneIcon = new JLabel(new ImageIcon("booking-hotel-client/src/main/resources/imgs/PhoneIcon.png"));
 		pageLabel = new JLabel("TRANG CHỦ");
 //		JLabel phoneLabel = new JLabel("1900-1000-0000");
 

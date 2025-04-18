@@ -23,9 +23,17 @@
             <artifactId>gson</artifactId>
         </dependency>
         <!-- Lombok -->
+<!--        <dependency>-->
+<!--            <groupId>org.projectlombok</groupId>-->
+<!--            <artifactId>lombok</artifactId>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>1.18.38</version> <!-- nên thêm version cụ thể -->
+            <scope>provided</scope>
         </dependency>
+
     </dependencies>
 </project>

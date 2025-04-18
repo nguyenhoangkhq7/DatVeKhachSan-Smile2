@@ -69,7 +69,7 @@ public class DangNhap_GUI extends JFrame {
         leftPanel.setBackground(BACKGROUND_COLOR);
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-        ImageIcon logoIcon = new ImageIcon("imgs/Logo.png");
+        ImageIcon logoIcon = new ImageIcon("booking-hotel-client/src/main/resources/imgs/Logo.png");
         JLabel logoLabel = new JLabel(logoIcon);
         logoLabel.setAlignmentX(CENTER_ALIGNMENT);
 

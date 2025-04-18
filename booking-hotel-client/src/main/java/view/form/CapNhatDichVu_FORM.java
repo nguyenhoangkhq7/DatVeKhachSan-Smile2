@@ -365,7 +365,7 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
         try {
             SocketManager.send(request);
             Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive(responseType);
+            Response<String> response = SocketManager.receive((Class<Response<String>>) responseType);
 
             if (response != null && response.isSuccess()) {
                 tableModel.setValueAt(tenDV, selectedRow, 1);
