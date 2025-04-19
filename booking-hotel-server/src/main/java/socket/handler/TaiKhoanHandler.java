@@ -30,15 +30,12 @@ public class TaiKhoanHandler implements RequestHandler {
                 });
 
                 if (!result.isEmpty()) {
-                    int chucVu = result.get(0).getChucVu();
-                    String role = (chucVu == 1) ? "ADMIN" : "NHANVIEN";
-                    return new Response<>(true, role);
+                    NhanVien nhanVien = result.get(0);
+                    return new Response<>(true, nhanVien);
                 } else {
                     return new Response<>(false, null);
                 }
             }
-
-            // các case khác có thể thêm vào đây
         }
 
         return new Response<>(false, null); // mặc định nếu không khớp action nào

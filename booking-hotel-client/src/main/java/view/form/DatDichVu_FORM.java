@@ -1,15 +1,19 @@
 package view.form;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import dto.*;
+import model.NhanVien;
 import model.Request;
 import model.Response;
 import socket.SocketManager;
 import utils.custom_element.*;
 import utils.custom_element.CustomTableCellRenderer;
 import dao.DichVu_DAO;
+import utils.session.SessionManager;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -25,10 +29,9 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 
 class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
@@ -111,31 +114,32 @@ class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
         return currentValue;
     }
 }
-    class QuantityCellRenderer extends JPanel implements TableCellRenderer {
-        private JLabel quantityLabel;
 
-        public QuantityCellRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            setBackground(new Color(50, 50, 54));
-            quantityLabel = new JLabel("", SwingConstants.CENTER);
-            quantityLabel.setFont(FontManager.getManrope(Font.PLAIN, 16));
-            quantityLabel.setForeground(Color.WHITE);
-            add(quantityLabel);
-        }
+class QuantityCellRenderer extends JPanel implements TableCellRenderer {
+    private JLabel quantityLabel;
 
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            quantityLabel.setText(value != null ? value.toString() : "1");
-            if (isSelected) {
-                setBackground(table.getSelectionBackground());
-                quantityLabel.setForeground(table.getSelectionForeground());
-            } else {
-                setBackground(new Color(50, 50, 54));
-                quantityLabel.setForeground(Color.WHITE);
-            }
-            return this;
-        }
+    public QuantityCellRenderer() {
+        setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        setBackground(new Color(50, 50, 54));
+        quantityLabel = new JLabel("", SwingConstants.CENTER);
+        quantityLabel.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        quantityLabel.setForeground(Color.WHITE);
+        add(quantityLabel);
     }
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        quantityLabel.setText(value != null ? value.toString() : "1");
+        if (isSelected) {
+            setBackground(table.getSelectionBackground());
+            quantityLabel.setForeground(table.getSelectionForeground());
+        } else {
+            setBackground(new Color(50, 50, 54));
+            quantityLabel.setForeground(Color.WHITE);
+        }
+        return this;
+    }
+}
 
 public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListener {
     private JButton btnDatDV;
@@ -148,12 +152,12 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
     private JButton btnThem;
     private DefaultTableModel tableModel2;
     private JTable table2;
+    private DefaultTableModel tableModel3; // Thêm tableModel3 cho table3
     private JButton btnLamMoi;
     private JButton btnXacNhan;
     private DichVu_DAO dichVuDao;
     private String selectedMaHD;
     private String selectedMaPhong;
-    private String selectMaPDP;
     private String selectedTenKhach;
     private JButton btnXoa;
     Color backgroundColor = new Color(31, 31, 32);
@@ -256,7 +260,56 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         scroll.getViewport().setOpaque(false);
         scroll.setViewportBorder(null);
         b.add(b2);
-        b.add(Box.createVerticalStrut(300));
+        b.add(Box.createVerticalStrut(5));
+        b.add(Box.createVerticalStrut(20));
+
+        JLabel titleLabel3 = new JLabel("Danh sách phòng đã đặt dịch vụ");
+        titleLabel3.setFont(FontManager.getManrope(Font.BOLD, 16));
+        titleLabel3.setForeground(Color.white);
+
+        RoundedPanel titlePanel3 = new RoundedPanel(10, 0, new Color(27, 112, 213));
+        titlePanel3.setPreferredSize(new Dimension(1642, 50));
+        titlePanel3.setMinimumSize(new Dimension(1642, 50));
+        titlePanel3.setMaximumSize(new Dimension(1642, 50));
+        titlePanel3.setOpaque(false);
+        titlePanel3.setLayout(new BoxLayout(titlePanel3, BoxLayout.X_AXIS));
+
+        titlePanel3.add(Box.createHorizontalStrut(15));
+        titlePanel3.add(titleLabel3);
+        titlePanel3.add(Box.createHorizontalGlue());
+        b.add(titlePanel3);
+        b.add(Box.createVerticalStrut(5));
+
+        Box b3 = Box.createHorizontalBox();
+        String[] colName3 = {"Mã đặt phòng", "Phòng", "Tên khách", "Dịch vụ đã đặt"};
+        tableModel3 = new DefaultTableModel(colName3, 0);
+        JTable table3 = new JTable(tableModel3);
+        JScrollPane scroll3 = new JScrollPane(table3, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scroll3.setPreferredSize(new Dimension(1642, 250)); // Thay setBounds bằng setPreferredSize
+        scroll3.setBorder(null);
+        scroll3.getViewport().setOpaque(false);
+        scroll3.setViewportBorder(null);
+        b3.add(scroll3);
+
+        table3.setBackground(new Color(24, 24, 28));
+        table3.setForeground(Color.WHITE);
+        table3.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        table3.setRowHeight(55);
+
+        JTableHeader header3 = table3.getTableHeader();
+        header3.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
+        header3.setPreferredSize(new Dimension(header3.getPreferredSize().width, 55));
+        header3.setReorderingAllowed(false);
+
+        CustomCellRenderer cellRenderer3 = new CustomCellRenderer();
+        for (int i = 0; i < table3.getColumnCount(); i++) {
+            TableColumn column = table3.getColumnModel().getColumn(i);
+            column.setCellRenderer(cellRenderer3);
+        }
+        loadDichVuDaDatData(); // Thay loadDichVuDaDat() bằng loadDichVuDaDatData()
+
+        b.add(b3);
+        b.add(Box.createVerticalStrut(50));
 
         // Tạo nút
         Box bbutton = Box.createHorizontalBox();
@@ -306,6 +359,146 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             }
         });
         loadPhongData();
+    }
+
+    private void loadDichVuDaDatData() {
+        tableModel3.setRowCount(0);
+
+        try {
+            // Sử dụng API get by maPDP thay vì get all
+            Request<String> request = new Request<>("GET_PHIEU_DAT_DICH_VU_BY_MA_PDP", selectedMaHD);
+            SocketManager.send(request);
+
+            Type responseType = new TypeToken<Response<List<PhieuDatDichVuDTO>>>(){}.getType();
+            Response<List<PhieuDatDichVuDTO>> response = SocketManager.receiveType(responseType);
+
+            if (response == null || !response.isSuccess() || response.getData() == null) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu dịch vụ đã đặt", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            List<PhieuDatDichVuDTO> dsPhieuDatDichVu = response.getData();
+            if (dsPhieuDatDichVu.isEmpty()) {
+                System.out.println("Không có phiếu đặt dịch vụ nào.");
+                return;
+            }
+
+            // Bước 2: Lấy danh sách phiếu đặt phòng
+            Map<String, PhieuDatPhongDTO> phieuDatPhongMap = new HashMap<>();
+            Request<Void> phieuDatPhongRequest = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
+            SocketManager.send(phieuDatPhongRequest);
+            Type phieuDatPhongResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>(){}.getType();
+            Response<List<PhieuDatPhongDTO>> phieuDatPhongResponse = SocketManager.receiveType(phieuDatPhongResponseType);
+
+            if (phieuDatPhongResponse == null || !phieuDatPhongResponse.isSuccess() || phieuDatPhongResponse.getData() == null) {
+                String errorMsg = phieuDatPhongResponse == null ? "Không nhận được phản hồi từ server"
+                        : (phieuDatPhongResponse.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phiếu đặt phòng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<PhieuDatPhongDTO> dsPhieuDatPhong = phieuDatPhongResponse.getData();
+            for (PhieuDatPhongDTO pdp : dsPhieuDatPhong) {
+                phieuDatPhongMap.put(pdp.getMaPDP(), pdp);
+            }
+
+            // Bước 3: Lấy danh sách khách hàng
+            Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
+            Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
+            SocketManager.send(khachHangRequest);
+            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>(){}.getType();
+            Response<List<KhachHangDTO>> khachHangResponse = SocketManager.receiveType(khachHangResponseType);
+
+            if (khachHangResponse == null || !khachHangResponse.isSuccess() || khachHangResponse.getData() == null) {
+                String errorMsg = khachHangResponse == null ? "Không nhận được phản hồi từ server"
+                        : (khachHangResponse.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<KhachHangDTO> dsKhachHang = khachHangResponse.getData();
+            for (KhachHangDTO kh : dsKhachHang) {
+                khachHangMap.put(kh.getMaKH(), kh);
+            }
+
+            // Bước 4: Lấy danh sách dịch vụ
+            Map<String, DichVuDTO> dichVuMap = new HashMap<>();
+            Request<Void> dichVuRequest = new Request<>("GET_ALL_DICH_VU", null);
+            SocketManager.send(dichVuRequest);
+            Type dichVuResponseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
+            Response<List<DichVuDTO>> dichVuResponse = SocketManager.receiveType(dichVuResponseType);
+
+            if (dichVuResponse == null || !dichVuResponse.isSuccess() || dichVuResponse.getData() == null) {
+                String errorMsg = dichVuResponse == null ? "Không nhận được phản hồi từ server"
+                        : (dichVuResponse.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách dịch vụ: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<DichVuDTO> dsDichVu = dichVuResponse.getData();
+            for (DichVuDTO dv : dsDichVu) {
+                dichVuMap.put(dv.getMaDV(), dv);
+            }
+
+            // Bước 5: Điền dữ liệu vào table3
+            for (PhieuDatDichVuDTO pddv : dsPhieuDatDichVu) {
+                if (!pddv.getMaPDP().equals(selectedMaHD)) continue; // Chỉ load theo maPDP đã chọn
+
+                // Lấy thông tin khách hàng
+                KhachHangDTO khachHang = khachHangMap.get(pddv.getMaKH());
+                String tenKhach = khachHang != null ? khachHang.getHoTen() : "Không xác định";
+
+                // Lấy danh sách dịch vụ đã đặt
+                List<String> dsMaDV = pddv.getDsMaDV();
+                StringBuilder dichVuDaDat = new StringBuilder();
+                if (dsMaDV != null && !dsMaDV.isEmpty()) {
+                    for (String maDV : dsMaDV) {
+                        DichVuDTO dichVu = dichVuMap.get(maDV);
+                        if (dichVu != null) {
+                            if (dichVuDaDat.length() > 0) {
+                                dichVuDaDat.append(", ");
+                            }
+                            dichVuDaDat.append(dichVu.getTenDV());
+                        }
+                    }
+                } else {
+                    dichVuDaDat.append("Không có dịch vụ");
+                }
+
+                // Lấy thông tin phiếu đặt phòng
+                PhieuDatPhongDTO pdp = phieuDatPhongMap.get(pddv.getMaPDP());
+                String maPhong = "N/A";
+                if (pdp != null && pdp.getDsMaPhong() != null && !pdp.getDsMaPhong().isEmpty()) {
+                    maPhong = pdp.getDsMaPhong().get(0);
+                }
+
+                tableModel3.addRow(new Object[]{
+                        pddv.getMaPDP(), // Mã đặt phòng
+                        maPhong,
+                        tenKhach,
+                        dichVuDaDat.toString()
+                });
+
+                break; // Nếu bạn chỉ muốn hiển thị 1 dòng duy nhất
+            }
+
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
+                    "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+            if (option == JOptionPane.YES_OPTION) {
+                loadDichVuDaDatData();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void phieuDatDichVu() {
@@ -586,7 +779,6 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         }
 
         loadDichVuData();
-        loadDichVuDaDat(selectedMaHD, selectedMaPhong);
     }
 
     private JButton createStyledButton(String text, Color bgColor, int width, int height) {
@@ -725,7 +917,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 }
 
                 tableModel1.setRowCount(0);
-                DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+                DecimalFormat decimalFormat = new DecimalFormat("#,###.PV");
                 for (DichVuDTO dv : dsDichVu) {
                     tableModel1.addRow(new Object[]{
                             dv.getMaDV(),
@@ -810,6 +1002,75 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         }
     }
 
+    private void loadDichVuDaDat(String maPDP) {
+        tableModel3.setRowCount(0); // Xóa dữ liệu cũ trong table3
+
+        try {
+            // Gửi yêu cầu đến server
+            Request<String> request = new Request<>("GET_PHIEU_DAT_DICH_VU_BY_MA_PDP", maPDP);
+            SocketManager.send(request);
+
+            // Nhận phản hồi
+            Type responseType = new TypeToken<Response<List<PhieuDatDichVuDTO>>>(){}.getType();
+            Response<List<PhieuDatDichVuDTO>> response = SocketManager.receiveType(responseType);
+
+            if (response == null || !response.isSuccess() || response.getData() == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi khi lấy danh sách dịch vụ đã đặt ",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<PhieuDatDichVuDTO> dsPhieuDatDichVu = response.getData();
+            if (dsPhieuDatDichVu.isEmpty()) {
+                return;
+            }
+
+            // Lấy danh sách dịch vụ để ánh xạ tên
+            Map<String, String> dichVuMap = new HashMap<>();
+            Request<Void> dichVuRequest = new Request<>("GET_ALL_DICH_VU", null);
+            SocketManager.send(dichVuRequest);
+            Type dichVuResponseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
+            Response<List<DichVuDTO>> dichVuResponse = SocketManager.receiveType(dichVuResponseType);
+
+            if (dichVuResponse != null && dichVuResponse.isSuccess() && dichVuResponse.getData() != null) {
+                dichVuResponse.getData().forEach(dv -> dichVuMap.put(dv.getMaDV(), dv.getTenDV()));
+            }
+
+            // Hiển thị dữ liệu lên table3
+            for (PhieuDatDichVuDTO pddv : dsPhieuDatDichVu) {
+                StringBuilder dichVuDaDat = new StringBuilder();
+                List<String> dsMaDV = pddv.getDsMaDV();
+
+                if (dsMaDV != null && !dsMaDV.isEmpty()) {
+                    for (String maDV : dsMaDV) {
+                        String tenDV = dichVuMap.getOrDefault(maDV, "Dịch vụ không xác định");
+                        if (dichVuDaDat.length() > 0) {
+                            dichVuDaDat.append(", ");
+                        }
+                        dichVuDaDat.append(tenDV);
+                    }
+                } else {
+                    dichVuDaDat.append("Không có dịch vụ");
+                }
+
+                tableModel3.addRow(new Object[]{
+                        pddv.getMaPDP(),
+                        selectedMaPhong, // Lấy từ biến đã chọn
+                        selectedTenKhach, // Lấy từ biến đã chọn
+                        dichVuDaDat.toString()
+                });
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+
     private void customizeTableAppearance() {
         table1.setBackground(new Color(24, 24, 28));
         table1.setForeground(Color.WHITE);
@@ -839,19 +1100,42 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         tableModel.setRowCount(0);
 
         try {
+            // Gửi yêu cầu lấy danh sách phiếu đặt phòng
             Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
             SocketManager.send(request);
-            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>(){}.getType();
-            Response<List<PhieuDatPhongDTO>> response = SocketManager.receiveType(phieuResponseType);
 
-            if (response == null || !response.isSuccess() || response.getData() == null) {
-                String errorMsg = response == null ? "Không nhận được phản hồi từ server"
-                        : (response.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+            // Nhận JSON gốc từ server
+            String rawJson = SocketManager.receiveRaw();
+            System.out.println("Raw JSON response: " + rawJson);
+
+            // Phân tích JSON để kiểm tra trường "data"
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+                    .create();
+
+            JsonObject jsonObject = gson.fromJson(rawJson, JsonObject.class);
+
+            // Kiểm tra trường "success"
+            if (!jsonObject.has("success") || !jsonObject.get("success").getAsBoolean()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Yêu cầu không thành công";
                 System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
                 JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            // Kiểm tra trường "data" có phải là mảng không
+            if (!jsonObject.has("data") || !jsonObject.get("data").isJsonArray()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Dữ liệu không hợp lệ";
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: Expected array but got: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Nếu "data" là mảng, phân tích thành List<PhieuDatPhongDTO>
+            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>(){}.getType();
+            Response<List<PhieuDatPhongDTO>> response = gson.fromJson(rawJson, phieuResponseType);
 
             List<PhieuDatPhongDTO> dsPhieuDatPhong = response.getData();
             if (dsPhieuDatPhong.isEmpty()) {
@@ -860,6 +1144,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                 return;
             }
 
+            // Lấy danh sách phòng
             Map<String, PhongDTO> phongMap = new HashMap<>();
             Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
             SocketManager.send(phongRequest);
@@ -880,6 +1165,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
+            // Lấy danh sách khách hàng
             Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
             Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
             SocketManager.send(khachHangRequest);
@@ -897,6 +1183,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
+            // Xử lý dữ liệu và thêm vào bảng
             StringBuilder errorMessages = new StringBuilder();
             int errorCount = 0;
 
@@ -949,6 +1236,11 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             }
 
+        } catch (JsonSyntaxException e) {
+            System.out.println("JSON Syntax Error in loadPhongData: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi định dạng dữ liệu từ server: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             System.out.println("Unexpected error in loadPhongData: " + e.getMessage());
             e.printStackTrace();
@@ -973,16 +1265,122 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         }
     }
 
-    private void loadDichVuDaDat(String maHD, String maPhong) {
-        // Giữ nguyên hoặc tích hợp với server nếu cần
-    }
-
     private void lamMoiDichVu() {
         tableModel2.setRowCount(0);
     }
 
     private void xacNhanDichVu() {
-        // Giữ nguyên hoặc tích hợp với server nếu cần
+        System.out.println("Bắt đầu xác nhận dịch vụ...");
+
+        // Kiểm tra điều kiện tiên quyết
+        if (tableModel2.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng thêm ít nhất một dịch vụ trước khi xác nhận!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (selectedMaHD == null || selectedMaHD.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy mã phiếu đặt phòng!",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Lấy thông tin khách hàng
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn khách hàng từ bảng!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Kiểm tra và lấy thông tin nhân viên từ session
+        if (!SessionManager.isUserLoggedIn()) {
+            JOptionPane.showMessageDialog(this,
+                    "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!",
+                    "Lỗi phiên làm việc", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        NhanVien currentUser = SessionManager.getCurrentUser();
+        String maNV = currentUser.getMaNhanVien();
+        String maKH = table.getValueAt(selectedRow, 5).toString();
+
+        // Tạo DTO
+        PhieuDatDichVuDTO phieuDatDichVuDTO = new PhieuDatDichVuDTO();
+        phieuDatDichVuDTO.setMaPDP(selectedMaHD);
+        phieuDatDichVuDTO.setMaKH(maKH);
+        phieuDatDichVuDTO.setMaNV(maNV);
+        phieuDatDichVuDTO.setNgayDatDichVu(LocalDateTime.now());
+
+        // Lấy danh sách mã dịch vụ
+        List<String> dsMaDV = new ArrayList<>();
+        for (int i = 0; i < tableModel2.getRowCount(); i++) {
+            String tenDichVu = tableModel2.getValueAt(i, 0).toString();
+            boolean found = false;
+
+            for (int j = 0; j < tableModel1.getRowCount(); j++) {
+                if (tableModel1.getValueAt(j, 1).toString().equals(tenDichVu)) {
+                    dsMaDV.add(tableModel1.getValueAt(j, 0).toString());
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                JOptionPane.showMessageDialog(this,
+                        "Không tìm thấy mã dịch vụ cho: " + tenDichVu,
+                        "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        phieuDatDichVuDTO.setDsMaDV(dsMaDV);
+
+        // Gửi request
+        try {
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+                    .create();
+
+            System.out.println("Dữ liệu gửi đi: " + gson.toJson(phieuDatDichVuDTO));
+
+            Request<PhieuDatDichVuDTO> request = new Request<>("CREATE_PHIEU_DAT_DICH_VU", phieuDatDichVuDTO);
+            SocketManager.send(request);
+
+            Response<?> response = SocketManager.receive(Response.class);
+            if (response == null) {
+                throw new IOException("Không nhận được phản hồi từ server");
+            }
+
+            System.out.println("Phản hồi từ server: " + gson.toJson(response));
+
+            if (response.isSuccess()) {
+                JOptionPane.showMessageDialog(this,
+                        "Đặt dịch vụ thành công!",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                loadDichVuDaDatData();
+
+                // Đóng dialog
+                Window window = SwingUtilities.getWindowAncestor(this);
+                if (window != null) {
+                    window.dispose();
+                }
+            } else {
+                throw new Exception("Lỗi từ server: " + (response.getData() != null ? response.getData().toString() : "Không có thông tin lỗi"));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage(),
+                    "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi hệ thống: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void themDichVu() {

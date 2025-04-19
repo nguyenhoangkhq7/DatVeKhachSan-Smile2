@@ -97,7 +97,7 @@ public class DataGenerator {
 //        return phong;
 //    }
 
-    private Phong generatePhong(LoaiPhong loaiPhong, PhieuDatPhong phieuDatPhong) {
+    private Phong generatePhong(LoaiPhong loaiPhong) {
         Phong phong = new Phong();
         phong.setMaPhong("PH" + faker.number().numberBetween(1000, 9999));
         phong.setTenPhong("Phòng " + faker.number().numberBetween(1, 100));
@@ -106,7 +106,6 @@ public class DataGenerator {
         phong.setMoTa(faker.lorem().sentence(10));
         phong.setSoNguoi(faker.number().numberBetween(1, 6));
         phong.setLoaiPhong(loaiPhong);
-        phong.setPhieuDatPhong(phieuDatPhong); // Thiết lập quan hệ với phiếu đặt phòng
 
         // Tạo các phiếu giảm giá nếu cần
         Set<PhieuGiamGia> dsPGG = new HashSet<>();
@@ -147,23 +146,29 @@ public class DataGenerator {
 //        return pddv;
 //    }
 
-    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv) {
+
+    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv, PhieuDatPhong pdp, HoaDon hd) {
         PhieuDatDichVu pddv = new PhieuDatDichVu();
-//        pddv.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
         pddv.setMaPDDV("PDDV" + UUID.randomUUID().toString().substring(0, 8));
         pddv.setNgayDatDichVu(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
         pddv.setSoLuongDichVu(faker.number().numberBetween(1, 5));
         pddv.setMoTa(faker.lorem().sentence());
         pddv.setNhanVien(nv);
         pddv.setKhachHang(kh);
+        pddv.setPhieuDatPhong(pdp); // Thiết lập quan hệ với phiếu đặt phòng
+        pddv.setHoaDon(hd); // Thiết lập quan hệ với hóa đơn
 
         Set<DichVu> dsDV = new HashSet<>();
         for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
             DichVu dv = generateDichVu();
-            dv.setPhieuDatDichVu(pddv);
+            em.persist(dv); // Lưu dịch vụ trước
             dsDV.add(dv);
         }
-        pddv.setDsDichVu(dsDV);
+        pddv.setDichVus(dsDV);
+
+        // Thêm phiếu đặt dịch vụ vào danh sách của phiếu đặt phòng
+        pdp.getPhieuDatDichVus().add(pddv);
+
         return pddv;
     }
 
@@ -183,40 +188,46 @@ public class DataGenerator {
 //    }
     private PhieuDatPhong generatePhieuDatPhong(KhachHang kh, NhanVien nv, LoaiPhong lp) {
         PhieuDatPhong pdp = new PhieuDatPhong();
-        pdp.setMaPDP("PDP" + faker.number().numberBetween(1000, 9999));
+        pdp.setMaPDP("PDP" + UUID.randomUUID().toString().substring(0, 8));
         pdp.setNgayDatPhong(LocalDate.now().minusDays(faker.number().numberBetween(1, 30)));
         pdp.setNgayNhanPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(1, 10)));
         pdp.setNgayTraPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(11, 20)));
         pdp.setKhachHang(kh);
         pdp.setNhanVien(nv);
+        pdp.setPhieuDatDichVus(new HashSet<>()); // Khởi tạo danh sách phiếu đặt dịch vụ
 
-        // Tạo danh sách phòng và thiết lập quan hệ hai chiều
         Set<Phong> dsPhong = new HashSet<>();
         int soPhong = faker.number().numberBetween(1, 4); // Mỗi phiếu đặt 1-3 phòng
-
         for (int i = 0; i < soPhong; i++) {
-            Phong phong = generatePhong(lp, pdp);
+            Phong phong = generatePhong(lp); // Chỉ truyền LoaiPhong lp
+            em.persist(phong); // Lưu phòng trước
             dsPhong.add(phong);
         }
+        pdp.setPhongs(dsPhong);
 
-        pdp.setDsPhong(dsPhong);
         return pdp;
     }
 
     private HoaDon generateHoaDon(KhachHang kh, PhieuDatPhong pdp, NhanVien nv) {
         HoaDon hd = new HoaDon();
-        hd.setMaHD("HD" + faker.number().numberBetween(1000, 9999));
+        hd.setMaHD("HD" + UUID.randomUUID().toString().substring(0, 8));
         hd.setNgayLapHD(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
         hd.setNgayNhanPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(1, 10)));
         hd.setNgayTraPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(11, 20)));
-        hd.setSoPhongDat(faker.number().numberBetween(1, 5));
+        hd.setSoPhongDat(pdp.getPhongs().size());
         hd.setKhachHang(kh);
         hd.setPhieuDatPhong(pdp);
         hd.setNhanVien(nv);
 
+        // Thiết lập quan hệ hai chiều
+        pdp.setHoaDon(hd);
+
+        // Tạo các phiếu đặt dịch vụ liên quan
         Set<PhieuDatDichVu> dsPDDV = new HashSet<>();
-        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
-            dsPDDV.add(generatePhieuDatDichVu(kh, nv));
+        int soPDDV = faker.number().numberBetween(1, 3);
+        for (int i = 0; i < soPDDV; i++) {
+            PhieuDatDichVu pddv = generatePhieuDatDichVu(kh, nv, pdp, hd);
+            dsPDDV.add(pddv);
         }
         hd.setDsPhieuDatDichVu(dsPDDV);
 
@@ -274,15 +285,13 @@ public class DataGenerator {
                 PhieuDatPhong pdp = generatePhieuDatPhong(kh, nv, lp);
                 em.persist(pdp);
 
-                // Persist các phòng (đã được persist tự động do cascade)
-
                 // Tạo hóa đơn và các dịch vụ liên quan
                 HoaDon hd = generateHoaDon(kh, pdp, nv);
                 for (PhieuDatDichVu pddv : hd.getDsPhieuDatDichVu()) {
-                    for (DichVu dv : pddv.getDsDichVu()) em.persist(dv);
-                    em.persist(pddv);
+                    em.persist(pddv); // Lưu phiếu đặt dịch vụ
                 }
                 em.persist(hd);
+
                 tr.commit();
             } catch (Exception e) {
                 if (tr.isActive()) tr.rollback();

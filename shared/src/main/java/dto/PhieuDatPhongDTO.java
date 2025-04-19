@@ -19,5 +19,5 @@ public class PhieuDatPhongDTO {
     private LocalDate ngayDatPhong;
     private LocalDate ngayNhanPhongDuKien;
     private LocalDate ngayTraPhongDuKien;
-
+    private String maHD;
 }

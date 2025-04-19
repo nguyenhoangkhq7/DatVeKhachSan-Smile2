@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import javax.swing.UIManager;
 
 import socket.SocketManager;
+import view.form.DatDichVu_FORM;
 import view.gui.DangNhap_GUI;
 import view.gui.GiaoDienChinh_GUI;
 
@@ -16,7 +17,7 @@ public class ClientApp {
        } catch (Exception e) {
            e.printStackTrace();
        }
-//		new DangNhap_GUI();
-		new GiaoDienChinh_GUI();
+		new DangNhap_GUI();
+//		new GiaoDienChinh_GUI();
 	}
 }

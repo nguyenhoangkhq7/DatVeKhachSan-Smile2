@@ -1,6 +1,5 @@
 package dao;
 
-
 import dto.PhieuDatPhongDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.*;
@@ -56,9 +55,14 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<PhieuDatPhong> cq = cb.createQuery(PhieuDatPhong.class);
             Root<PhieuDatPhong> root = cq.from(PhieuDatPhong.class);
-            root.fetch("dsPhong", JoinType.LEFT); // Eager fetch dsPhong
 
-            cq.select(root);
+            // Fetch các liên kết cần thiết
+            root.fetch("phongs", JoinType.LEFT);
+            root.fetch("khachHang", JoinType.LEFT);
+            root.fetch("nhanVien", JoinType.LEFT);
+            root.fetch("phieuDatDichVus", JoinType.LEFT);
+
+            cq.select(root).distinct(true);
 
             List<PhieuDatPhong> resultList = em.createQuery(cq).getResultList();
             return resultList.stream()
@@ -69,6 +73,7 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             em.close();
         }
     }
+
 
     // Find by maKH
     public List<PhieuDatPhongDTO> findByMaKH(String maKH) {
@@ -105,7 +110,7 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             }
 
             if (soPhongDat != null) {
-                predicates.add(cb.equal(cb.size(root.get("dsPhong")), soPhongDat));
+                predicates.add(cb.equal(cb.size(root.get("phongs")), soPhongDat)); // Sửa dsPhong thành phongs
             }
 
             cq.select(root).where(predicates.toArray(new Predicate[0]));
@@ -117,4 +122,3 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
         }
     }
 }
-

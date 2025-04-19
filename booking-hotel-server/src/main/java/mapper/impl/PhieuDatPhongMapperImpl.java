@@ -2,6 +2,7 @@ package mapper.impl;
 
 import dto.PhieuDatPhongDTO;
 import mapper.GenericMapper;
+import model.HoaDon;
 import model.KhachHang;
 import model.NhanVien;
 import model.PhieuDatPhong;
@@ -17,19 +18,21 @@ public class PhieuDatPhongMapperImpl implements GenericMapper<PhieuDatPhong, Phi
     @Override
     public PhieuDatPhongDTO toDTO(PhieuDatPhong entity) {
         if (entity == null) return null;
+
         return new PhieuDatPhongDTO(
                 entity.getMaPDP(),
                 entity.getKhachHang() != null ? entity.getKhachHang().getMaKH() : null,
                 entity.getNhanVien() != null ? entity.getNhanVien().getMaNhanVien() : null,
-                entity.getDsPhong() != null
-                        ? entity.getDsPhong().stream()
+                entity.getPhongs() != null
+                        ? entity.getPhongs().stream()
                         .filter(phong -> phong != null && phong.getMaPhong() != null)
                         .map(Phong::getMaPhong)
                         .collect(Collectors.toList())
                         : Collections.emptyList(),
                 entity.getNgayDatPhong(),
                 entity.getNgayNhanPhongDuKien(),
-                entity.getNgayTraPhongDuKien()
+                entity.getNgayTraPhongDuKien(),
+                entity.getHoaDon() != null ? entity.getHoaDon().getMaHD() : null // Ánh xạ maHD
         );
     }
 
@@ -53,7 +56,7 @@ public class PhieuDatPhongMapperImpl implements GenericMapper<PhieuDatPhong, Phi
         }
 
         if (dto.getDsMaPhong() != null) {
-            Set<Phong> dsPhong = dto.getDsMaPhong().stream()
+            Set<Phong> phongs = dto.getDsMaPhong().stream()
                     .filter(ma -> ma != null && !ma.isEmpty())
                     .map(ma -> {
                         Phong p = new Phong();
@@ -61,12 +64,18 @@ public class PhieuDatPhongMapperImpl implements GenericMapper<PhieuDatPhong, Phi
                         return p;
                     })
                     .collect(Collectors.toSet());
-            phieu.setDsPhong(dsPhong);
+            phieu.setPhongs(phongs); // Sửa setDsPhong thành setPhongs
         }
 
         phieu.setNgayDatPhong(dto.getNgayDatPhong());
         phieu.setNgayNhanPhongDuKien(dto.getNgayNhanPhongDuKien());
         phieu.setNgayTraPhongDuKien(dto.getNgayTraPhongDuKien());
+
+        if (dto.getMaHD() != null) {
+            HoaDon hoaDon = new HoaDon();
+            hoaDon.setMaHD(dto.getMaHD());
+            phieu.setHoaDon(hoaDon); // Ánh xạ maHD
+        }
 
         return phieu;
     }

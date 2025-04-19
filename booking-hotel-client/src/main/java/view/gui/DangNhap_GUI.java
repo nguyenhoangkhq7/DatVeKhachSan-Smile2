@@ -1,7 +1,13 @@
 package view.gui;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import dto.LoginResponse;
+import dto.NhanVienDTO;
 import dto.TaiKhoanDTO;
+import mapper.GenericMapper;
+import mapper.impl.NhanVienMapperImpl;
+import model.NhanVien;
 import model.Request;
 import model.Response;
 import socket.SocketManager;
@@ -10,6 +16,7 @@ import utils.custom_element.FontManager;
 import utils.custom_element.RoundedPanel;
 import dao.TaiKhoan_DAO;
 import model.TaiKhoan;
+import utils.session.SessionManager;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -18,6 +25,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.*;
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -189,42 +197,46 @@ public class DangNhap_GUI extends JFrame {
                     String tenDN = userField.getText();
                     String matKhau = new String(passField.getPassword());
 
-                    try (Socket socket = new Socket("localhost", 1234);
-                         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                    try {
+                        // Tạo DTO gửi lên server
+                        TaiKhoanDTO dto = new TaiKhoanDTO();
+                        dto.setTenDN(tenDN);
+                        dto.setMatKhau(matKhau);
 
-                        // Dùng Gson để tạo JSON yêu cầu đăng nhập
-                        Gson gson = new Gson();
-                        Map<String, String> request = new HashMap<>();
-                        request.put("action", "dangNhap");
-                        request.put("username", tenDN);
-                        request.put("password", matKhau);
-                        String jsonRequest = gson.toJson(request);
-                        out.println(jsonRequest);  // Gửi yêu cầu dưới dạng JSON
+                        // Tạo request gửi đi
+                        Request<TaiKhoanDTO> request = new Request<>("DANG_NHAP", dto);
+                        SocketManager.send(request);
 
-                        // Nhận phản hồi từ server (dạng JSON, chứa role)
-                        String jsonResponse = in.readLine();
-                        Map<String, String> response = gson.fromJson(jsonResponse, Map.class);
-                        String role = response.get("role");
+                        // Nhận phản hồi (trả về NhanVien nếu đúng)
+                        Response<NhanVien> response = SocketManager.receive(Response.class);
 
-                        if (role != null) {
-                            if ("ADMIN".equals(role)) {
-                                new GiaoDienChinh_GUI();
+                        if (response != null && response.isSuccess() && response.getData() != null) {
+                            NhanVien nhanVien = response.getData();
+                            SessionManager.setCurrentUser(nhanVien);  // Lưu user
+
+                            if (nhanVien.getChucVu() == 1) {
+                                new GiaoDienChinh_GUI(); // ADMIN
                             } else {
-                                new GiaoDienNhanVien_GUI();
+                                new GiaoDienNhanVien_GUI(); // NHÂN VIÊN
                             }
+
                             dispose();
                         } else {
-                            JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tên đăng nhập hoặc mật khẩu không đúng!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(DangNhap_GUI.this,
+                                    "Tên đăng nhập hoặc mật khẩu không đúng!",
+                                    "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
                         }
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Lỗi kết nối tới server!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(DangNhap_GUI.this,
+                                "Lỗi kết nối tới server!",
+                                "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
         });
+
 
 
         rightPanel.addMouseListener(new MouseAdapter() {
@@ -257,44 +269,58 @@ public class DangNhap_GUI extends JFrame {
                 String tenDN = userField.getText();
                 String matKhau = new String(passField.getPassword());
 
-                // Gửi thông tin đăng nhập lên server
+                // Gửi thông tin đăng nhập
                 TaiKhoanDTO taiKhoanDTO = new TaiKhoanDTO(tenDN, matKhau);
                 Request<TaiKhoanDTO> request = new Request<>("DANG_NHAP", taiKhoanDTO);
-                SocketManager.send(request); // Gửi object Request
+                SocketManager.send(request);
 
                 try {
-                    Response<String> response = SocketManager.receive(Response.class);
+                    // Nhận response từ server
+                    java.lang.reflect.Type responseType = new TypeToken<Response<LoginResponse>>() {
+                    }.getType();
+                    Response<LoginResponse> response = SocketManager.receiveType(responseType);
 
-                    if (response != null && response.isSuccess()) {
-                        String role = response.getData(); // ADMIN hoặc NHANVIEN
-
-                        if ("ADMIN".equals(role)) {
-                            new GiaoDienChinh_GUI();
-                        } else if ("NHANVIEN".equals(role)) {
-                            new GiaoDienNhanVien_GUI();
-                        } else {
-                            JOptionPane.showMessageDialog(DangNhap_GUI.this,
-                                    "Phân quyền không hợp lệ!",
-                                    "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-
-                        dispose(); // Đóng giao diện đăng nhập sau khi vào thành công
-
-                    } else {
-                        JOptionPane.showMessageDialog(DangNhap_GUI.this,
-                                "Tên đăng nhập hoặc mật khẩu không đúng!",
-                                "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                    if (response == null || !response.isSuccess() || response.getData() == null) {
+                        JOptionPane.showMessageDialog(DangNhap_GUI.this, "Đăng nhập thất bại. Vui lòng thử lại!", "Lỗi đăng nhập", JOptionPane.ERROR_MESSAGE);
+                        return;
                     }
 
+                    LoginResponse loginData = response.getData();
+
+                    // Debug: In ra dữ liệu nhận được
+                    System.out.println("Dữ liệu đăng nhập: " + new Gson().toJson(loginData));
+
+                    // Lưu thông tin đăng nhập vào session
+                    NhanVien nhanVien = new NhanVien();
+                    nhanVien.setMaNhanVien(loginData.getMaNV());
+                    nhanVien.setHoTen(loginData.getTenNV());
+                    nhanVien.setChucVu(loginData.getChucVu());
+                    SessionManager.setCurrentUser(nhanVien);
+
+                    // Phân quyền
+                    switch (loginData.getChucVu()) {
+                        case 1: // Admin
+                            new GiaoDienChinh_GUI();
+                            break;
+                        case 2: // Lễ tân
+                            new GiaoDienNhanVien_GUI();
+                            break;
+                        case 3: // Quản lý
+                            new GiaoDienNhanVien_GUI();
+                            break;
+                        default:
+                            JOptionPane.showMessageDialog(DangNhap_GUI.this, "Tài khoản không có quyền truy cập!", "Lỗi phân quyền", JOptionPane.ERROR_MESSAGE);
+                            return;
+                    }
+
+                    dispose(); // Đóng màn hình đăng nhập
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Lỗi kết nối đến server!", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(DangNhap_GUI.this,
-                            "Lỗi kết nối đến server!",
-                            "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-                }
-
-            }
+                    JOptionPane.showMessageDialog(DangNhap_GUI.this, "Lỗi xử lý dữ liệu: " + ex.getMessage(), "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+                }}
         });
 
 

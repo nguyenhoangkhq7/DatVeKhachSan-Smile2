@@ -3,11 +3,13 @@ package socket;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import utils.custom_element.LocalDateAdapter;
+import utils.custom_element.LocalDateTimeAdapter;
 
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class SocketManager {
 
@@ -17,6 +19,8 @@ public class SocketManager {
 //    private static final Gson gson = new Gson();
     private static final Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+            .serializeNulls()
             .create();
 
     public static void connect(String host, int port) throws IOException {
@@ -48,4 +52,5 @@ public class SocketManager {
         System.out.println("RECEIVED JSON: " + json);
         return gson.fromJson(json, responseType);
     }
+
 }
