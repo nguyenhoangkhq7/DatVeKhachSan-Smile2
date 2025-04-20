@@ -1,15 +1,16 @@
 package socket.handler;
 
+import dao.GenericDAO;
 import dao.PhieuDatDichVu_DAO;
 import dto.PhieuDatDichVuDTO;
-import mapper.impl.PhieuDatDichVuMapperImpl;
-import model.PhieuDatDichVu;
-import model.Request;
-import model.Response;
+import model.*;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
+
 
 public class PhieuDatDichVuHandler implements RequestHandler {
 
@@ -83,17 +84,50 @@ public class PhieuDatDichVuHandler implements RequestHandler {
                         }
                         return handleGetByNgayDatRange(range);
 
-                    case "GET_PHIEU_DAT_DICH_VU_BY_MA_PDP":
-                        String maPDP = (String) request.getData();
-                        if (maPDP == null || maPDP.isEmpty()) {
-                            System.out.println("GET_PHIEU_DAT_DICH_VU_BY_MA_PDP failed: Mã PDP không hợp lệ");
-                            return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ" + maPDP);
-                        }
-                        System.out.println("Handling GET_PHIEU_DAT_DICH_VU_BY_MA_PDP for maPDP: " + maPDP);
-                        return handleGetByMaPDP(maPDP);
+//                    case "GET_PHIEU_DAT_DICH_VU_BY_MA_PDP":
+//                        String maPDP = (String) request.getData();
+//                        if (maPDP == null || maPDP.isEmpty()) {
+//                            System.out.println("GET_PHIEU_DAT_DICH_VU_BY_MA_PDP failed: Mã PDP không hợp lệ");
+//                            return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ" + maPDP);
+//                        }
+//                        System.out.println("Handling GET_PHIEU_DAT_DICH_VU_BY_MA_PDP for maPDP: " + maPDP);
+//                        return handleGetByMaPDP(maPDP);
+
+                    case "GET_ALL_PHONG_DAT_DICHVU":
+                        @SuppressWarnings("unchecked")
+                        List<String> maPDPList = (List<String>) request.getData();
+
+                        GenericDAO<PhieuDatDichVu> pddvDAO = new GenericDAO<>(PhieuDatDichVu.class);
+                        List<PhieuDatDichVu> danhSachPhieuDatDichVu = pddvDAO.findByCondition(pddv ->
+                                pddv.getPhieuDatPhong() != null &&
+                                        maPDPList.contains(pddv.getPhieuDatPhong().getMaPDP())
+                        );
+
+                        List<String[]> resultList = new ArrayList<>();
+
+                        for (PhieuDatDichVu pddv : danhSachPhieuDatDichVu) {
+                            String maPDP = pddv.getPhieuDatPhong().getMaPDP();
+                            String tenKhachHang = pddv.getKhachHang().getHoTen();
+
+                            Set<Phong> danhSachPhong = pddv.getPhieuDatPhong().getPhongs();
+                            Set<DichVu> danhSachDichVu = pddv.getDichVus();
+
+                            for (Phong phong : danhSachPhong) {
+                                String maPhong = phong.getMaPhong();
+                                for (DichVu dv : danhSachDichVu) {
+                                    String tenDV = dv.getTenDV();
+                                    resultList.add(new String[]{maPDP, maPhong, tenKhachHang, tenDV});
+                                }
+                            }
+
+                        String[][] resultArray = resultList.toArray(new String[0][]);
+                        return new Response<>(true, resultArray);
+                    }
 
 
-                    default:
+                return new Response<>(false, null);
+
+                default:
                         return new Response<>(false, null);
                 }
             } catch (Exception e) {
@@ -106,7 +140,38 @@ public class PhieuDatDichVuHandler implements RequestHandler {
             return new Response<>(true, dtos);
         }
 
-        private Response<PhieuDatDichVuDTO> handleGetById(String id) {
+        // Giả sử đây là nơi xử lý lệnh GET_ALL_PHONG_DAT_DICHVU
+        public Response<String[][]> getAllPhongDatDichVu() {
+            List<PhieuDatDichVu> danhSachPhieuDatDichVu = new GenericDAO<>(PhieuDatDichVu.class).findAll(); // hoặc truy vấn có điều kiện
+
+            List<String[]> ketQua = new ArrayList<>();
+
+            for (PhieuDatDichVu pddv : danhSachPhieuDatDichVu) {
+                String maPDP = pddv.getPhieuDatPhong().getMaPDP();
+                String tenKhachHang = pddv.getKhachHang().getHoTen();
+
+                Set<Phong> phongSet = pddv.getPhieuDatPhong().getPhongs();
+                Set<DichVu> dichVuSet = pddv.getDichVus();
+
+                for (Phong phong : phongSet) {
+                    for (DichVu dichVu : dichVuSet) {
+                        String[] dong = new String[]{
+                                maPDP,
+                                phong.getMaPhong(),       // cần có getter trong lớp Phong
+                                tenKhachHang,
+                                dichVu.getTenDV()
+                        };
+                        ketQua.add(dong);
+                    }
+                }
+            }
+
+            String[][] resultArray = ketQua.toArray(new String[0][]);
+            return new Response<>(true, resultArray);
+        }
+
+
+    private Response<PhieuDatDichVuDTO> handleGetById(String id) {
             PhieuDatDichVuDTO dto = dao.read(id);
             if (dto == null) {
                 return new Response<>(false, null);

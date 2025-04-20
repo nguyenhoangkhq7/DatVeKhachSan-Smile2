@@ -17,11 +17,6 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString
 
-// mình đổi từ camelCase bên java qua snakecase bên sql nha
-              // camelCase
-            // snake_case
-            // PascalCase
-            // KHACH_HANG
 @Table(name = "khach_hang")
 public class KhachHang {
 
