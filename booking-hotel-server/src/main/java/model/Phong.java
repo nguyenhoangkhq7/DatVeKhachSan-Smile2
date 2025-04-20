@@ -40,8 +40,10 @@ public class Phong {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.PERSIST)
+//    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "ma_loai_phong")
+//    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     private LoaiPhong loaiPhong;
 
     // có cái bảng phụ là Phong_PGG

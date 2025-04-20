@@ -15,4 +15,13 @@ public class DichVuDTO {
     private double donGia;
     private String donViTinh;
     private String moTa;
+
+    public String getMaDV() {
+        return maDV;
+    }
+
+    public void setMaDV(String maDV) {
+        this.maDV = maDV;
+    }
+
 }

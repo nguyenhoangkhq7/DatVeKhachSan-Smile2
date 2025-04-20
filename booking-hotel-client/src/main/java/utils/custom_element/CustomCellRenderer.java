@@ -1,6 +1,6 @@
 package utils.custom_element;
 
-import java.awt.Component;
+import java.awt.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -16,6 +16,15 @@ public class CustomCellRenderer extends DefaultTableCellRenderer {
         if (c instanceof JComponent) {
             ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         }
+        if (isSelected) {
+            c.setBackground(new Color(27, 112, 213)); // Màu xanh khi chọn
+            c.setForeground(Color.WHITE);
+        } else {
+            c.setBackground(new Color(40, 40, 44)); // Màu nền mặc định
+            c.setForeground(Color.WHITE);
+        }
         return c;
     }
+
+
 }

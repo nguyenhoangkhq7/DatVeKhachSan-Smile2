@@ -18,7 +18,8 @@ public class PhieuDatDichVuDTO {
     private String moTa;
     private String maKH;
     private String maNV;
+    private String maPDP;
     private List<String> dsMaDV;
-
+    private String maHD;
 }
 

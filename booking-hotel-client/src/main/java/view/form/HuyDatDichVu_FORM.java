@@ -1,5 +1,10 @@
 package view.form;
 
+import com.google.gson.reflect.TypeToken;
+import dto.DichVuDTO;
+import model.Request;
+import model.Response;
+import socket.SocketManager;
 import utils.custom_element.*;
 
 import javax.swing.*;
@@ -10,9 +15,12 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.util.List;
 
 public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseListener {
     private JButton btnDatDV;
@@ -545,80 +553,64 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
 //        }
     }
     private void huyDatDichVu() {
-//        int[] selectedRows = table2.getSelectedRows(); // Lấy các hàng được chọn
-//        if (selectedRows.length == 0) {
-//            JOptionPane.showMessageDialog(this, "Vui lòng chọn ít nhất một dịch vụ để hủy!");
-//            return;
-//        }
-//
-//        if (selectedMaHD == null || selectedMaPhong == null) {
-//            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trước khi hủy dịch vụ!");
-//            return;
-//        }
-//
-//        Connection connection = ConnectDB.getConnection();
-//        if (connection == null) {
-//            JOptionPane.showMessageDialog(this, "Không thể kết nối cơ sở dữ liệu!");
-//            return;
-//        }
-//
-//        try {
-//            String getMaDVQuery = "SELECT maDV FROM DichVu WHERE tenDV = ?";
-//            String updateQuery = """
-//        UPDATE ChiTietHoaDon
-//        SET soLuongDV = 0
-//        WHERE maHD = ? AND maPhong = ? AND maDV = ?
-//        """;
-//            String updateSoLuongTonQuery = "UPDATE DichVu SET soLuongTon = soLuongTon + ? WHERE maDV = ?";
-//
-//            var getMaDVStatement = connection.prepareStatement(getMaDVQuery);
-//            var updateStatement = connection.prepareStatement(updateQuery);
-//            var updateSoLuongTonStatement = connection.prepareStatement(updateSoLuongTonQuery);
-//
-//            // Lặp qua các hàng được chọn trong table2
-//            for (int row : selectedRows) {
-//                String tenDV = tableModel2.getValueAt(row, 0).toString(); // Lấy tên dịch vụ
-//                int soLuongDV = Integer.parseInt(tableModel2.getValueAt(row, 1).toString()); // Lấy số lượng dịch vụ
-//
-//                // Truy vấn mã dịch vụ (maDV) từ tên dịch vụ
-//                getMaDVStatement.setString(1, tenDV);
-//                var maDVResult = getMaDVStatement.executeQuery();
-//                if (!maDVResult.next()) {
-//                    JOptionPane.showMessageDialog(this, "Không tìm thấy mã dịch vụ cho: " + tenDV);
-//                    return; // Dừng nếu không tìm thấy mã dịch vụ
-//                }
-//                String maDV = maDVResult.getString("maDV"); // Lấy mã dịch vụ
-//
-//                // Cập nhật số lượng dịch vụ về 0 trong bảng ChiTietHoaDon
-//                updateStatement.setString(1, selectedMaHD);
-//                updateStatement.setString(2, selectedMaPhong);
-//                updateStatement.setString(3, maDV);
-//                updateStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
-//
-//                // Cập nhật lại số lượng tồn kho của dịch vụ trong bảng DichVu
-//                updateSoLuongTonStatement.setInt(1, soLuongDV);
-//                updateSoLuongTonStatement.setString(2, maDV);
-//                updateSoLuongTonStatement.addBatch(); // Thêm vào batch để xử lý hàng loạt
-//            }
-//
-//            // Thực thi batch cập nhật
-//            updateStatement.executeBatch();
-//            updateSoLuongTonStatement.executeBatch();
-//
-//            JOptionPane.showMessageDialog(this, "Hủy dịch vụ thành công!");
-//
-//            // Xóa các hàng đã chọn khỏi tableModel2 (chỉ xóa từ giao diện, không xóa từ cơ sở dữ liệu)
-//            for (int i = selectedRows.length - 1; i >= 0; i--) {
-//                tableModel2.removeRow(selectedRows[i]);
-//            }
-//
-//            // Làm mới giao diện để hiển thị lại dòng giữ chỗ nếu cần
-//            loadDichVuDaDat(selectedMaHD, selectedMaPhong);
-//
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//            JOptionPane.showMessageDialog(this, "Lỗi khi hủy dịch vụ! Lỗi SQL: " + ex.getMessage());
-//        }
+        int[] selectedRows = table2.getSelectedRows();
+        if (selectedRows.length == 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn ít nhất một dịch vụ để hủy!");
+            return;
+        }
+
+        if (selectedMaHD == null || selectedMaPhong == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trước khi hủy dịch vụ!");
+            return;
+        }
+
+        for (int row : selectedRows) {
+            String tenDV = tableModel2.getValueAt(row, 0).toString();
+            int soLuongDV = Integer.parseInt(tableModel2.getValueAt(row, 1).toString());
+
+            // Tìm thông tin dịch vụ từ table2 hoặc server
+            Request<String> requestFind = new Request<>("TIM_DICH_VU_THEO_TEN", tenDV);
+            try {
+                SocketManager.send(requestFind);
+                Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
+                Response<java.util.List<DichVuDTO>> responseFind = SocketManager.receive((Class<Response<List<DichVuDTO>>>) responseType);
+
+                if (responseFind != null && responseFind.isSuccess() && !responseFind.getData().isEmpty()) {
+                    DichVuDTO dichVuDTO = responseFind.getData().get(0); // Lấy dịch vụ đầu tiên
+//                    dichVuDTO.setSoLuongTon(dichVuDTO.getSoLuongTon() + soLuongDV); // Tăng số lượng tồn
+
+                    // Gửi yêu cầu cập nhật số lượng tồn
+                    Request<DichVuDTO> requestUpdate = new Request<>("SUA_DICH_VU", dichVuDTO);
+                    SocketManager.send(requestUpdate);
+                    Response<String> responseUpdate = SocketManager.receive((Class<Response<String>>) new TypeToken<Response<String>>(){}.getType());
+
+                    if (responseUpdate == null || !responseUpdate.isSuccess()) {
+                        JOptionPane.showMessageDialog(this, "Không thể cập nhật số lượng tồn trên server!");
+                        return;
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin dịch vụ: " + tenDV);
+                    return;
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                int option = JOptionPane.showConfirmDialog(this,
+                        "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
+                        "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+                if (option == JOptionPane.YES_OPTION) {
+                    huyDatDichVu();
+                }
+                return;
+            }
+        }
+
+        // Xóa các hàng đã chọn khỏi giao diện
+        for (int i = selectedRows.length - 1; i >= 0; i--) {
+            tableModel2.removeRow(selectedRows[i]);
+        }
+
+        JOptionPane.showMessageDialog(this, "Hủy dịch vụ thành công!");
+        loadDichVuDaDat(selectedMaHD, selectedMaPhong);
     }
 
     // Hàm load lại dịch vụ đã đặt, bỏ qua các dịch vụ có số lượng bằng 0
