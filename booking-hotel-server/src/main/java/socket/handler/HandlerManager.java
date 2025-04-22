@@ -39,6 +39,9 @@ public class HandlerManager {
         handlers.put("GET_ALL_DICH_VU", new DichVuHandler());
         handlers.put("GET_PHIEU_DAT_DICH_VU_BY_MA_PDP", new DichVuHandler());
         handlers.put("GET_ALL_PHONG_DAT_DICH_VU", new PhieuDatDichVuHandler());
+        handlers.put("GET_PHONG_DA_DAT", new PhieuDatPhongHandler());
+        handlers.put("GET_PHIEU_DAT_PHONG_DA_DAT", new PhieuDatPhongHandler());
+        handlers.put("GET_PHIEU_DAT_PHONG_DA_DAT_IN_LINE", new PhieuDatPhongHandler());
 
 
 

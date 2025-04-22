@@ -1,11 +1,20 @@
 package view.form;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
+import dto.KhachHangDTO;
+import dto.NhanVienDTO;
+import dto.PhieuDatPhongDTO;
+import dto.PhongDTO;
+import model.*;
+import socket.SocketManager;
 import utils.custom_element.*;
 import dao.KhachHang_DAO;
 import dao.NhanVien_DAO;
 import dao.PhieuDatPhong_DAO;
-import model.KhachHang;
-import model.PhieuDatPhong;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -18,7 +27,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable {
     private DefaultTableModel tableModel;
@@ -31,7 +46,7 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
     public void open() {
         phieuDatPhongDAO = new PhieuDatPhong_DAO();
 //        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDangCho();
-        loadTableData();
+        loadTableDataInline();
     }
     public HuyDatPhong_FORM() {
         setBackground(new Color(16, 16, 20));
@@ -149,19 +164,161 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
         b.add(bbutton);
         add(b, BorderLayout.CENTER);
     }
-    private void loadTableData(){
-//        tableModel.setRowCount(0);
-//        for (PhieuDatPhong pdp : dsPhieuDatPhong) {
-//            tableModel.addRow(new Object[]{
-//                    pdp.getMaPDP(),
-//                    pdp.getPhong().getMaPhong(),
-//                    pdp.getKhachHang().getHoTen(),
-//                    pdp.getNgayDat(),
-//                    pdp.getNgayDen(),
-//                    pdp.getNgayDi(),
-//                    pdp.getNhanVien().getHoTen()
-//            });
-//        }
+    private void loadTableDataInline() {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+
+            try {
+                // Get all customers
+                System.out.println("Sending request: GET_ALL_KHACH_HANG");
+                Request<Void> khRequest = new Request<>("GET_ALL_KHACH_HANG", null);
+                SocketManager.send(khRequest);
+                System.out.println("Waiting for response...");
+                Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>() {}.getType();
+                Response<List<KhachHangDTO>> khResponse = SocketManager.receiveType(khachHangResponseType);
+                if (!khResponse.isSuccess()) {
+                    throw new Exception("Failed to fetch customer data: " + (khResponse.getData() != null ? khResponse.getData().toString() : "No error message"));
+                }
+
+                Map<String, String> khachHangMap = new HashMap<>();
+                for (KhachHangDTO kh : khResponse.getData()) {
+                    khachHangMap.put(kh.getMaKH(), kh.getHoTen());
+                }
+
+                // Get all employees
+                System.out.println("Sending request: GET_ALL_NHAN_VIEN");
+                Request<Void> nvRequest = new Request<>("GET_ALL_NHAN_VIEN", null);
+                SocketManager.send(nvRequest);
+                Type nhanVienResponseType = new TypeToken<Response<List<NhanVienDTO>>>() {}.getType();
+                Response<List<NhanVienDTO>> nvResponse = SocketManager.receiveType(nhanVienResponseType);
+                if (!nvResponse.isSuccess()) {
+                    throw new Exception("Failed to fetch employee data: " + (nvResponse.getData() != null ? nvResponse.getData().toString() : "No error message"));
+                }
+
+                Map<String, String> nhanVienMap = new HashMap<>();
+                for (NhanVienDTO nv : nvResponse.getData()) {
+                    nhanVienMap.put(nv.getMaNhanVien(), nv.getHoTen());
+                }
+
+                // Get booking data for rooms with "Đã đặt" status
+                System.out.println("Sending request: GET_PHIEU_DAT_PHONG_DA_DAT");
+//                Request<Void> request = new Request<>("GET_PHIEU_DAT_PHONG_DA_DAT", null);
+                Request<Void> request = new Request<>("GET_PHIEU_DAT_PHONG_DA_DAT", null);
+                SocketManager.send(request);
+
+                Type pdpResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>() {}.getType();
+                Response<List<PhieuDatPhongDTO>> pdpResponse = SocketManager.receiveType(pdpResponseType);
+
+                if (!pdpResponse.isSuccess()) {
+                    String message = pdpResponse.getData() != null ? pdpResponse.getData().toString() : "No error message from server";
+                    JOptionPane.showMessageDialog(this, "Server error: " + message, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                List<PhieuDatPhongDTO> pdpListDTO = pdpResponse.getData();
+                if (pdpListDTO == null || pdpListDTO.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No bookings found for booked rooms", "Notification", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                // Hiển thị tất cả mã phòng trong cùng một hàng
+                for (PhieuDatPhongDTO pdp : pdpListDTO) {
+                    String maPDP = pdp.getMaPDP() != null ? pdp.getMaPDP() : "";
+                    String maKH = pdp.getMaKH() != null ? pdp.getMaKH() : "";
+                    String maNV = pdp.getMaNV() != null ? pdp.getMaNV() : "";
+                    List<String> dsMaPhong = pdp.getDsMaPhong() != null ? pdp.getDsMaPhong() : new ArrayList<>();
+                    LocalDate ngayDat = pdp.getNgayDatPhong();
+                    LocalDate ngayDen = pdp.getNgayNhanPhongDuKien();
+                    LocalDate ngayDi = pdp.getNgayTraPhongDuKien();
+
+                    String tenKhachHang = khachHangMap.getOrDefault(maKH, "");
+                    String tenNhanVien = nhanVienMap.getOrDefault(maNV, "");
+                    String soPhong = String.join(", ", dsMaPhong); // Gộp tất cả mã phòng thành một chuỗi
+
+                    Object[] row = new Object[]{
+                            maPDP,
+                            soPhong,
+                            tenKhachHang,
+                            ngayDat != null ? Date.valueOf(ngayDat) : null,
+                            ngayDen != null ? Date.valueOf(ngayDen) : null,
+                            ngayDi != null ? Date.valueOf(ngayDi) : null,
+                            tenNhanVien
+                    };
+                    tableModel.addRow(row);
+                    System.out.println("Row: " + Arrays.toString(row));
+                }
+
+                table.repaint();
+                table.revalidate();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error loading customer/employee data: " + e.getMessage(), "System Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+    }
+
+
+    // Phương thức hỗ trợ để phân tích dữ liệu khách hàng
+    private Map<String, String> parseKhachHang(JsonParser parser, String khJson) throws Exception {
+        Map<String, String> khachHangMap = new HashMap<>();
+        JsonElement khElement = parser.parse(khJson);
+
+        if (khElement.isJsonObject()) {
+            JsonObject khObj = khElement.getAsJsonObject();
+            if (khObj.get("success").getAsBoolean() && khObj.has("data")) {
+                JsonArray khArray = khObj.get("data").getAsJsonArray();
+                for (int i = 0; i < khArray.size(); i++) {
+                    JsonObject kh = khArray.get(i).getAsJsonObject();
+                    String maKH = kh.get("maKH").getAsString();
+                    String hoTen = kh.has("hoTen") ? kh.get("hoTen").getAsString() : "";
+                    khachHangMap.put(maKH, hoTen);
+                }
+            } else {
+                throw new Exception("Phản hồi từ server không hợp lệ: " + khJson);
+            }
+        } else if (khElement.isJsonArray()) {
+            JsonArray khArray = khElement.getAsJsonArray();
+            for (int i = 0; i < khArray.size(); i++) {
+                JsonObject kh = khArray.get(i).getAsJsonObject();
+                String maKH = kh.get("maKH").getAsString();
+                String hoTen = kh.has("hoTen") ? kh.get("hoTen").getAsString() : "";
+                khachHangMap.put(maKH, hoTen);
+            }
+        } else {
+            throw new Exception("Dữ liệu khách hàng không đúng định dạng JSON: " + khJson);
+        }
+        return khachHangMap;
+    }
+
+    // Phương thức hỗ trợ để phân tích dữ liệu nhân viên
+    private Map<String, String> parseNhanVien(JsonParser parser, String nvJson) throws Exception {
+        Map<String, String> nhanVienMap = new HashMap<>();
+        JsonElement nvElement = parser.parse(nvJson);
+
+        if (nvElement.isJsonObject()) {
+            JsonObject nvObj = nvElement.getAsJsonObject();
+            if (nvObj.get("success").getAsBoolean() && nvObj.has("data")) {
+                JsonArray nvArray = nvObj.get("data").getAsJsonArray();
+                for (int i = 0; i < nvArray.size(); i++) {
+                    JsonObject nv = nvArray.get(i).getAsJsonObject();
+                    String maNV = nv.get("maNhanVien").getAsString();
+                    String hoTen = nv.has("hoTen") ? nv.get("hoTen").getAsString() : "";
+                    nhanVienMap.put(maNV, hoTen);
+                }
+            } else {
+                throw new Exception("Phản hồi từ server không hợp lệ: " + nvJson);
+            }
+        } else if (nvElement.isJsonArray()) {
+            JsonArray nvArray = nvElement.getAsJsonArray();
+            for (int i = 0; i < nvArray.size(); i++) {
+                JsonObject nv = nvArray.get(i).getAsJsonObject();
+                String maNV = nv.get("maNhanVien").getAsString();
+                String hoTen = nv.has("hoTen") ? nv.get("hoTen").getAsString() : "";
+                nhanVienMap.put(maNV, hoTen);
+            }
+        } else {
+            throw new Exception("Dữ liệu nhân viên không đúng định dạng JSON: " + nvJson);
+        }
+        return nhanVienMap;
     }
     @Override
     public void actionPerformed(ActionEvent e) {

@@ -15,6 +15,13 @@ public class Phong {
     private String tenPhong;
     private double giaPhong;
     private int tinhTrang;
+    //Có 5 trạng thái phòng:
+    //    0: Còn trống
+    //    1: Đã đặt
+    //    2: Đang sử dụng
+    //    3: Đang dọn dẹp
+    //    4: Đang bảo trì
+    //    5: Tạm khóa
     private String moTa;
     private int soNguoi;
     private LoaiPhong loaiPhong;
