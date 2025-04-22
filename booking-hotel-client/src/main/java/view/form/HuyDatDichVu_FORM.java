@@ -1,7 +1,14 @@
 package view.form;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import dto.DichVuDTO;
+import dto.KhachHangDTO;
+import dto.PhieuDatPhongDTO;
+import dto.PhongDTO;
 import model.Request;
 import model.Response;
 import socket.SocketManager;
@@ -20,7 +27,12 @@ import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseListener {
     private JButton btnDatDV;
@@ -35,6 +47,7 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
     private String selectedMaHD;
     private String selectedMaPhong;
     private String selectMaPDP;
+    private List<String> dsMaPDP = new ArrayList<>();
 
     public HuyDatDichVu_FORM() {
         setBackground(new Color(16, 16, 20));
@@ -503,54 +516,160 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
 
 
     private void loadPhongData() {
-//        Connection connection = ConnectDB.getConnection();
-//        if (connection != null) {
-//            try {
-//                String query = """
-//            SELECT PDP.maPDP, P.loaiPhong, P.tenPhong, P.maPhong, PDP.tinhTrangPDP, KH.hoTen,
-//                   PDP.ngayDen, PDP.ngayDi
-//            FROM PhieuDatPhong PDP
-//            JOIN Phong P ON PDP.maPhong = P.maPhong
-//            JOIN KhachHang KH ON PDP.maKH = KH.maKH
-//            WHERE P.trangThai = 1 AND PDP.tinhTrangPDP != 2
-//            """;
-//                var preparedStatement = connection.prepareStatement(query);
-//                var resultSet = preparedStatement.executeQuery();
-//
-//                tableModel.setRowCount(0); // Xóa dữ liệu cũ
-//                while (resultSet.next()) {
-//                    // Lấy dữ liệu từ kết quả truy vấn
-//                    String maPDP = resultSet.getString("maPDP");
-//                    String loaiPhong = resultSet.getString("loaiPhong");
-//                    String tenPhong = resultSet.getString("tenPhong");
-//                    String maPhong = resultSet.getString("maPhong");
-//                    int tinhTrang = resultSet.getInt("tinhTrangPDP");  // Lấy tình trạng dưới dạng số
-//                    String tenKhach = resultSet.getString("hoTen");
-//                    String ngayDen = resultSet.getString("ngayDen");
-//                    String ngayDi = resultSet.getString("ngayDi");
-//
-//                    // Chuyển đổi tình trạng thành chuỗi tương ứng
-//                    String tinhTrangString;
-//                    switch (tinhTrang) {
-//                        case 0:
-//                            tinhTrangString = "Chờ nhận phòng";
-//                            break;
-//                        case 1:
-//                            tinhTrangString = "Đã nhận phòng";
-//                            break;
-//                        default:
-//                            tinhTrangString = "Không xác định";
-//                            break;
-//                    }
-//
-//                    // Thêm dữ liệu vào tableModel
-//                    tableModel.addRow(new Object[]{maPDP, loaiPhong, tenPhong, maPhong, tinhTrangString, tenKhach, ngayDen, ngayDi});
-//                }
-//            } catch (SQLException e) {
-//                e.printStackTrace();
-//                JOptionPane.showMessageDialog(this, "Lỗi tải dữ liệu phòng!");
-//            }
-//        }
+        tableModel.setRowCount(0);
+
+        try {
+            // Gửi yêu cầu lấy danh sách phiếu đặt phòng
+            Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
+            SocketManager.send(request);
+
+            // Nhận JSON gốc từ server
+            String rawJson = SocketManager.receiveRaw();
+            System.out.println("Raw JSON response: " + rawJson);
+
+            // Phân tích JSON để kiểm tra trường "data"
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+                    .create();
+
+            JsonObject jsonObject = gson.fromJson(rawJson, JsonObject.class);
+
+            // Kiểm tra trường "success"
+            if (!jsonObject.has("success") || !jsonObject.get("success").getAsBoolean()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Yêu cầu không thành công";
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Kiểm tra trường "data" có phải là mảng không
+            if (!jsonObject.has("data") || !jsonObject.get("data").isJsonArray()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Dữ liệu không hợp lệ";
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: Expected array but got: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Nếu "data" là mảng, phân tích thành List<PhieuDatPhongDTO>
+            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>(){}.getType();
+            Response<List<PhieuDatPhongDTO>> response = gson.fromJson(rawJson, phieuResponseType);
+
+            List<PhieuDatPhongDTO> dsPhieuDatPhong = response.getData();
+            if (dsPhieuDatPhong.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu phiếu đặt phòng",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Lấy danh sách phòng
+            Map<String, PhongDTO> phongMap = new HashMap<>();
+            Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
+            SocketManager.send(phongRequest);
+            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>(){}.getType();
+            Response<List<PhongDTO>> phongResponse = SocketManager.receiveType(phongResponseType);
+
+            if (phongResponse != null && phongResponse.isSuccess() && phongResponse.getData() != null) {
+                phongResponse.getData().forEach(phong -> {
+                    System.out.println("Phòng: " + phong.getMaPhong() + " - " + phong.getTenPhong());
+                    phongMap.put(phong.getMaPhong(), phong);
+                });
+            } else {
+                String errorMsg = phongResponse == null ? "Không nhận được phản hồi từ server"
+                        : !phongResponse.isSuccess() ? "Yêu cầu không thành công"
+                        : "Dữ liệu phòng trống";
+                System.out.println("GET_ALL_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phòng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // Lấy danh sách khách hàng
+            Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
+            Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
+            SocketManager.send(khachHangRequest);
+            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>(){}.getType();
+            Response<List<KhachHangDTO>> khachHangResponse = SocketManager.receiveType(khachHangResponseType);
+
+            if (khachHangResponse != null && khachHangResponse.isSuccess() && khachHangResponse.getData() != null) {
+                khachHangResponse.getData().forEach(kh -> khachHangMap.put(kh.getMaKH(), kh));
+            } else {
+                String errorMsg = khachHangResponse == null ? "Không nhận được phản hồi từ server"
+                        : !khachHangResponse.isSuccess() ? "Yêu cầu không thành công"
+                        : "Dữ liệu khách hàng trống";
+                System.out.println("GET_ALL_KHACH_HANG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // Xử lý dữ liệu và thêm vào bảng
+            StringBuilder errorMessages = new StringBuilder();
+            int errorCount = 0;
+
+            for (PhieuDatPhongDTO pdp : dsPhieuDatPhong) {
+                String tenKhachHang = "Không xác định";
+                if (pdp.getMaKH() != null) {
+                    KhachHangDTO kh = khachHangMap.get(pdp.getMaKH());
+                    tenKhachHang = kh != null ? kh.getHoTen() : "Khách hàng không tồn tại";
+                }
+
+                List<String> dsMaPhong = pdp.getDsMaPhong();
+                if (dsMaPhong == null || dsMaPhong.isEmpty()) {
+                    tableModel.addRow(new Object[]{
+                            pdp.getMaPDP(),
+                            "N/A", "N/A", "N/A", "N/A",
+                            tenKhachHang,
+                            formatDate(pdp.getNgayNhanPhongDuKien()),
+                            formatDate(pdp.getNgayTraPhongDuKien())
+                    });
+                    continue;
+                }
+
+                for (String maPhong : dsMaPhong) {
+                    PhongDTO phong = phongMap.get(maPhong);
+                    if (phong == null) {
+                        errorMessages.append("Không tìm thấy phòng ").append(maPhong)
+                                .append(" trong phiếu ").append(pdp.getMaPDP()).append("\n");
+                        errorCount++;
+                        continue;
+                    }
+                    if (phong.getTinhTrang() != 0) {
+                        dsMaPDP.add(pdp.getMaPDP());
+                        System.out.println(dsMaPDP);
+                        tableModel.addRow(new Object[]{
+                                pdp.getMaPDP(),
+                                phong.getMaLoai() != null ? phong.getMaLoai() : "N/A",
+                                phong.getTenPhong() != null ? phong.getTenPhong() : "N/A",
+                                phong.getMaPhong() != null ? phong.getMaPhong() : "N/A",
+                                getTrangThaiPhong(phong.getTinhTrang()),
+                                tenKhachHang,
+                                formatDate(pdp.getNgayNhanPhongDuKien()),
+                                formatDate(pdp.getNgayTraPhongDuKien())
+                        });
+                    }
+                }
+            }
+
+            if (errorCount > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Có " + errorCount + " lỗi xảy ra:\n" + errorMessages.toString(),
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (JsonSyntaxException e) {
+            System.out.println("JSON Syntax Error in loadPhongData: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi định dạng dữ liệu từ server: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            System.out.println("Unexpected error in loadPhongData: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            table.repaint();
+            table.revalidate();
+        }
     }
     private void huyDatDichVu() {
         int[] selectedRows = table2.getSelectedRows();
@@ -611,6 +730,18 @@ public class HuyDatDichVu_FORM extends JPanel implements ActionListener,MouseLis
 
         JOptionPane.showMessageDialog(this, "Hủy dịch vụ thành công!");
         loadDichVuDaDat(selectedMaHD, selectedMaPhong);
+    }
+
+    private String formatDate(LocalDate date) {
+        return date != null ? date.toString() : "N/A";
+    }
+    private String getTrangThaiPhong(int tinhTrang) {
+        switch (tinhTrang) {
+            case 0: return "Trống";
+            case 1: return "Đã đặt";
+            case 2: return "Đang sử dụng";
+            default: return "Không xác định";
+        }
     }
 
     // Hàm load lại dịch vụ đã đặt, bỏ qua các dịch vụ có số lượng bằng 0

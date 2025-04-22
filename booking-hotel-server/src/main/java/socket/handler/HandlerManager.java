@@ -46,6 +46,7 @@ public class HandlerManager {
         handlers.put("GET_PHIEU_DAT_PHONG_DANG_SU_DUNG", new PhieuDatPhongHandler());
         handlers.put("NHAN_PHONG", new PhieuDatPhongHandler());
         handlers.put("TRA_PHONG", new PhieuDatPhongHandler());
+        handlers.put("XOA_DICH_VU", new DichVuHandler());
 
 
 
