@@ -1,3 +1,4 @@
+
 package model;
 
 import jakarta.persistence.*;
@@ -31,6 +32,13 @@ public class Phong {
 
     @Column(name = "tinh_trang", nullable = false)
     private int tinhTrang;
+    //Có 5 trạng thái phòng:
+    //    0: Còn trống
+    //    1: Đã đặt
+    //    2: Đang sử dụng
+    //    3: Đang dọn dẹp
+    //    4: Đang bảo trì
+    //    5: Tạm khóa
 
     @Column(name = "mo_ta", length = 250)
     private String moTa;
@@ -40,8 +48,10 @@ public class Phong {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.PERSIST)
+//    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "ma_loai_phong")
+//    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     private LoaiPhong loaiPhong;
 
     // có cái bảng phụ là Phong_PGG

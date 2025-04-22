@@ -17,6 +17,7 @@
     </parent>
 
     <dependencies>
+
         <!-- Gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>

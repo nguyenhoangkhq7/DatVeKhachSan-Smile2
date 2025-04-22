@@ -12,6 +12,7 @@ import lombok.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PhieuDatPhong {
     @EqualsAndHashCode.Include
+
     private String maPDP;
     private LocalDate ngayDatPhong;
     private LocalDate ngayNhanPhongDuKien;

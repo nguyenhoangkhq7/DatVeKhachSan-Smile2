@@ -1,16 +1,29 @@
 package socket;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import utils.custom_element.LocalDateAdapter;
+import utils.custom_element.LocalDateTimeAdapter;
+import utils.custom_element.LocalDateTimeDeserializer;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class SocketManager {
 
     private static Socket socket;
     private static PrintWriter out;
     private static BufferedReader in;
-    private static final Gson gson = new Gson();
+    //    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())  // GIỮ LẠI DÒNG NÀY
+            .serializeNulls()
+            .create();
+
 
     public static void connect(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -33,4 +46,13 @@ public class SocketManager {
             socket.close();
         }
     }
+    public static String receiveRaw() throws IOException {
+        return in.readLine();
+    }
+    public static <T> T receiveType(Type responseType) throws IOException {
+        String json = in.readLine();
+        System.out.println("RECEIVED JSON: " + json);
+        return gson.fromJson(json, responseType);
+    }
+
 }
