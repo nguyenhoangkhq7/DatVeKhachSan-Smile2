@@ -24,6 +24,7 @@ public class HoaDon_DAO extends GenericDAO<HoaDon> {
     }
 
     // CREATE
+<<<<<<< HEAD
     public boolean create1(HoaDonDTO hoaDonDTO) {
         if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
             System.err.println("Mã hóa đơn không hợp lệ");
@@ -36,6 +37,28 @@ public class HoaDon_DAO extends GenericDAO<HoaDon> {
         return super.create1(mapper.toEntity(hoaDonDTO));
     }
 
+=======
+    public boolean create(HoaDonDTO hoaDonDTO) {
+        if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
+            return false;
+        }
+        return super.create(mapper.toEntity(hoaDonDTO));
+    }
+
+//    // DELETE
+//    public boolean delete(String maHoaDon) {
+//        if (maHoaDon == null || maHoaDon.isEmpty()) return false;
+//        return super.delete(maHoaDon);
+//    }
+//
+//    // UPDATE
+//    public boolean update(HoaDonDTO hoaDonDTO) {
+//        if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
+//            return false;
+//        }
+//        return super.update(mapper.toEntity(hoaDonDTO));
+//    }
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
 
     // READ (find by ID)
     public HoaDonDTO read(String maHoaDon) {

@@ -14,6 +14,7 @@ public class HandlerManager {
     static {
         // Đăng ký handler ứng với action
         handlers.put("DANG_NHAP", new TaiKhoanHandler());
+<<<<<<< HEAD
         handlers.put("GET_ALL_NHAN_VIEN", new NhanVienHandler());
         handlers.put("THEM_NHAN_VIEN", new NhanVienHandler());
         handlers.put("CAP_NHAT_NHAN_VIEN", new NhanVienHandler());
@@ -40,6 +41,9 @@ public class HandlerManager {
         handlers.put("CREATE_HOA_DON", new HoaDonHandler());
         handlers.put("GET_ALL_PHIEU_DAT_DICH_VU", new PhieuDatDichVuHandler());
         handlers.put("FIND_BY_MA_KH", new PhieuDatDichVuHandler());
+=======
+        handlers.put("READ_HOA_DON", new HoaDonHandler());
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
 
     }
 

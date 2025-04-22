@@ -32,7 +32,11 @@ public class HoaDonMapperImpl implements GenericMapper<HoaDon, HoaDonDTO> {
         HoaDon hoaDon = new HoaDon();
         hoaDon.setMaHD(dto.getMaHD());
 
+<<<<<<< HEAD
         // Gán đối tượng KhachHang (chỉ gán maKH, không tạo đối tượng đầy đủ)
+=======
+        // Gán đối tượng KhachHang
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
         if (dto.getMaKH() != null) {
             KhachHang kh = new KhachHang();
             kh.setMaKH(dto.getMaKH());
@@ -60,4 +64,8 @@ public class HoaDonMapperImpl implements GenericMapper<HoaDon, HoaDonDTO> {
 
         return hoaDon;
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592

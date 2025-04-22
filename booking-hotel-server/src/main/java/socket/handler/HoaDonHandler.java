@@ -1,10 +1,15 @@
 package socket.handler;
 
 import com.google.gson.Gson;
+<<<<<<< HEAD
 import com.google.gson.GsonBuilder;
 import dao.HoaDon_DAO;
 import dto.HoaDonDTO;
 import dto.NhanVienDTO;
+=======
+import dao.HoaDon_DAO;
+import dto.HoaDonDTO;
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
 import model.Request;
 import model.Response;
 import utils.LocalDateAdapter;
@@ -16,18 +21,27 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.io.IOException;
+import java.util.List;
+
 public class HoaDonHandler implements RequestHandler {
     private final HoaDon_DAO hoaDonDao;
     private final Gson gson;
 
     public HoaDonHandler() {
         this.hoaDonDao = new HoaDon_DAO();
+<<<<<<< HEAD
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter()) // ✅ GIỮ LẠI
                 .serializeNulls()
                 .create();
     }
+=======
+        this.gson = new Gson();
+    }
+
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
     @Override
     public Response<?> handle(Request<?> request) throws IOException {
         String action = request.getAction();
@@ -37,7 +51,11 @@ public class HoaDonHandler implements RequestHandler {
                 if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
                     return new Response<>(false, "Mã hóa đơn không hợp lệ");
                 }
+<<<<<<< HEAD
                 boolean success = hoaDonDao.create1(hoaDonDTO);
+=======
+                boolean success = hoaDonDao.create(hoaDonDTO);
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
                 return new Response<>(success, success ? "Thêm hóa đơn thành công" : "Thêm hóa đơn thất bại");
             }
             case "READ_HOA_DON" -> {
@@ -48,6 +66,7 @@ public class HoaDonHandler implements RequestHandler {
                 HoaDonDTO hoaDonDTO = hoaDonDao.read(maHD);
                 return new Response<>(true, hoaDonDTO != null ? hoaDonDTO : "Hóa đơn không tồn tại");
             }
+<<<<<<< HEAD
             case "GET_ALL_HOA_DON" -> {
                 try {
                     List<HoaDonDTO> ds = hoaDonDao.getAllHoaDonDTOs();
@@ -57,6 +76,24 @@ public class HoaDonHandler implements RequestHandler {
                     return new Response<>(false, "Lỗi hệ thống: " + e.getMessage());
                 }
             }
+=======
+//            case "UPDATE_HOA_DON" -> {
+//                HoaDonDTO hoaDonDTO = gson.fromJson(gson.toJson(request.getData()), HoaDonDTO.class);
+//                if (hoaDonDTO == null || hoaDonDTO.getMaHD() == null || hoaDonDTO.getMaHD().isEmpty()) {
+//                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
+//                }
+//                boolean success = hoaDonDao.update(hoaDonDTO);
+//                return new Response<>(success, success ? "Cập nhật hóa đơn thành công" : "Cập nhật hóa đơn thất bại");
+//            }
+//            case "DELETE_HOA_DON" -> {
+//                String maHD = gson.fromJson(gson.toJson(request.getData()), String.class);
+//                if (maHD == null || maHD.isEmpty()) {
+//                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
+//                }
+//                boolean success = hoaDonDao.delete(maHD);
+//                return new Response<>(success, success ? "Hóa đơn đã được xóa" : "Không thể xóa hóa đơn");
+//            }
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
             case "FIND_BY_MA_KH" -> {
                 String maKH = gson.fromJson(gson.toJson(request.getData()), String.class);
                 if (maKH == null || maKH.isEmpty()) {

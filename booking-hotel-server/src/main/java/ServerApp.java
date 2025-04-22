@@ -20,7 +20,13 @@ public class ServerApp {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Client đã kết nối: " + clientSocket.getInetAddress());
 
+<<<<<<< HEAD
                 new Thread(() -> handleClient(clientSocket)).start();
+=======
+                new Thread(() -> handleClient(clientSocket)).start(); // Mỗi client xử lý riêng 1 luồng
+                // Tạo một luồng để xử lý client
+                // handleClient(clientSocket); // Nếu không sử dụng luồng, sẽ chờ client xử lý xong mới tiếp tục
+>>>>>>> 69cc089da244c6a6bd926ca816ed090ed8567592
             }
 
         } catch (IOException e) {
