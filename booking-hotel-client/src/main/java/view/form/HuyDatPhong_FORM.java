@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable {
     private DefaultTableModel tableModel;
     private JTable table;
@@ -46,7 +47,8 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
     public void open() {
         phieuDatPhongDAO = new PhieuDatPhong_DAO();
 //        dsPhieuDatPhong = phieuDatPhongDAO.getDSPhieuDatPhongDangCho();
-        loadTableDataInline();
+//        loadTableDataInline();
+        loadTableData();
     }
     public HuyDatPhong_FORM() {
         setBackground(new Color(16, 16, 20));
@@ -164,7 +166,8 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
         b.add(bbutton);
         add(b, BorderLayout.CENTER);
     }
-    private void loadTableDataInline() {
+
+    private void loadTableData() {
         SwingUtilities.invokeLater(() -> {
             tableModel.setRowCount(0);
 
@@ -202,7 +205,6 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
 
                 // Get booking data for rooms with "Đã đặt" status
                 System.out.println("Sending request: GET_PHIEU_DAT_PHONG_DA_DAT");
-//                Request<Void> request = new Request<>("GET_PHIEU_DAT_PHONG_DA_DAT", null);
                 Request<Void> request = new Request<>("GET_PHIEU_DAT_PHONG_DA_DAT", null);
                 SocketManager.send(request);
 
@@ -221,7 +223,7 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
                     return;
                 }
 
-                // Hiển thị tất cả mã phòng trong cùng một hàng
+                // Hiển thị từng mã phòng riêng lẻ
                 for (PhieuDatPhongDTO pdp : pdpListDTO) {
                     String maPDP = pdp.getMaPDP() != null ? pdp.getMaPDP() : "";
                     String maKH = pdp.getMaKH() != null ? pdp.getMaKH() : "";
@@ -233,19 +235,20 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
 
                     String tenKhachHang = khachHangMap.getOrDefault(maKH, "");
                     String tenNhanVien = nhanVienMap.getOrDefault(maNV, "");
-                    String soPhong = String.join(", ", dsMaPhong); // Gộp tất cả mã phòng thành một chuỗi
 
-                    Object[] row = new Object[]{
-                            maPDP,
-                            soPhong,
-                            tenKhachHang,
-                            ngayDat != null ? Date.valueOf(ngayDat) : null,
-                            ngayDen != null ? Date.valueOf(ngayDen) : null,
-                            ngayDi != null ? Date.valueOf(ngayDi) : null,
-                            tenNhanVien
-                    };
-                    tableModel.addRow(row);
-                    System.out.println("Row: " + Arrays.toString(row));
+                    for (String maPhong : dsMaPhong) {
+                        Object[] row = new Object[]{
+                                maPDP,
+                                maPhong,
+                                tenKhachHang,
+                                ngayDat != null ? Date.valueOf(ngayDat) : null,
+                                ngayDen != null ? Date.valueOf(ngayDen) : null,
+                                ngayDi != null ? Date.valueOf(ngayDi) : null,
+                                tenNhanVien
+                        };
+                        tableModel.addRow(row);
+                        System.out.println("Row: " + Arrays.toString(row));
+                    }
                 }
 
                 table.repaint();
@@ -256,70 +259,6 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
         });
     }
 
-
-    // Phương thức hỗ trợ để phân tích dữ liệu khách hàng
-    private Map<String, String> parseKhachHang(JsonParser parser, String khJson) throws Exception {
-        Map<String, String> khachHangMap = new HashMap<>();
-        JsonElement khElement = parser.parse(khJson);
-
-        if (khElement.isJsonObject()) {
-            JsonObject khObj = khElement.getAsJsonObject();
-            if (khObj.get("success").getAsBoolean() && khObj.has("data")) {
-                JsonArray khArray = khObj.get("data").getAsJsonArray();
-                for (int i = 0; i < khArray.size(); i++) {
-                    JsonObject kh = khArray.get(i).getAsJsonObject();
-                    String maKH = kh.get("maKH").getAsString();
-                    String hoTen = kh.has("hoTen") ? kh.get("hoTen").getAsString() : "";
-                    khachHangMap.put(maKH, hoTen);
-                }
-            } else {
-                throw new Exception("Phản hồi từ server không hợp lệ: " + khJson);
-            }
-        } else if (khElement.isJsonArray()) {
-            JsonArray khArray = khElement.getAsJsonArray();
-            for (int i = 0; i < khArray.size(); i++) {
-                JsonObject kh = khArray.get(i).getAsJsonObject();
-                String maKH = kh.get("maKH").getAsString();
-                String hoTen = kh.has("hoTen") ? kh.get("hoTen").getAsString() : "";
-                khachHangMap.put(maKH, hoTen);
-            }
-        } else {
-            throw new Exception("Dữ liệu khách hàng không đúng định dạng JSON: " + khJson);
-        }
-        return khachHangMap;
-    }
-
-    // Phương thức hỗ trợ để phân tích dữ liệu nhân viên
-    private Map<String, String> parseNhanVien(JsonParser parser, String nvJson) throws Exception {
-        Map<String, String> nhanVienMap = new HashMap<>();
-        JsonElement nvElement = parser.parse(nvJson);
-
-        if (nvElement.isJsonObject()) {
-            JsonObject nvObj = nvElement.getAsJsonObject();
-            if (nvObj.get("success").getAsBoolean() && nvObj.has("data")) {
-                JsonArray nvArray = nvObj.get("data").getAsJsonArray();
-                for (int i = 0; i < nvArray.size(); i++) {
-                    JsonObject nv = nvArray.get(i).getAsJsonObject();
-                    String maNV = nv.get("maNhanVien").getAsString();
-                    String hoTen = nv.has("hoTen") ? nv.get("hoTen").getAsString() : "";
-                    nhanVienMap.put(maNV, hoTen);
-                }
-            } else {
-                throw new Exception("Phản hồi từ server không hợp lệ: " + nvJson);
-            }
-        } else if (nvElement.isJsonArray()) {
-            JsonArray nvArray = nvElement.getAsJsonArray();
-            for (int i = 0; i < nvArray.size(); i++) {
-                JsonObject nv = nvArray.get(i).getAsJsonObject();
-                String maNV = nv.get("maNhanVien").getAsString();
-                String hoTen = nv.has("hoTen") ? nv.get("hoTen").getAsString() : "";
-                nhanVienMap.put(maNV, hoTen);
-            }
-        } else {
-            throw new Exception("Dữ liệu nhân viên không đúng định dạng JSON: " + nvJson);
-        }
-        return nhanVienMap;
-    }
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnHuyDatPhong) {
@@ -330,18 +269,44 @@ public class HuyDatPhong_FORM extends JPanel implements ActionListener, Openable
                 return;
             }
 
-
+            // Lấy maPDP và maPhong từ hàng được chọn
             String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
-            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn huỷ đặt phòng phiếu "+maPDP+" ?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-//            if (confirm == JOptionPane.YES_OPTION) {
-//                if (phieuDatPhongDAO.huyDatPhong(maPDP)) {
-//                    JOptionPane.showMessageDialog(this, "Đã hủy đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-//                    tableModel.removeRow(selectedRow);
-//                } else {
-//                    JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi hủy đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-//                }
-//            }
+            String maPhong = (String) tableModel.getValueAt(selectedRow, 1);
 
+            // Hiển thị hộp thoại xác nhận
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn hủy đặt phòng phiếu " + maPDP + " cho phòng " + maPhong + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                try {
+                    // Tạo dữ liệu gửi đi: maPDP và maPhong
+                    JsonObject requestData = new JsonObject();
+                    requestData.addProperty("maPDP", maPDP);
+                    requestData.addProperty("maPhong", maPhong);
+
+                    // Gửi yêu cầu HUY_DAT_PHONG đến server
+                    System.out.println("Sending request: HUY_DAT_PHONG for maPDP = " + maPDP + ", maPhong = " + maPhong);
+                    Request<JsonObject> request = new Request<>("HUY_DAT_PHONG", requestData);
+                    SocketManager.send(request);
+
+                    // Nhận phản hồi từ server
+                    Type responseType = new TypeToken<Response<String>>() {}.getType();
+                    Response<String> response = SocketManager.receiveType(responseType);
+
+                    // Log phản hồi từ server
+                    System.out.println("RECEIVED JSON: " + response.toString());
+
+                    if (response.isSuccess()) {
+                        JOptionPane.showMessageDialog(this, "Đã hủy đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        // Tải lại toàn bộ dữ liệu từ server
+                        loadTableData();
+                    } else {
+                        String errorMessage = response.getData() != null ? response.getData() : "Không có thông điệp lỗi từ server";
+                        JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi hủy đặt phòng: " + errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
     }
     private void handleTimKiem() {

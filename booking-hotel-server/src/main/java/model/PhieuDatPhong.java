@@ -40,7 +40,7 @@ public class PhieuDatPhong {
 
     // Quan hệ với Phòng (many-to-many)
     @ToString.Exclude
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "chi_tiet_dat_phong",
             joinColumns = @JoinColumn(name = "ma_pdp"),

@@ -42,6 +42,10 @@ public class HandlerManager {
         handlers.put("GET_PHONG_DA_DAT", new PhieuDatPhongHandler());
         handlers.put("GET_PHIEU_DAT_PHONG_DA_DAT", new PhieuDatPhongHandler());
         handlers.put("GET_PHIEU_DAT_PHONG_DA_DAT_IN_LINE", new PhieuDatPhongHandler());
+        handlers.put("HUY_DAT_PHONG", new PhieuDatPhongHandler());
+        handlers.put("GET_PHIEU_DAT_PHONG_DANG_SU_DUNG", new PhieuDatPhongHandler());
+        handlers.put("NHAN_PHONG", new PhieuDatPhongHandler());
+        handlers.put("TRA_PHONG", new PhieuDatPhongHandler());
 
 
 

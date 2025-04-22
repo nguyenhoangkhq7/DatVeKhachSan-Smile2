@@ -54,11 +54,13 @@ public class Phong_DAO extends GenericDAO<Phong> {
     public PhongDTO read(String maPhong) {
         EntityManager em = HibernateUtil.getEntityManager();
         try {
-            return em.find(PhongDTO.class, maPhong);
+            Phong phong = em.find(Phong.class, maPhong); // ✅ Tìm entity Phong trước
+            return phong != null ? mapper.toDTO(phong) : null;
         } finally {
             em.close();
         }
     }
+
 
     public List<PhongDTO> getAllPhongDTOs() {
         EntityManager em = HibernateUtil.getEntityManager();

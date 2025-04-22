@@ -19,8 +19,8 @@ public class SubMenuPanel extends JPanel {
         add(Box.createVerticalStrut(5));
         int index = 0;
         for (String[] item : subItems) {
-            ImageIcon subMenuIcon = index == subItems.length - 1 ? new ImageIcon("imgs/LastSubMenuIcon.png")
-                    : new ImageIcon("imgs/SubMenuIcon.png");
+            ImageIcon subMenuIcon = index == subItems.length - 1 ? new ImageIcon("booking-hotel-client/src/main/resources/imgs/LastSubMenuIcon.png")
+                    : new ImageIcon("booking-hotel-client/src/main/resources/imgs/SubMenuIcon.png");
             RoundedButton subMenuButton = new RoundedButton(item[0], subMenuIcon, 0);
             subMenuButton.setHorizontalAlignment(SwingConstants.LEFT);
             subMenuButton.setIconTextGap(4);
@@ -91,8 +91,8 @@ public class SubMenuPanel extends JPanel {
         add(Box.createVerticalStrut(5));
         int index = 0;
         for (String[] item : subItems) {
-            ImageIcon subMenuIcon = index == subItems.length - 1 ? new ImageIcon("imgs/LastSubMenuIcon.png")
-                    : new ImageIcon("imgs/SubMenuIcon.png");
+            ImageIcon subMenuIcon = index == subItems.length - 1 ? new ImageIcon("booking-hotel-client/src/main/resources/imgs/LastSubMenuIcon.png")
+                    : new ImageIcon("booking-hotel-client/src/main/resources/imgs/SubMenuIcon.png");
             RoundedButton subMenuButton = new RoundedButton(item[0], subMenuIcon, 0);
             subMenuButton.setHorizontalAlignment(SwingConstants.LEFT);
             subMenuButton.setIconTextGap(4);
