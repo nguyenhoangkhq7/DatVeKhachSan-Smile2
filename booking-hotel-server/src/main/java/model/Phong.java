@@ -40,7 +40,7 @@ public class Phong {
 
     // các thuộc tính tham chiếu
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_loai_phong")
     private LoaiPhong loaiPhong;
 

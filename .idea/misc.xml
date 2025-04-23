@@ -6,7 +6,6 @@
       <list>
         <option value="$PROJECT_DIR$/booking-hotel-server/pom.xml" />
         <option value="$PROJECT_DIR$/booking-hotel-client/pom.xml" />
-        <option value="$PROJECT_DIR$/shared/pom.xml" />
         <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>
