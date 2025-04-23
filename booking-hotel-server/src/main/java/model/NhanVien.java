@@ -39,6 +39,18 @@ public class NhanVien {
     @Column(name = "ngay_sinh")
     private LocalDate ngaySinh;
 
+    @Column(name = "ngay_vao_lam")
+    private LocalDate ngayVaoLam;
+
+    @Column(name = "luong_co_ban")
+    private double luongCoBan;
+
+    @Column(name = "he_so_luong")
+    private double heSoLuong;
+
+    @Column(name = "trang_thai")
+    private int trangThai;
+
     // các thuộc tính tham chiếu
     @ToString.Exclude
     @OneToOne(cascade = CascadeType.ALL)

@@ -16,6 +16,10 @@ public class KhachHangMapperImpl implements GenericMapper<KhachHang, KhachHangDT
                 entity.getSoDienThoai(),
                 entity.getSoCCCD(),
                 entity.getEmail()
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
         );
     }
 

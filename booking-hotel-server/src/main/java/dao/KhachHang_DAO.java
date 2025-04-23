@@ -75,13 +75,18 @@ public class KhachHang_DAO extends GenericDAO<KhachHang> {
         }
     }
 
+<<<<<<< HEAD
     // Tìm kiếm khách hàng theo nhiều tiêu chí (tên, email, số điện thoại)
     public List<KhachHangDTO> findByMultipleCriteria(String hoTen, String email, String sdt) {
+=======
+    public List<KhachHangDTO> findByKeyword(String keyword) {
+>>>>>>> main
         EntityManager em = HibernateUtil.getEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<KhachHang> cq = cb.createQuery(KhachHang.class);
             Root<KhachHang> root = cq.from(KhachHang.class);
+<<<<<<< HEAD
             List<Predicate> predicates = new ArrayList<>();
 
             if (hoTen != null && !hoTen.isEmpty()) {
@@ -97,6 +102,18 @@ public class KhachHang_DAO extends GenericDAO<KhachHang> {
             }
 
             cq.select(root).where(predicates.toArray(new Predicate[0]));
+=======
+
+            if (keyword != null) keyword = keyword.trim().toLowerCase();
+
+            Predicate nameLike = cb.like(cb.lower(root.get("hoTen")), "%" + keyword + "%");
+            Predicate emailLike = cb.like(cb.lower(root.get("email")), "%" + keyword + "%");
+            Predicate phoneLike = cb.like(cb.lower(root.get("soDienThoai")), "%" + keyword + "%");
+            Predicate cccdLike = cb.like(cb.lower(root.get("soCCCD")), "%" + keyword + "%");
+
+            cq.select(root).where(cb.or(nameLike, emailLike, phoneLike, cccdLike));
+
+>>>>>>> main
             return em.createQuery(cq).getResultList().stream()
                     .map(mapper::toDTO)
                     .collect(Collectors.toList());
@@ -104,4 +121,8 @@ public class KhachHang_DAO extends GenericDAO<KhachHang> {
             em.close();
         }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 }

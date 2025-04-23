@@ -55,6 +55,7 @@ public class PhongHandler implements RequestHandler {
                 return new Response<>(true, ds);
             }
             case "TIM_PHONG_NANG_CAO" -> {
+<<<<<<< HEAD
                 // Tìm nâng cao: [tenPhong, tinhTrang (as String), maLoaiPhong]
                 String[] criteria = gson.fromJson(gson.toJson(request.getData()), String[].class);
                 if (criteria == null || criteria.length != 3) {
@@ -75,6 +76,37 @@ public class PhongHandler implements RequestHandler {
                 List<PhongDTO> ds = phongDao.findByMultipleCriteria(tenPhong, tinhTrang, maLoaiPhong);
                 return new Response<>(true, ds);
             }
+=======
+                // Tìm kiếm nâng cao phòng theo keyword
+                String keyword = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (keyword == null || keyword.trim().isEmpty()) {
+                    return new Response<>(false, "Từ khóa tìm kiếm không hợp lệ");
+                }
+
+                List<PhongDTO> ds = phongDao.findByKeyword(keyword.trim());
+                return new Response<>(true, ds);
+            }
+            case "KIEM_TRA_MA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean exists = phongDao.existsByMaPhong(maPhong.trim());
+                return new Response<>(true, exists); // true nếu mã đã tồn tại
+            }
+            case "XOA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean success = phongDao.delete(maPhong.trim());
+                return new Response<>(success, success ? "Xóa phòng thành công" : "Xóa phòng thất bại");
+            }
+
+
+
+
+>>>>>>> main
         }
         return new Response<>(false, "Hành động không được hỗ trợ");
     }

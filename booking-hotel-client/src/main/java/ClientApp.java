@@ -5,6 +5,7 @@ import javax.swing.UIManager;
 
 import socket.SocketManager;
 import view.gui.DangNhap_GUI;
+import view.gui.GiaoDienChinh_GUI;
 
 public class ClientApp {
 	public static void main(String[] args) throws SQLException {
@@ -16,5 +17,6 @@ public class ClientApp {
            e.printStackTrace();
        }
 		new DangNhap_GUI();
+//		new GiaoDienChinh_GUI();
 	}
 }

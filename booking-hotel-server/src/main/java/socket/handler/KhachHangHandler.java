@@ -36,6 +36,7 @@ public class KhachHangHandler implements RequestHandler {
                 boolean success = khachHangDao.create(dto);
                 return new Response<>(success, success ? "Thêm khách hàng thành công" : "Thêm khách hàng thất bại");
             }
+<<<<<<< HEAD
             case "SUA_KHACH_HANG" -> {
                 KhachHangDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), KhachHangDTO.class
@@ -45,6 +46,19 @@ public class KhachHangHandler implements RequestHandler {
                 }
                 boolean success = khachHangDao.update(dto);
                 return new Response<>(success, success ? "Cập nhật khách hàng thành công" : "Cập nhật khách hàng thất bại");
+=======
+
+            case "SUA_KHACH_HANG" -> {
+                KhachHangDTO dto = gson.fromJson(gson.toJson(request.getData()), KhachHangDTO.class);
+                if (dto == null || dto.getMaKH() == null || dto.getMaKH().isEmpty()) {
+                    System.out.println("Invalid KhachHangDTO: null or empty maKH");
+                    return new Response<>(false, "Mã khách hàng không hợp lệ");
+                }
+                boolean success = khachHangDao.update(dto);
+                String message = success ? "Sửa khách hàngthành công" : "Sửa khách hàng thất bại";
+                System.out.println("SUA_KHACH_HANG result: " + message);
+                return new Response<>(success, message);
+>>>>>>> main
             }
             case "TIM_KHACH_HANG_THEO_TEN" -> {
                 String hoTen = gson.fromJson(gson.toJson(request.getData()), String.class);
@@ -55,6 +69,7 @@ public class KhachHangHandler implements RequestHandler {
                 return new Response<>(true, ds);
             }
             case "TIM_KHACH_HANG_NANG_CAO" -> {
+<<<<<<< HEAD
                 // Tìm kiếm nâng cao: [hoTen, email, soDienThoai]
                 String[] criteria = gson.fromJson(gson.toJson(request.getData()), String[].class);
                 if (criteria == null || criteria.length != 3) {
@@ -65,6 +80,15 @@ public class KhachHangHandler implements RequestHandler {
                 String sdt = criteria[2].isEmpty() ? null : criteria[2];
 
                 List<KhachHangDTO> ds = khachHangDao.findByMultipleCriteria(hoTen, email, sdt);
+=======
+                // Tìm kiếm nâng cao theo keyword
+                String keyword = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (keyword == null || keyword.trim().isEmpty()) {
+                    return new Response<>(false, "Từ khóa tìm kiếm không hợp lệ");
+                }
+
+                List<KhachHangDTO> ds = khachHangDao.findByKeyword(keyword.trim());
+>>>>>>> main
                 return new Response<>(true, ds);
             }
         }

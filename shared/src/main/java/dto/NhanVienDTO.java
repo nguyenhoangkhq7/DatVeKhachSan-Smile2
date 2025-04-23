@@ -1,7 +1,9 @@
-package model;
+package dto;
+
+import com.google.gson.annotations.SerializedName;
+import lombok.*;
 
 import java.time.LocalDate;
-import lombok.*;
 
 @Setter
 @Getter
@@ -9,11 +11,12 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class NhanVien {
+public class NhanVienDTO {
     @EqualsAndHashCode.Include
     private String maNhanVien;
     private String hoTen;
     private int chucVu;
+    @SerializedName("soDienThoai")
     private String SDT;
     private String diaChi;
     private String email;
@@ -21,6 +24,6 @@ public class NhanVien {
     private LocalDate ngayVaoLam;
     private double luongCoBan;
     private double heSoLuong;
-    private TaiKhoan taiKhoan;
 
 }
+

@@ -1,7 +1,7 @@
+import com.google.gson.Gson;
 import model.Request;
 import model.Response;
 import socket.handler.HandlerManager;
-import com.google.gson.Gson;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -17,10 +17,10 @@ public class ServerApp {
             System.out.println("Server đang chạy trên cổng " + PORT);
 
             while (true) {
-                Socket clientSocket = serverSocket.accept(); // Đợi client kết nối
+                Socket clientSocket = serverSocket.accept();
                 System.out.println("Client đã kết nối: " + clientSocket.getInetAddress());
 
-                new Thread(() -> handleClient(clientSocket)).start(); // Mỗi client xử lý riêng 1 luồng
+                new Thread(() -> handleClient(clientSocket)).start();
             }
 
         } catch (IOException e) {
@@ -33,32 +33,20 @@ public class ServerApp {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))
         ) {
-            Gson gson = new Gson();
+            String requestJson;
+            while ((requestJson = reader.readLine()) != null) {
+                if (requestJson.isEmpty()) continue;
 
-            // Đọc chuỗi JSON từ client
-            String requestJson = reader.readLine();
-            if (requestJson == null || requestJson.isEmpty()) {
-                System.out.println("Yêu cầu rỗng hoặc không hợp lệ từ client.");
-                return;
+                Request<?> request = gson.fromJson(requestJson, Request.class);
+                Response<?> response = HandlerManager.handle(request);
+
+                String responseJson = gson.toJson(response);
+                writer.write(responseJson);
+                writer.newLine();
+                writer.flush();
             }
-
-            // Chuyển JSON thành đối tượng Request
-            Request<?> request = gson.fromJson(requestJson, Request.class);
-
-            // Gọi HandlerManager để xử lý và nhận về Response tương ứng
-            Response<?> response = HandlerManager.handle(request);
-
-            // Chuyển Response thành JSON và gửi về lại client
-            String responseJson = gson.toJson(response);
-            writer.write(responseJson);
-            writer.newLine();
-            writer.flush();
-
         } catch (IOException e) {
             System.err.println("Lỗi khi xử lý client: " + e.getMessage());
-            e.printStackTrace();
         }
     }
-
 }
-

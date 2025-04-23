@@ -9,13 +9,15 @@ import net.datafaker.Faker;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class DataGenerator {
     private final Faker faker = new Faker();
     private final EntityManager em = Persistence.createEntityManagerFactory("mariadb-pu").createEntityManager();
     private final EntityTransaction tr = em.getTransaction();
+
+    private final String[] roomTypes = {"Phòng Đơn", "Phòng Đôi", "Phòng Gia Đình", "Phòng Deluxe"};
+    private final Map<String, LoaiPhong> loaiPhongMap = new HashMap<>();
 
     private String generatePhoneNumber() {
         return faker.phoneNumber().cellPhone();
@@ -47,15 +49,18 @@ public class DataGenerator {
         nv.setDiaChi(faker.address().fullAddress());
         nv.setEmail(faker.internet().emailAddress());
         nv.setNgaySinh(faker.date().birthday(20, 60).toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        nv.setNgayVaoLam(LocalDate.now().minusDays(faker.number().numberBetween(30, 365)));
+        nv.setLuongCoBan(faker.number().randomDouble(2, 5000000, 15000000));
+        nv.setHeSoLuong(faker.number().randomDouble(2, 1, 3));
+        nv.setTrangThai(faker.number().numberBetween(0, 2));
         nv.setTaiKhoan(tk);
         return nv;
     }
 
-    private LoaiPhong generateLoaiPhong() {
+    private LoaiPhong generateLoaiPhongCoDinh(String tenLoai, int index) {
         LoaiPhong lp = new LoaiPhong();
-        String[] types = {"Phòng Đơn", "Phòng Đôi", "Phòng Gia Đình", "Phòng Deluxe"};
-        lp.setMaLoai("LP" + faker.number().numberBetween(1000, 9999));
-        lp.setTenLoai(faker.options().option(types));
+        lp.setMaLoai("LP" + (1000 + index)); // e.g., LP1000, LP1001, ...
+        lp.setTenLoai(tenLoai);
         lp.setMoTa(faker.lorem().sentence(10));
         return lp;
     }
@@ -94,20 +99,29 @@ public class DataGenerator {
         DichVu dv = new DichVu();
         dv.setMaDV("DV" + faker.number().numberBetween(1000, 9999));
         dv.setTenDV(faker.commerce().productName());
-        dv.setDonGia(faker.number().randomDouble(2, 100, 1000));
+        dv.setDonGia(faker.number().randomDouble(2, 100000, 1000000));
         dv.setDonViTinh(faker.options().option("Lần", "Chiếc", "Hộp", "Bộ", "Giờ"));
         dv.setMoTa(faker.lorem().sentence(10));
         return dv;
     }
 
-    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv) {
+    // Sửa: Tạo ngày ngẫu nhiên trong khoảng 2023-2025
+    private LocalDateTime generateRandomDateTime() {
+        int year = faker.number().numberBetween(2023, 2025);
+        int month = faker.number().numberBetween(1, 12);
+        int day = faker.number().numberBetween(1, 28); // Giới hạn ngày để tránh lỗi tháng ngắn
+        return LocalDateTime.of(year, month, day, faker.number().numberBetween(0, 23), faker.number().numberBetween(0, 59));
+    }
+
+    private PhieuDatDichVu generatePhieuDatDichVu(KhachHang kh, NhanVien nv, HoaDon hd) {
         PhieuDatDichVu pddv = new PhieuDatDichVu();
         pddv.setMaPDDV("PDDV" + faker.number().numberBetween(1000, 9999));
-        pddv.setNgayDatDichVu(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
+        pddv.setNgayDatDichVu(generateRandomDateTime()); // Sửa: Dùng ngày ngẫu nhiên
         pddv.setSoLuongDichVu(faker.number().numberBetween(1, 5));
         pddv.setMoTa(faker.lorem().sentence());
         pddv.setNhanVien(nv);
         pddv.setKhachHang(kh);
+        pddv.setHoaDon(hd);
 
         Set<DichVu> dsDV = new HashSet<>();
         for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
@@ -122,32 +136,43 @@ public class DataGenerator {
     private PhieuDatPhong generatePhieuDatPhong(KhachHang kh, NhanVien nv, LoaiPhong lp) {
         PhieuDatPhong pdp = new PhieuDatPhong();
         pdp.setMaPDP("PDP" + faker.number().numberBetween(1000, 9999));
-        pdp.setNgayDatPhong(LocalDate.now().minusDays(faker.number().numberBetween(1, 30)));
-        pdp.setNgayNhanPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(1, 10)));
-        pdp.setNgayTraPhongDuKien(LocalDate.now().plusDays(faker.number().numberBetween(11, 20)));
+        LocalDateTime baseDate = generateRandomDateTime(); // Ngày cơ sở
+        pdp.setNgayDatPhong(baseDate.toLocalDate());
+        pdp.setNgayNhanPhongDuKien(baseDate.plusDays(faker.number().numberBetween(1, 10)).toLocalDate());
+        pdp.setNgayTraPhongDuKien(baseDate.plusDays(faker.number().numberBetween(11, 20)).toLocalDate());
         pdp.setKhachHang(kh);
         pdp.setNhanVien(nv);
 
         Set<Phong> dsPhong = new HashSet<>();
-        dsPhong.add(generatePhong(lp));
+        for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
+            Phong phong = generatePhong(lp);
+            phong.setPhieuDatPhong(pdp);
+            dsPhong.add(phong);
+        }
         pdp.setDsPhong(dsPhong);
+
         return pdp;
     }
 
     private HoaDon generateHoaDon(KhachHang kh, PhieuDatPhong pdp, NhanVien nv) {
         HoaDon hd = new HoaDon();
         hd.setMaHD("HD" + faker.number().numberBetween(1000, 9999));
-        hd.setNgayLapHD(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 30)));
-        hd.setNgayNhanPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(1, 10)));
-        hd.setNgayTraPhong(LocalDateTime.now().plusDays(faker.number().numberBetween(11, 20)));
+        LocalDateTime baseDate = generateRandomDateTime(); // Ngày cơ sở
+        hd.setNgayLapHD(baseDate);
+        hd.setNgayNhanPhong(baseDate.plusDays(faker.number().numberBetween(1, 10)));
+        hd.setNgayTraPhong(baseDate.plusDays(faker.number().numberBetween(11, 20)));
         hd.setSoPhongDat(faker.number().numberBetween(1, 5));
         hd.setKhachHang(kh);
         hd.setPhieuDatPhong(pdp);
         hd.setNhanVien(nv);
 
+        // Gán ngược từ PDP về HD
+        pdp.setHoaDon(hd);
+
+        // Tạo danh sách Phiếu Đặt Dịch Vụ và gán ngược về hóa đơn
         Set<PhieuDatDichVu> dsPDDV = new HashSet<>();
         for (int i = 0; i < faker.number().numberBetween(1, 3); i++) {
-            dsPDDV.add(generatePhieuDatDichVu(kh, nv));
+            dsPDDV.add(generatePhieuDatDichVu(kh, nv, hd));
         }
         hd.setDsPhieuDatDichVu(dsPDDV);
 
@@ -155,20 +180,37 @@ public class DataGenerator {
     }
 
     public void generateAndPersistSampleData() {
-        for (int i = 0; i < 10; i++) {
+        // 1. Tạo sẵn 4 loại phòng duy nhất
+        for (int i = 0; i < roomTypes.length; i++) {
+            LoaiPhong lp = generateLoaiPhongCoDinh(roomTypes[i], i);
+            loaiPhongMap.put(roomTypes[i], lp);
+        }
+
+        // Tăng số lượng bản ghi để có dữ liệu phong phú hơn
+        for (int i = 0; i < 50; i++) { // Tăng từ 10 lên 50 để có nhiều dữ liệu hơn
             TaiKhoan tk = generateTaiKhoan();
             NhanVien nv = generateNhanVien(tk);
             KhachHang kh = generateKhachHang();
-            LoaiPhong lp = generateLoaiPhong();
+
+            // Random loại phòng trong danh sách đã tạo
+            String randomType = faker.options().option(roomTypes);
+            LoaiPhong lp = loaiPhongMap.get(randomType);
+
             PhieuDatPhong pdp = generatePhieuDatPhong(kh, nv, lp);
             HoaDon hd = generateHoaDon(kh, pdp, nv);
 
             try {
                 tr.begin();
+                // Chỉ persist 4 loại phòng duy nhất 1 lần ở đầu
+                if (i == 0) {
+                    for (LoaiPhong loai : loaiPhongMap.values()) {
+                        em.persist(loai);
+                    }
+                }
+
                 em.persist(tk);
                 em.persist(nv);
                 em.persist(kh);
-                em.persist(lp);
                 for (Phong p : pdp.getDsPhong()) em.persist(p);
                 em.persist(pdp);
                 for (PhieuDatDichVu pddv : hd.getDsPhieuDatDichVu()) {

@@ -51,6 +51,7 @@ public class Phong_DAO extends GenericDAO<Phong> {
         return mapper.toDTO(super.read(maPhong));
     }
 
+<<<<<<< HEAD
     // Lấy tất cả phòng
     public List<PhongDTO> getAllPhongDTOs() {
         return super.findAll().stream()
@@ -58,6 +59,29 @@ public class Phong_DAO extends GenericDAO<Phong> {
                 .collect(Collectors.toList());
     }
 
+=======
+    public List<PhongDTO> getAllPhongDTOs() {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Phong> cq = cb.createQuery(Phong.class);
+            Root<Phong> root = cq.from(Phong.class);
+            root.fetch("loaiPhong"); // JOIN với bảng LoaiPhong
+
+            cq.select(root);
+
+            List<Phong> resultList = em.createQuery(cq).getResultList();
+            return resultList.stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+
+        } finally {
+            em.close();
+        }
+    }
+
+
+>>>>>>> main
     // Tìm kiếm phòng theo tên gần đúng
     public List<PhongDTO> findByTenPhong(String tenPhong) {
         if (tenPhong == null || tenPhong.isEmpty()) return new ArrayList<>();
@@ -75,13 +99,18 @@ public class Phong_DAO extends GenericDAO<Phong> {
         }
     }
 
+<<<<<<< HEAD
     // Tìm kiếm phòng theo nhiều tiêu chí (tên, tình trạng, loại phòng)
     public List<PhongDTO> findByMultipleCriteria(String tenPhong, Integer tinhTrang, String maLoaiPhong) {
+=======
+    public List<PhongDTO> findByKeyword(String keyword) {
+>>>>>>> main
         EntityManager em = HibernateUtil.getEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Phong> cq = cb.createQuery(Phong.class);
             Root<Phong> root = cq.from(Phong.class);
+<<<<<<< HEAD
             List<Predicate> predicates = new ArrayList<>();
 
             if (tenPhong != null && !tenPhong.isEmpty()) {
@@ -100,8 +129,69 @@ public class Phong_DAO extends GenericDAO<Phong> {
             return em.createQuery(cq).getResultList().stream()
                     .map(mapper::toDTO)
                     .collect(Collectors.toList());
+=======
+
+            if (keyword != null) keyword = keyword.trim().toLowerCase();
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Tìm theo chuỗi (String)
+            predicates.add(cb.like(cb.lower(root.get("tenPhong")), "%" + keyword + "%"));
+            predicates.add(cb.like(cb.lower(root.get("loaiPhong").get("tenLoai")), "%" + keyword + "%"));
+            predicates.add(cb.like(cb.lower(root.get("moTa")), "%" + keyword + "%"));
+
+            // Tìm theo số nếu có thể parse được
+            try {
+                double gia = Double.parseDouble(keyword);
+                predicates.add(cb.equal(root.get("giaPhong"), gia));
+            } catch (NumberFormatException ignored) {}
+
+            try {
+                int so = Integer.parseInt(keyword);
+                predicates.add(cb.equal(root.get("soNguoi"), so));
+                predicates.add(cb.equal(root.get("tinhTrang"), so));
+            } catch (NumberFormatException ignored) {}
+
+            // Ánh xạ keyword dạng chữ cho tình trạng
+            if ("Còn trống".equalsIgnoreCase(keyword)) {
+                predicates.add(cb.equal(root.get("tinhTrang"), 0));
+            } else if ("Đang sử dụng".equalsIgnoreCase(keyword)) {
+                predicates.add(cb.equal(root.get("tinhTrang"), 1));
+            }
+
+            cq.select(root).where(cb.or(predicates.toArray(new Predicate[0])));
+
+            List<Phong> resultList = em.createQuery(cq).getResultList();
+            return resultList.stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+
+>>>>>>> main
         } finally {
             em.close();
         }
     }
+<<<<<<< HEAD
+=======
+
+
+    // Kiểm tra mã phòng đã tồn tại hay chưa
+    public boolean existsByMaPhong(String maPhong) {
+        if (maPhong == null || maPhong.trim().isEmpty()) return false;
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+            Root<Phong> root = cq.from(Phong.class);
+
+            cq.select(cb.count(root)).where(cb.equal(root.get("maPhong"), maPhong.trim()));
+            Long count = em.createQuery(cq).getSingleResult();
+            return count != null && count > 0;
+        } finally {
+            em.close();
+        }
+    }
+
+
+>>>>>>> main
 }

@@ -4,18 +4,40 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.shared</groupId>
+    <groupId>iuh.fit.smile2</groupId>
     <artifactId>shared</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <parent>
+        <groupId>iuh.fit.smile2</groupId>
+        <artifactId>booking-hotel</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath> <!-- Đường dẫn đến pom.xml của folder cha -->
+    </parent>
+
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+        <!-- Gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
+            <version>1.18.30</version> <!-- nên thêm version cụ thể -->
             <scope>provided</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.fatboyindustrial.gson-javatime-serialisers/gson-javatime-serialisers -->
+        <dependency>
+            <groupId>com.fatboyindustrial.gson-javatime-serialisers</groupId>
+            <artifactId>gson-javatime-serialisers</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+
     </dependencies>
+
+
 </project>
