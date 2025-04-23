@@ -46,10 +46,21 @@ public class Phong_DAO extends GenericDAO<Phong> {
     }
 
     // Đọc phòng theo mã
+//    public PhongDTO read(String maPhong) {
+//        if (maPhong == null || maPhong.isEmpty()) return null;
+//        return mapper.toDTO(super.read(maPhong));
+//    }
+
     public PhongDTO read(String maPhong) {
-        if (maPhong == null || maPhong.isEmpty()) return null;
-        return mapper.toDTO(super.read(maPhong));
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            Phong phong = em.find(Phong.class, maPhong); // ✅ Tìm entity Phong trước
+            return phong != null ? mapper.toDTO(phong) : null;
+        } finally {
+            em.close();
+        }
     }
+
 
     public List<PhongDTO> getAllPhongDTOs() {
         EntityManager em = HibernateUtil.getEntityManager();
@@ -115,6 +126,25 @@ public class Phong_DAO extends GenericDAO<Phong> {
         }
     }
 
+    public List<PhongDTO> findPhongDaDat() {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Phong> cq = cb.createQuery(Phong.class);
+            Root<Phong> root = cq.from(Phong.class);
+
+            // WHERE tinhTrang = 1
+            Predicate daDat = cb.equal(root.get("tinhTrang"), 1);
+            cq.select(root).where(daDat);
+
+            List<Phong> resultList = em.createQuery(cq).getResultList();
+            return resultList.stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+        } finally {
+            em.close();
+        }
+    }
 
 
 }

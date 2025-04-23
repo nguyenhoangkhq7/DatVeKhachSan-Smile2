@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.*;
 import mapper.GenericMapper;
 import mapper.impl.PhieuDatPhongMapperImpl;
 import model.PhieuDatPhong;
+import org.hibernate.Hibernate;
 import utils.HibernateUtil;
 
 import java.util.ArrayList;
@@ -31,7 +32,36 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
     // READ by ID
     public PhieuDatPhongDTO read(String maPDP) {
         if (maPDP == null || maPDP.isEmpty()) return null;
-        return mapper.toDTO(super.read(maPDP));
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<PhieuDatPhong> cq = cb.createQuery(PhieuDatPhong.class);
+            Root<PhieuDatPhong> root = cq.from(PhieuDatPhong.class);
+
+            // Fetch các liên kết cần thiết - EAGER loading
+            root.fetch("phongs", JoinType.LEFT);
+            root.fetch("khachHang", JoinType.LEFT);
+            root.fetch("nhanVien", JoinType.LEFT);
+            root.fetch("phieuDatDichVus", JoinType.LEFT);
+            root.fetch("hoaDon", JoinType.LEFT);
+
+            cq.select(root).where(cb.equal(root.get("maPDP"), maPDP));
+            PhieuDatPhong entity = em.createQuery(cq).getSingleResult();
+            Hibernate.initialize(entity);
+            // Ép buộc khởi tạo collections trước khi đóng session
+//            if (entity.getPhongs() != null) {
+//                entity.getPhongs().size();
+//            }
+
+
+            return mapper.toDTO(entity);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Lỗi khi đọc PhieuDatPhong với maPDP=" + maPDP + ": " + e.getMessage());
+            return null;
+        } finally {
+            em.close();
+        }
     }
 
     // UPDATE

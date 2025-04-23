@@ -35,6 +35,7 @@ public class DichVuHandler implements RequestHandler{
                 boolean sucess = dichVuDao.create(dto);
                 return new Response<>(sucess, sucess ? "Thêm dịch vụ thành công" : "Thêm dịch vụ thất bại");
             }
+
             case "SUA_DICH_VU" -> {
                 DichVuDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), DichVuDTO.class
@@ -65,6 +66,37 @@ public class DichVuHandler implements RequestHandler{
                 String donViTinh = criteria[3].isEmpty() ? null : criteria[3];
                 List<DichVuDTO> ds = dichVuDao.findByMultipleCriteria(tenDV, minGia, maxGia, donViTinh);
                 return new Response<>(true, ds);
+            }
+            case "XOA_DICH_VU" -> {
+                System.out.println("Handling XOA_DICH_VU request for maDV: " + request.getData());
+                try {
+                    String maDV = gson.fromJson(gson.toJson(request.getData()), String.class);
+                    if (maDV == null || maDV.isEmpty()) {
+                        System.out.println("Invalid maDV: null or empty");
+                        Response<String> response = new Response<>(false, "Mã dịch vụ không hợp lệ");
+                        System.out.println("Returning response: " + gson.toJson(response));
+                        return response;
+                    }
+                    DichVuDTO existingDV = dichVuDao.read(maDV);
+                    if (existingDV == null) {
+                        System.out.println("XOA_DICH_VU result: Dịch vụ không tồn tại với mã " + maDV);
+                        Response<String> response = new Response<>(false, "Dịch vụ không tồn tại với mã " + maDV);
+                        System.out.println("Returning response: " + gson.toJson(response));
+                        return response;
+                    }
+                    boolean success = dichVuDao.delete(new DichVuDTO(maDV, "", 0, "", ""));
+                    String message = success ? "Xóa dịch vụ thành công" : "Không thể xóa dịch vụ, có thể đang được sử dụng trong phiếu đặt dịch vụ";
+                    System.out.println("XOA_DICH_VU result: " + message);
+                    Response<String> response = new Response<>(success, message);
+                    System.out.println("Returning response: " + gson.toJson(response));
+                    return response;
+                } catch (Exception e) {
+                    System.out.println("XOA_DICH_VU error: " + e.getMessage());
+                    e.printStackTrace();
+                    Response<String> response = new Response<>(false, "Lỗi không xác định khi xóa dịch vụ: " + e.getMessage());
+                    System.out.println("Returning error response: " + gson.toJson(response));
+                    return response;
+                }
             }
         }
         return new Response<>(false, "Hành động không được hỗ trợ");

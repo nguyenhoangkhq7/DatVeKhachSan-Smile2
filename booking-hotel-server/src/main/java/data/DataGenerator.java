@@ -102,7 +102,7 @@ public class DataGenerator {
         phong.setMaPhong("PH" + faker.number().numberBetween(1000, 9999));
         phong.setTenPhong("Phòng " + faker.number().numberBetween(1, 100));
         phong.setGiaPhong(faker.number().randomDouble(2, 500000, 5000000));
-        phong.setTinhTrang(faker.number().numberBetween(0, 2));
+        phong.setTinhTrang(faker.number().numberBetween(0, 6));
         phong.setMoTa(faker.lorem().sentence(10));
         phong.setSoNguoi(faker.number().numberBetween(1, 6));
         phong.setLoaiPhong(loaiPhong);

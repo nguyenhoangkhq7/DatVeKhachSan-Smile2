@@ -1,5 +1,6 @@
 package view.form;
 
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import dto.DichVuDTO;
 import model.Request;
@@ -18,6 +19,7 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseListener {
 
@@ -149,7 +151,7 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
 
         // Tạo bang
         Box b6 = Box.createHorizontalBox();
-        String[] colName = {"Mã dịch vụ", "Tên dịch vụ", "Mô tả", "Giá dịch vụ", "Đơn vị tính", "Số lượng tồn"};
+        String[] colName = {"Mã dịch vụ", "Tên dịch vụ", "Mô tả", "Giá dịch vụ", "Đơn vị tính"};
         tableModel = new DefaultTableModel(colName, 0) {
             private static final long serialVersionUID = 1L;
 
@@ -283,7 +285,7 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
             txtMoTa.setText(tableModel.getValueAt(selectedRow, 2).toString());
             txtGiaDV.setText(tableModel.getValueAt(selectedRow, 3).toString());
             txtDVT.setText(tableModel.getValueAt(selectedRow, 4).toString());
-            txtSLT.setText(tableModel.getValueAt(selectedRow, 5).toString());
+//            txtSLT.setText(tableModel.getValueAt(selectedRow, 5).toString());
         }
     }
 
@@ -300,9 +302,44 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
     public void mouseExited(MouseEvent e) {}
 
     private void loadTableData() {
-        // (Giữ nguyên hoặc tích hợp với server nếu cần)
-    }
+        try {
+            // Gửi yêu cầu lấy tất cả dịch vụ
+            Request<String> request = new Request<>("GET_ALL_DICH_VU", null);
+            SocketManager.send(request);
 
+            // Nhận phản hồi từ server
+            Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
+            Response<List<DichVuDTO>> response = SocketManager.receiveType(responseType);
+
+            // Xóa dữ liệu cũ trong bảng
+            tableModel.setRowCount(0);
+
+            // Kiểm tra phản hồi
+            if (response != null && response.isSuccess() && response.getData() != null) {
+                // Thêm từng dịch vụ vào bảng
+                for (DichVuDTO dichVu : response.getData()) {
+                    Object[] row = {
+                            dichVu.getMaDV(),
+                            dichVu.getTenDV(),
+                            dichVu.getMoTa(),
+                            dichVu.getDonGia(),
+                            dichVu.getDonViTinh(),
+                    };
+                    tableModel.addRow(row);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Không thể tải danh sách dịch vụ!");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
+                    "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+            if (option == JOptionPane.YES_OPTION) {
+                loadTableData(); // Thử lại nếu người dùng chọn "Yes"
+            }
+        }
+    }
     private void timKiem(String keyword) {
         // (Giữ nguyên hoặc tích hợp với server nếu cần)
     }
@@ -323,60 +360,44 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
     }
 
     private void themDichVu() {
-        // (Giữ nguyên hoặc tích hợp với server nếu cần)
-    }
-
-    private void xoaDichVu() {
-        // (Giữ nguyên hoặc tích hợp với server nếu cần)
-    }
-
-    private void suaDichVu() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để sửa!");
-            return;
-        }
-
-        String maDV = tableModel.getValueAt(selectedRow, 0).toString();
+        String maDV = txtMaDV.getText().trim();
         String tenDV = txtTenDV.getText().trim();
         String moTa = txtMoTa.getText().trim();
         String giaDVText = txtGiaDV.getText().trim();
         String donVT = txtDVT.getText().trim();
-        String soLTText = txtSLT.getText().trim();
 
+        // Kiểm tra dữ liệu đầu vào
         if (!kiemTraDauVao(maDV, tenDV, moTa, giaDVText)) {
             return;
         }
 
+        // Chuyển đổi giá dịch vụ và số lượng tồn thành số
         double giaDV;
-        int soLT;
         try {
             giaDV = Double.parseDouble(giaDVText);
-            soLT = Integer.parseInt(soLTText);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Giá dịch vụ hoặc số lượng tồn phải là số hợp lệ!");
             return;
         }
 
+        // Tạo đối tượng DichVuDTO
         DichVuDTO dichVuDTO = new DichVuDTO(maDV, tenDV, giaDV, donVT, moTa);
-//        dichVuDTO.setSoLuongTon(soLT);
 
-        Request<DichVuDTO> request = new Request<>("SUA_DICH_VU", dichVuDTO);
+        // Gửi yêu cầu thêm dịch vụ đến server
+        Request<DichVuDTO> request = new Request<>("THEM_DICH_VU", dichVuDTO);
         try {
             SocketManager.send(request);
             Type responseType = new TypeToken<Response<String>>(){}.getType();
-            Response<String> response = SocketManager.receive((Class<Response<String>>) responseType);
+            Response<String> response = SocketManager.receiveType(responseType);
 
             if (response != null && response.isSuccess()) {
-                tableModel.setValueAt(tenDV, selectedRow, 1);
-                tableModel.setValueAt(moTa, selectedRow, 2);
-                tableModel.setValueAt(giaDV, selectedRow, 3);
-                tableModel.setValueAt(donVT, selectedRow, 4);
-                tableModel.setValueAt(soLT, selectedRow, 5);
-                lamMoi();
-                JOptionPane.showMessageDialog(this, "Cập nhật dịch vụ thành công!");
+                // Thêm dịch vụ vào bảng
+                Object[] row = {maDV, tenDV, moTa, giaDV, donVT};
+                tableModel.addRow(row);
+                lamMoi(); // Làm mới form
+                JOptionPane.showMessageDialog(this, "Thêm dịch vụ thành công!");
             } else {
-                JOptionPane.showMessageDialog(this, "Cập nhật dịch vụ thất bại!");
+                JOptionPane.showMessageDialog(this, "Thêm dịch vụ thất bại: " + (response != null ? response.getData() : "Lỗi không xác định"));
             }
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -384,8 +405,146 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
                     "Lỗi kết nối đến server: " + ex.getMessage() + "\nBạn có muốn thử lại?",
                     "Lỗi hệ thống", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
             if (option == JOptionPane.YES_OPTION) {
-                suaDichVu();
+                themDichVu(); // Thử lại nếu người dùng chọn "Yes"
             }
+        }
+    }
+
+    private void xoaDichVu() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn dịch vụ cần xóa!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String maDV = (String) tableModel.getValueAt(selectedRow, 0);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa dịch vụ " + maDV + "?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            Request<String> request = new Request<>("XOA_DICH_VU", maDV);
+            System.out.println("Sending request: " + new Gson().toJson(request));
+            SocketManager.send(request);
+            Type type = new TypeToken<Response<String>>() {}.getType();
+            Response<String> response = SocketManager.receiveType(type);
+            System.out.println("RECEIVED JSON: " + new Gson().toJson(response));
+            System.out.println("Message: " + response.getData());
+
+            if (response != null && response.isSuccess()) {
+                tableModel.removeRow(selectedRow);
+                table.repaint();
+                table.revalidate();
+                JOptionPane.showMessageDialog(this,
+                        "Xóa dịch vụ thành công!",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                lamMoi();
+            } else {
+                String errorMsg = response != null && response.getData() != null ?
+                        response.getData().toString() : "Lỗi không xác định từ server";
+                JOptionPane.showMessageDialog(this,
+                        "Xóa dịch vụ thất bại: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi xử lý dữ liệu: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void suaDichVu() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn dịch vụ cần sửa!",
+                    "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Use the maDV from the selected row (non-editable)
+        String maDV = (String) tableModel.getValueAt(selectedRow, 0);
+        String tenDV = txtTenDV.getText().trim();
+        String moTa = txtMoTa.getText().trim();
+        String donGiaText = txtGiaDV.getText().trim();
+        String donViTinh = txtDVT.getText().trim();
+
+        // Validate inputs
+        if (tenDV.isEmpty() || donGiaText.isEmpty() || donViTinh.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
+            return;
+        }
+
+        // Validate maDV format
+        if (!maDV.matches("^DV[0-9]{4}$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Mã dịch vụ không hợp lệ! Mã phải có dạng DVXXXX (XXXX là 4 chữ số).",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        double donGia;
+        try {
+            donGia = Double.parseDouble(donGiaText);
+            if (donGia <= 0) {
+                JOptionPane.showMessageDialog(this, "Đơn giá phải lớn hơn 0!");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Đơn giá phải là số!");
+            return;
+        }
+
+        // Create DichVuDTO with updated values
+        DichVuDTO dto = new DichVuDTO(maDV, tenDV, donGia, donViTinh, moTa);
+
+        try {
+            Request<DichVuDTO> request = new Request<>("SUA_DICH_VU", dto);
+            System.out.println("Sending request: " + new Gson().toJson(request));
+            SocketManager.send(request);
+            Type type = new TypeToken<Response<String>>() {}.getType();
+            Response<String> response = SocketManager.receiveType(type);
+            System.out.println("RECEIVED JSON: " + new Gson().toJson(response));
+            System.out.println("Message: " + response.getData());
+
+            if (response != null && response.isSuccess()) {
+                // Update the table row
+                tableModel.setValueAt(tenDV, selectedRow, 1);
+                tableModel.setValueAt(moTa, selectedRow, 2);
+                tableModel.setValueAt(donGia, selectedRow, 3);
+                tableModel.setValueAt(donViTinh, selectedRow, 4);
+                JOptionPane.showMessageDialog(this,
+                        "Sửa dịch vụ thành công!",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                lamMoi();
+            } else {
+                String errorMsg = response != null && response.getData() != null ?
+                        response.getData().toString() : "Lỗi không xác định từ server";
+                JOptionPane.showMessageDialog(this,
+                        "Sửa dịch vụ thất bại: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi xử lý dữ liệu: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -393,8 +552,8 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
         int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
         int lastTwoDigitsOfYear = currentYear % 100;
 
-        if (!maDV.matches("^[0-9]{2}[A-Z0-9]{4}$")) {
-            JOptionPane.showMessageDialog(this, "Mã dịch vụ phải có 2 ký tự đầu là số, 4 ký tự sau là chữ in hoa hoặc số!");
+        if (!maDV.matches("^DV[0-9]{4}$")) {
+            JOptionPane.showMessageDialog(this, "Mã dịch vụ phải có 2 ký tự đầu là DV, 4 ký tự sau là chữ số!");
             return false;
         }
         int firstTwoDigits = Integer.parseInt(maDV.substring(0, 2));
