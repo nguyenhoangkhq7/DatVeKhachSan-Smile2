@@ -552,26 +552,36 @@ public class CapNhatDichVu_FORM extends JPanel implements ActionListener, MouseL
         int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
         int lastTwoDigitsOfYear = currentYear % 100;
 
+        // Kiểm tra định dạng mã dịch vụ: DV + 4 chữ số
         if (!maDV.matches("^DV[0-9]{4}$")) {
             JOptionPane.showMessageDialog(this, "Mã dịch vụ phải có 2 ký tự đầu là DV, 4 ký tự sau là chữ số!");
             return false;
         }
-        int firstTwoDigits = Integer.parseInt(maDV.substring(0, 2));
-        if (firstTwoDigits > lastTwoDigitsOfYear) {
-            JOptionPane.showMessageDialog(this, "Hai ký tự đầu của mã dịch vụ không được lớn hơn 2 số cuối của năm hiện tại!");
+
+        // Lấy 4 ký tự cuối của mã dịch vụ (phần số) và lấy 2 chữ số đầu tiên để so sánh
+        String numberPart = maDV.substring(2); // Lấy "1234" từ "DV1234"
+        int firstTwoDigitsOfNumber = Integer.parseInt(numberPart.substring(0, 2)); // Lấy "12" từ "1234"
+        if (firstTwoDigitsOfNumber > lastTwoDigitsOfYear) {
+            JOptionPane.showMessageDialog(this,
+                    "Hai chữ số đầu của phần số trong mã dịch vụ không được lớn hơn 2 số cuối của năm hiện tại!");
             return false;
         }
 
+        // Kiểm tra tên dịch vụ
         if (tenDV == null || tenDV.isEmpty() || tenDV.length() > 100) {
-            JOptionPane.showMessageDialog(this, "Tên dịch vụ không hợp lệ! (Không được để trống, tối đa 100 ký tự)");
+            JOptionPane.showMessageDialog(this,
+                    "Tên dịch vụ không hợp lệ! (Không được để trống, tối đa 100 ký tự)");
             return false;
         }
 
+        // Kiểm tra mô tả
         if (moTa == null || moTa.isEmpty() || moTa.length() > 200) {
-            JOptionPane.showMessageDialog(this, "Mô tả dịch vụ không hợp lệ! (Không được để trống, tối đa 200 ký tự)");
+            JOptionPane.showMessageDialog(this,
+                    "Mô tả dịch vụ không hợp lệ! (Không được để trống, tối đa 200 ký tự)");
             return false;
         }
 
+        // Kiểm tra giá dịch vụ
         try {
             double giaDV = Double.parseDouble(giaDVText);
             if (giaDV <= 0) {

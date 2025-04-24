@@ -174,6 +174,11 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         Box b = Box.createVerticalBox();
         b.add(Box.createVerticalStrut(10));
 
+        if (dsMaPDP == null) {
+            dsMaPDP = new ArrayList<>();
+            System.out.println("dsMaPDP bị null, đã khởi tạo lại.");
+        }
+
         // Tìm kiếm
         JTextField searchField = new JTextField("Tìm kiếm mã phòng");
         Border emptyBorder = BorderFactory.createEmptyBorder(13, 52, 12, 0);
@@ -308,6 +313,12 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             TableColumn column = table3.getColumnModel().getColumn(i);
             column.setCellRenderer(cellRenderer3);
         }
+
+        System.out.println("Bắt đầu loadPhongData...");
+        loadPhongData();
+        System.out.println("dsMaPDP sau loadPhongData: " + dsMaPDP);
+
+        System.out.println("Bắt đầu loadDichVuDaDatData với dsMaPDP: " + dsMaPDP);
         loadDichVuDaDatData(dsMaPDP); // Thay loadDichVuDaDat() bằng loadDichVuDaDatData()
 
         b.add(b3);
@@ -365,36 +376,121 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
 
     private void loadDichVuDaDatData(List<String> maPDPs) {
         try {
-            // Gửi request kèm theo danh sách maPDP
-            Request<List<String>> request = new Request<>("GET_ALL_PHONG_DAT_DICHVU", maPDPs);
+            // Kiểm tra danh sách maPDPs
+            if (maPDPs == null) {
+                System.out.println("Danh sách mã PDP là null, khởi tạo danh sách rỗng.");
+                maPDPs = new ArrayList<>();
+            }
+            if (maPDPs.isEmpty()) {
+                System.out.println("Danh sách mã PDP rỗng, không gửi yêu cầu đến server.");
+                tableModel3.setRowCount(0); // Xóa dữ liệu cũ
+                JOptionPane.showMessageDialog(null, "Không có mã phiếu đặt phòng để lấy dữ liệu dịch vụ.",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Loại bỏ các mã PDP trùng lặp
+            List<String> uniqueMaPDPs = new ArrayList<>(new LinkedHashSet<>(maPDPs));
+            System.out.println("Danh sách mã PDP (sau khi loại trùng lặp): " + uniqueMaPDPs);
+
+            // Gửi yêu cầu kèm theo danh sách maPDP
+            Request<List<String>> request = new Request<>("GET_ALL_PHONG_DAT_DICHVU", uniqueMaPDPs);
+            System.out.println("Gửi yêu cầu GET_ALL_PHONG_DAT_DICHVU với maPDPs: " + uniqueMaPDPs);
             SocketManager.send(request);
 
-            // Nhận phản hồi từ server với Type chính xác
-            Type responseType = new TypeToken<Response<String[][]>>() {}.getType();
-            Response<String[][]> response = SocketManager.receiveType(responseType);
-            System.out.println(response);
+            // Nhận JSON thô từ server
+            String rawJson = SocketManager.receiveRaw();
+            System.out.println("Nhận JSON thô từ server: " + rawJson);
 
-            if (response.isSuccess()) {
-                String[][] data = response.getData();
-                System.out.println(data);
-                // Xóa dữ liệu cũ
+            // Phân tích JSON để kiểm tra success và data
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(rawJson, JsonObject.class);
+
+            // Kiểm tra trường "success"
+            if (!jsonObject.has("success") || !jsonObject.get("success").getAsBoolean()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Yêu cầu không thành công";
+                System.out.println("Yêu cầu GET_ALL_PHONG_DAT_DICHVU thất bại: " + errorMsg);
+                JOptionPane.showMessageDialog(null, "Lỗi từ server: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
                 tableModel3.setRowCount(0);
+                return;
+            }
+
+            // Kiểm tra trường "data" có phải là mảng không
+            if (!jsonObject.has("data") || !jsonObject.get("data").isJsonArray()) {
+                String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Dữ liệu không hợp lệ";
+                System.out.println("Dữ liệu không phải mảng: " + errorMsg);
+                JOptionPane.showMessageDialog(null, "Dữ liệu từ server không hợp lệ: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                tableModel3.setRowCount(0);
+                return;
+            }
+
+            // Phân tích dữ liệu thành Response<String[][]>
+            Type responseType = new TypeToken<Response<String[][]>>() {}.getType();
+            Response<String[][]> response = gson.fromJson(rawJson, responseType);
+
+            System.out.println("Phản hồi từ server: Success=" + response.isSuccess() +
+                    ", Data=" + (response.getData() != null ? Arrays.deepToString(response.getData()) : "null"));
+
+            if (response.isSuccess() && response.getData() != null && response.getData().length > 0) {
+                String[][] data = response.getData();
+                tableModel3.setRowCount(0); // Xóa dữ liệu cũ
 
                 // Thêm dữ liệu mới vào model
                 for (String[] row : data) {
-                    tableModel3.addRow(new Object[]{
-                            row[0],
-                            row[1],
-                            row[2],
-                            row[3]
-                    });
+                    if (row != null && row.length == 4) { // Kiểm tra độ dài của hàng
+                        tableModel3.addRow(new Object[]{
+                                row[0], // Mã đặt phòng
+                                row[1], // Phòng
+                                row[2], // Tên khách
+                                row[3]  // Dịch vụ đã đặt
+                        });
+                        System.out.println("Thêm hàng vào tableModel3: " + Arrays.toString(row));
+                    } else {
+                        System.out.println("Dữ liệu hàng không hợp lệ: " + Arrays.toString(row));
+                    }
+                }
+
+                // Kiểm tra số lượng hàng được thêm
+                System.out.println("Đã thêm " + tableModel3.getRowCount() + " hàng vào tableModel3.");
+                if (tableModel3.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(null,
+                            "Không có dữ liệu dịch vụ đã đặt cho các mã PDP: " + uniqueMaPDPs,
+                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 }
             } else {
-                JOptionPane.showMessageDialog(null, "Không lấy được dữ liệu dịch vụ đã đặt!");
+                String errorMsg = response.getData() != null ? Arrays.deepToString(response.getData()) :
+                        "Dữ liệu rỗng";
+                System.out.println("Không lấy được dữ liệu từ server: " + errorMsg);
+                JOptionPane.showMessageDialog(null,
+                        "Không lấy được dữ liệu dịch vụ đã đặt: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                tableModel3.setRowCount(0);
             }
-        } catch (Exception e) {
+
+            // Cập nhật giao diện bảng
+            table1.repaint();
+            table1.revalidate();
+
+        } catch (IOException e) {
+            System.err.println("Lỗi kết nối khi tải dữ liệu dịch vụ đã đặt: " + e.getMessage());
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi khi load dịch vụ đã đặt.");
+            JOptionPane.showMessageDialog(null, "Lỗi kết nối đến server: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            tableModel3.setRowCount(0);
+        } catch (JsonSyntaxException e) {
+            System.err.println("Lỗi định dạng JSON khi tải dữ liệu dịch vụ đã đặt: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Dữ liệu nhận được không hợp lệ: " + e.getMessage(),
+                    "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+            tableModel3.setRowCount(0);
+        } catch (Exception e) {
+            System.err.println("Lỗi không xác định khi tải dữ liệu dịch vụ đã đặt: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi hệ thống: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            tableModel3.setRowCount(0);
         }
     }
 

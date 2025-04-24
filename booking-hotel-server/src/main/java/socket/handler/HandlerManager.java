@@ -60,6 +60,7 @@ public class HandlerManager {
         handlers.put("CREATE_HOA_DON", new HoaDonHandler());
         handlers.put("CHECK_PHIEU_DAT_PHONG_EXISTS", new PhieuDatPhongHandler());
         handlers.put("FIND_PHIEU_BY_MULTIPLE_CRITERIA", new PhieuDatPhongHandler());
+        handlers.put("GET_ALL_PHONG_DAT_DICHVU", new DichVuHandler());
 
 
 
