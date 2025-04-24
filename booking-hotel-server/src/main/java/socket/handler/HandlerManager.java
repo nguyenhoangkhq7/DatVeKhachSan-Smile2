@@ -58,6 +58,7 @@ public class HandlerManager {
         handlers.put("THEM_KHACH_HANG_BOOLEAN", new KhachHangHandler());
         handlers.put("SUA_PHONG_BOOLEAN", new PhongHandler());
         handlers.put("CREATE_HOA_DON", new HoaDonHandler());
+        handlers.put("CHECK_PHIEU_DAT_PHONG_EXISTS", new PhieuDatPhongHandler());
 
 
 

@@ -669,21 +669,21 @@ public class DatPhong_FORM extends JPanel implements Openable {
 
     private String getRandomMa() {
         String maPDP;
+        Random random = new Random();
+        final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // Tập hợp ký tự để tạo ngẫu nhiên
+
         do {
-            Random random = new Random();
-            StringBuilder letters = new StringBuilder();
-            for (int i = 0; i < 3; i++) {
-                char randomLetter = (char) ('A' + random.nextInt(26));
-                letters.append(randomLetter);
+            StringBuilder suffix = new StringBuilder();
+            // Tạo 8 ký tự ngẫu nhiên (chữ cái in hoa và số)
+            for (int i = 0; i < 8; i++) {
+                int index = random.nextInt(CHARACTERS.length());
+                suffix.append(CHARACTERS.charAt(index));
             }
-            StringBuilder numbers = new StringBuilder();
-            for (int i = 0; i < 3; i++) {
-                int randomNumber = random.nextInt(10);
-                numbers.append(randomNumber);
-            }
-            maPDP = letters.toString() + "-" + numbers.toString();
+            // Ghép tiền tố PDP với 8 ký tự ngẫu nhiên
+            maPDP = "PDP" + suffix.toString();
 
             try {
+                // Kiểm tra mã có tồn tại chưa
                 Request<String> checkRequest = new Request<>("CHECK_PHIEU_DAT_PHONG_EXISTS", maPDP);
                 SocketManager.send(checkRequest);
                 Type checkResponseType = new TypeToken<Response<Boolean>>() {}.getType();
@@ -877,6 +877,44 @@ public class DatPhong_FORM extends JPanel implements Openable {
         return sdt != null && sdt.matches("\\d{10}");
     }
 
+    // Thêm phương thức addRowToTable vào DatPhong_FORM.java
+    private void addRowToTable(PhieuDatPhongDTO pdp, String tenKhachHang, String maPhong, String tinhTrangText) {
+        NhanVien currentUser = SessionManager.getCurrentUser();
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin nhân viên đăng nhập!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        System.out.println("Nhân viên hiện tại: maNV=" + currentUser.getMaNhanVien() + ", hoTen=" + currentUser.getHoTen());
+        String tenNhanVien = currentUser.getHoTen() != null ? currentUser.getHoTen() : "Không xác định";
+
+        String maPDP = pdp.getMaPDP() != null ? pdp.getMaPDP() : "";
+        LocalDate ngayDat = pdp.getNgayDatPhong();
+        LocalDate ngayDen = pdp.getNgayNhanPhongDuKien();
+        LocalDate ngayDi = pdp.getNgayTraPhongDuKien();
+
+        Timestamp ngayDatTimestamp = ngayDat != null ? Timestamp.valueOf(ngayDat.atStartOfDay()) : null;
+        Timestamp ngayDenTimestamp = ngayDen != null ? Timestamp.valueOf(ngayDen.atStartOfDay()) : null;
+        Timestamp ngayDiTimestamp = ngayDi != null ? Timestamp.valueOf(ngayDi.atStartOfDay()) : null;
+
+        Object[] row = new Object[]{
+                maPDP,
+                maPhong,
+                tenKhachHang,
+                ngayDatTimestamp,
+                ngayDenTimestamp,
+                ngayDiTimestamp,
+                tenNhanVien,
+                tinhTrangText
+        };
+        tableModel.addRow(row);
+        System.out.println("Thêm hàng mới: " + Arrays.toString(row));
+
+        table.repaint();
+        table.revalidate();
+    }
+
+    // Sửa phương thức handleSubmit
     private void handleSubmit() {
         try {
             // 1. Lấy dữ liệu từ form
@@ -958,8 +996,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
 
                 Request<KhachHangDTO> createCustomerRequest = new Request<>("THEM_KHACH_HANG_BOOLEAN", newCustomer);
                 SocketManager.send(createCustomerRequest);
-                Type createResponseType = new TypeToken<Response<Boolean>>() {
-                }.getType();
+                Type createResponseType = new TypeToken<Response<Boolean>>() {}.getType();
                 Response<Boolean> createResponse = SocketManager.receiveType(createResponseType);
 
                 if (!createResponse.isSuccess() || !createResponse.getData()) {
@@ -1027,25 +1064,9 @@ public class DatPhong_FORM extends JPanel implements Openable {
                 return;
             }
 
-            // Tạo HoaDon sau khi PhieuDatPhong được lưu thành công
-            HoaDonDTO hoaDon = new HoaDonDTO();
-            hoaDon.setMaHD(phieuDatPhong.getMaHD());
-            hoaDon.setMaPDP(phieuDatPhong.getMaPDP());
-//            // Điền các thông tin khác cho HoaDon (nếu cần)
-//
-//            Request<HoaDonDTO> createHoaDonRequest = new Request<>("CREATE_HOA_DON", hoaDon);
-//            SocketManager.send(createHoaDonRequest);
-//            Type createHoaDonResponseType = new TypeToken<Response<Boolean>>() {}.getType();
-//            Response<Boolean> createHoaDonResponse = SocketManager.receiveType(createHoaDonResponseType);
-//
-//            if (!createHoaDonResponse.isSuccess() || !createHoaDonResponse.getData()) {
-//                JOptionPane.showMessageDialog(this, "Tạo hóa đơn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-//                return;
-//            }
-
-            // 8. Thông báo thành công và làm mới bảng
+            // 8. Thêm hàng mới vào bảng thay vì tải lại toàn bộ dữ liệu
             JOptionPane.showMessageDialog(this, "Tạo phiếu đặt phòng thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            loadTableData();
+            addRowToTable(phieuDatPhong, tenKhachHang, soPhong, "Đã đặt");
 
         } catch (Exception e) {
             String errorMessage = "Lỗi khi xử lý: " + e.getMessage();

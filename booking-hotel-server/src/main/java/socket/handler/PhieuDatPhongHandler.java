@@ -500,6 +500,17 @@ public class PhieuDatPhongHandler implements RequestHandler {
                     return new Response<>(false, "Lỗi hệ thống khi trả phòng: " + ex.getMessage());
                 }
             }
+            case "CHECK_PHIEU_DAT_PHONG_EXISTS" -> {
+                String maPDP = (String) request.getData();
+                System.out.println("Nhận yêu cầu CHECK_PHIEU_DAT_PHONG_EXISTS với maPDP: " + maPDP);
+                if (maPDP == null || maPDP.isEmpty()) {
+                    System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
+                    return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ");
+                }
+                boolean exists = phieuDatPhongDao.existsByMaPDP(maPDP);
+                System.out.println("Kết quả kiểm tra mã PDP: " + maPDP + " -> Tồn tại: " + exists);
+                return new Response<>(true, exists);
+            }
         }
         return null;
     }

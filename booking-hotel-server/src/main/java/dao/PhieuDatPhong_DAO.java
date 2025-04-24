@@ -2,6 +2,7 @@ package dao;
 
 import dto.PhieuDatPhongDTO;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.*;
 import mapper.GenericMapper;
 import mapper.impl.PhieuDatPhongMapperImpl;
@@ -164,6 +165,25 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             System.out.println("Lỗi khi thêm phiếu đặt phòng: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+    public boolean existsByMaPDP(String maPDP) {
+        if (maPDP == null || maPDP.isEmpty()) {
+            return false;
+        }
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            em.createQuery("SELECT p FROM PhieuDatPhong p WHERE p.maPDP = :maPDP", PhieuDatPhong.class)
+                    .setParameter("maPDP", maPDP)
+                    .getSingleResult();
+            return true; // Nếu tìm thấy, trả về true
+        } catch (NoResultException e) {
+            return false; // Nếu không tìm thấy, trả về false
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            em.close();
         }
     }
 }

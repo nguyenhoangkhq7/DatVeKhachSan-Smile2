@@ -2,6 +2,7 @@ package dao;
 
 import dto.NhanVienDTO;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -101,6 +102,22 @@ public class NhanVien_DAO extends GenericDAO<NhanVien> {
             return em.createQuery(cq).getResultList().stream()
                     .map(mapper::toDTO)
                     .collect(Collectors.toList());
+        } finally {
+            em.close();
+        }
+    }
+    public NhanVien findByMaTK(String tenDN) {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            return em.createQuery("SELECT nv FROM NhanVien nv WHERE nv.taiKhoan.tenDN = :tenDN", NhanVien.class)
+                    .setParameter("tenDN", tenDN)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            System.out.println("Không tìm thấy nhân viên với tenDN=" + tenDN);
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         } finally {
             em.close();
         }
