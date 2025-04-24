@@ -1,5 +1,6 @@
 package dao;
 
+import com.google.gson.reflect.TypeToken;
 import dto.PhieuDatPhongDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -7,15 +8,19 @@ import jakarta.persistence.criteria.*;
 import mapper.GenericMapper;
 import mapper.impl.PhieuDatPhongMapperImpl;
 import model.PhieuDatPhong;
+import model.Request;
+import model.Response;
 import org.hibernate.Hibernate;
+import socket.SocketManager;
 import utils.HibernateUtil;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
-    private final GenericMapper<PhieuDatPhong, PhieuDatPhongDTO> mapper;
+    public final GenericMapper<PhieuDatPhong, PhieuDatPhongDTO> mapper;
 
     public PhieuDatPhong_DAO() {
         super(PhieuDatPhong.class);

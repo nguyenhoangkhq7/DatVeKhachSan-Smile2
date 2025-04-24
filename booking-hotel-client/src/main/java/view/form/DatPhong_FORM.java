@@ -94,7 +94,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
                 }
             }
         });
-        txtSearch.addActionListener(e -> handleTimKiem());
+        txtSearch.addActionListener(e -> handleTimKiemTheoTieuChi());
         JLabel searchIcon = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
         searchIcon.setBounds(12, 12, 24, 24);
 
@@ -125,7 +125,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
         Box boxForm9 = createFormBox("Số điện thoại", txtSDT = new JTextField());
         Box boxForm10 = createFormBox("Loại phòng", cmbLoaiPhong = new JComboBox<>(new String[]{"Chọn", "Phòng Deluxe", "Phòng Đôi", "Phòng Gia Đình", "Phòng Đơn"}));
         Box boxForm11 = createFormBox("Số phòng", cmbSoPhong = new JComboBox<>());
-        Box boxForm12 = createFormBox("Số khách", txtSoKhach = new JTextField());
+//        Box boxForm12 = createFormBox("Số khách", txtSoKhach = new JTextField());
         dateTimeNgayDen.addActionListener(e -> handleChonLoaiPhong());
         dateTimeNgayDi.addActionListener(e -> handleChonLoaiPhong());
         cmbSoPhong.setEnabled(false);
@@ -166,7 +166,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
         form.add(boxForm9);
         form.add(boxForm10);
         form.add(boxForm11);
-        form.add(boxForm12);
+//        form.add(boxForm12);
         northPanelBox.add(searchBox);
         northPanelBox.add(Box.createVerticalStrut(10));
         northPanelBox.add(form);
@@ -396,20 +396,140 @@ public class DatPhong_FORM extends JPanel implements Openable {
         });
     }
 
-    private void handleTimKiem() {
-        String tuKhoa = txtSearch.getText().trim().toLowerCase();
-        phieuDatPhongDAO = new PhieuDatPhong_DAO();
-        if (tuKhoa.equals("Tìm kiếm") || tuKhoa.isEmpty()) {
-            return;
-        }
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
-        for (int i = 0; i < model.getRowCount(); i++) {
-            String maPDP = model.getValueAt(i, 0).toString().toLowerCase();
-            if (maPDP.contains(tuKhoa)) {
-                table.setRowSelectionInterval(i, i);
-                table.scrollRectToVisible(table.getCellRect(i, 0, true));
-                break;
+    private void handleTimKiemTheoTieuChi() {
+        try {
+            // 1. Thu thập tiêu chí tìm kiếm từ giao diện
+            String maPDP = txtSearch.getText().trim().toLowerCase();
+            String tenKhachHang = txtTenKhachHang.getText().trim();
+            String soCCCD = txtCCCD.getText().trim();
+            String soDienThoai = txtSDT.getText().trim();
+            String email = txtEmail.getText().trim();
+
+            // Kiểm tra xem có ít nhất một tiêu chí được nhập
+            if (maPDP.isEmpty() && tenKhachHang.isEmpty() && soCCCD.isEmpty() && soDienThoai.isEmpty() && email.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập ít nhất một tiêu chí tìm kiếm!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
             }
+
+            // 2. Tạo đối tượng chứa các tiêu chí
+            Map<String, String> criteria = new HashMap<>();
+            if (!maPDP.isEmpty() && !maPDP.equals("tìm kiếm")) {
+                criteria.put("maPDP", maPDP);
+            }
+            if (!tenKhachHang.isEmpty()) {
+                criteria.put("tenKhachHang", tenKhachHang);
+            }
+            if (!soCCCD.isEmpty()) {
+                criteria.put("soCCCD", soCCCD);
+            }
+            if (!soDienThoai.isEmpty()) {
+                criteria.put("soDienThoai", soDienThoai);
+            }
+            if (!email.isEmpty()) {
+                criteria.put("email", email);
+            }
+
+            // 3. Gửi yêu cầu tìm kiếm tới server
+            System.out.println("Gửi yêu cầu: FIND_PHIEU_BY_MULTIPLE_CRITERIA với tiêu chí: " + criteria);
+            Request<Map<String, String>> request = new Request<>("FIND_PHIEU_BY_MULTIPLE_CRITERIA", criteria);
+            SocketManager.send(request);
+
+            // 4. Nhận và xử lý phản hồi từ server
+            Type responseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>() {}.getType();
+            Response<List<PhieuDatPhongDTO>> response = SocketManager.receiveType(responseType);
+
+            if (response == null || !response.isSuccess()) {
+                String message = response != null && response.getData() != null ? response.getData().toString() : "Không có phản hồi từ server";
+                JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm: " + message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<PhieuDatPhongDTO> resultList = response.getData();
+            if (resultList == null || resultList.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy phiếu đặt phòng nào phù hợp!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                tableModel.setRowCount(0);
+                return;
+            }
+
+            // 5. Cập nhật bảng với kết quả tìm kiếm
+            tableModel.setRowCount(0);
+            for (PhieuDatPhongDTO pdp : resultList) {
+                String maKH = pdp.getMaKH() != null ? pdp.getMaKH() : "";
+                String maNV = pdp.getMaNV() != null ? pdp.getMaNV() : "";
+                List<String> dsMaPhong = pdp.getDsMaPhong() != null ? pdp.getDsMaPhong() : new ArrayList<>();
+                LocalDate ngayDat = pdp.getNgayDatPhong();
+                LocalDate ngayDen = pdp.getNgayNhanPhongDuKien();
+                LocalDate ngayDi = pdp.getNgayTraPhongDuKien();
+
+                // Lấy thông tin khách hàng
+                Request<String> khRequest = new Request<>("TIM_KHACH_HANG_THEO_MA", maKH);
+                SocketManager.send(khRequest);
+                Type khResponseType = new TypeToken<Response<KhachHangDTO>>() {}.getType();
+                Response<KhachHangDTO> khResponse = SocketManager.receiveType(khResponseType);
+                String tenKhachHangResult = khResponse.isSuccess() && khResponse.getData() != null ? khResponse.getData().getHoTen() : "";
+
+                // Lấy thông tin nhân viên
+                Request<String> nvRequest = new Request<>("TIM_NHAN_VIEN_THEO_MA", maNV);
+                SocketManager.send(nvRequest);
+                Type nvResponseType = new TypeToken<Response<NhanVienDTO>>() {}.getType();
+                Response<NhanVienDTO> nvResponse = SocketManager.receiveType(nvResponseType);
+                String tenNhanVien = nvResponse.isSuccess() && nvResponse.getData() != null ? nvResponse.getData().getHoTen() : "";
+
+                // Lấy trạng thái và loại phòng
+                for (String maPhong : dsMaPhong) {
+                    Request<String> phongRequest = new Request<>("GET_PHONG_BY_MA_PHONG", maPhong);
+                    SocketManager.send(phongRequest);
+                    Type phongResponseType = new TypeToken<Response<PhongDTO>>() {}.getType();
+                    Response<PhongDTO> phongResponse = SocketManager.receiveType(phongResponseType);
+                    Integer tinhTrangPhong = phongResponse.isSuccess() && phongResponse.getData() != null ? phongResponse.getData().getTinhTrang() : -1;
+
+                    String tinhTrangText = switch (tinhTrangPhong) {
+                        case 0 -> "Còn trống";
+                        case 1 -> "Đã đặt";
+                        case 2 -> "Đang sử dụng";
+                        case 3 -> "Đang dọn dẹp";
+                        case 4 -> "Đang bảo trì";
+                        case 5 -> "Tạm khóa";
+                        default -> "Không xác định";
+                    };
+
+                    String tenLoai = "Không xác định";
+                    if (phongResponse.isSuccess() && phongResponse.getData() != null && phongResponse.getData().getMaLoai() != null) {
+                        Request<String> tenLoaiRequest = new Request<>("GET_TEN_LOAI_BY_MA_LOAI", phongResponse.getData().getMaLoai());
+                        SocketManager.send(tenLoaiRequest);
+                        Type tenLoaiResponseType = new TypeToken<Response<String>>() {}.getType();
+                        Response<String> tenLoaiResponse = SocketManager.receiveType(tenLoaiResponseType);
+                        if (tenLoaiResponse.isSuccess() && tenLoaiResponse.getData() != null) {
+                            tenLoai = tenLoaiResponse.getData();
+                        }
+                    }
+
+                    Timestamp ngayDatTimestamp = ngayDat != null ? Timestamp.valueOf(ngayDat.atStartOfDay()) : null;
+                    Timestamp ngayDenTimestamp = ngayDen != null ? Timestamp.valueOf(ngayDen.atStartOfDay()) : null;
+                    Timestamp ngayDiTimestamp = ngayDi != null ? Timestamp.valueOf(ngayDi.atStartOfDay()) : null;
+
+                    Object[] row = new Object[]{
+                            pdp.getMaPDP(),
+                            maPhong,
+                            tenKhachHangResult,
+                            ngayDatTimestamp,
+                            ngayDenTimestamp,
+                            ngayDiTimestamp,
+                            tenNhanVien,
+                            tinhTrangText
+                    };
+                    tableModel.addRow(row);
+                }
+            }
+
+            table.repaint();
+            table.revalidate();
+            JOptionPane.showMessageDialog(this, "Tìm thấy " + resultList.size() + " phiếu đặt phòng!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            String errorMessage = "Lỗi khi tìm kiếm: " + e.getMessage();
+            JOptionPane.showMessageDialog(this, errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 
