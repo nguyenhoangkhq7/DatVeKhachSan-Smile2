@@ -67,6 +67,59 @@ public class HoaDon_DAO extends GenericDAO<HoaDon> {
         }
     }
 
+    public List<Object[]> getDoanhThuPhongTheoNamThang() {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            String sql = """
+                SELECT
+                    YEAR(hd.ngay_lap_hd) AS nam,
+                    MONTH(hd.ngay_lap_hd) AS thang,
+                    SUM(p.gia_phong * hd.so_luong_dat) AS doanh_thu_phong
+                FROM hoa_don hd
+                JOIN phieu_dat_phong pdp ON hd.ma_phieu_dat_phong = pdp.ma_pdp
+                JOIN chi_tiet_dat_phong ct ON  pdp.ma_pdp = ct.ma_pdp
+                JOIN phong p ON ct.ma_phong = p.ma_phong
+                GROUP BY YEAR(hd.ngay_lap_hd), MONTH(hd.ngay_lap_hd)
+                ORDER BY nam, thang
+            """;
+            List<Object[]> result = em.createNativeQuery(sql).getResultList();
+            System.out.println("Doanh thu phòng: " + result); // Debug
+            return result;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi lấy doanh thu phòng: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu có lỗi
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Object[]> getDoanhThuDichVuTheoNamThang() {
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            String sql = """
+                SELECT
+                    YEAR(pddv.ngay_dat_dich_vu) AS nam,
+                    MONTH(pddv.ngay_dat_dich_vu) AS thang,
+                    SUM(dv.don_gia * pddv.so_luong_dich_vu) AS doanh_thu_dich_vu
+                FROM phieu_dat_dich_vu pddv            
+                JOIN chi_tiet_dat_dich_vu ct ON pddv.ma_pddv = ct.ma_pddv
+                JOIN dich_vu dv ON ct.ma_dv = dv.ma_dv
+                GROUP BY YEAR(pddv.ngay_dat_dich_vu), MONTH(pddv.ngay_dat_dich_vu)
+                ORDER BY nam, thang
+            """;
+            List<Object[]> result = em.createNativeQuery(sql).getResultList();
+            System.out.println("Doanh thu dịch vụ: " + result); // Debug
+            return result;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi lấy doanh thu dịch vụ: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Trả về danh sách rỗng nếu có lỗi
+        } finally {
+            em.close();
+        }
+    }
+
     // Tìm hóa đơn theo nhiều tiêu chí: mã KH, mã NV, số phòng đặt
     public List<HoaDonDTO> findByMultipleCriteria(String maKH, String maNV, Integer soPhongDat) {
         EntityManager em = HibernateUtil.getEntityManager();
@@ -92,6 +145,20 @@ public class HoaDon_DAO extends GenericDAO<HoaDon> {
             return em.createQuery(cq).getResultList().stream()
                     .map(mapper::toDTO)
                     .collect(Collectors.toList());
+        } finally {
+            em.close();
+        }
+    }
+    public boolean existsByMaHoaDon(String maHoaDon) {
+        if (maHoaDon == null || maHoaDon.trim().isEmpty()) return false;
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+            Root<HoaDon> root = cq.from(HoaDon.class);
+            cq.select(cb.count(root)).where(cb.equal(root.get("maHoaDon"), maHoaDon.trim()));
+            Long count = em.createQuery(cq).getSingleResult();
+            return count != null && count > 0;
         } finally {
             em.close();
         }

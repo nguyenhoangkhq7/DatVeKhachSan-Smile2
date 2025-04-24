@@ -13,16 +13,24 @@ public class HoaDonMapperImpl implements GenericMapper<HoaDon, HoaDonDTO> {
     public HoaDonDTO toDTO(HoaDon entity) {
         if (entity == null) return null;
 
-        return new HoaDonDTO(
-                entity.getMaHD(),
-                entity.getKhachHang() != null ? entity.getKhachHang().getMaKH() : null,
-                entity.getNhanVien() != null ? entity.getNhanVien().getMaNhanVien() : null,
-                entity.getPhieuDatPhong() != null ? entity.getPhieuDatPhong().getMaPDP() : null,
-                entity.getNgayLapHD(),
-                entity.getNgayNhanPhong(),
-                entity.getNgayTraPhong(),
-                entity.getSoPhongDat()
-        );
+        HoaDonDTO dto = new HoaDonDTO();
+        dto.setMaHD(entity.getMaHD());
+        dto.setNgayLapHD(entity.getNgayLapHD());
+        dto.setNgayNhanPhong(entity.getNgayNhanPhong());
+        dto.setNgayTraPhong(entity.getNgayTraPhong());
+        dto.setSoPhongDat(entity.getSoPhongDat());
+
+        if (entity.getKhachHang() != null) {
+            dto.setMaKH(entity.getKhachHang().getMaKH());
+        }
+        if (entity.getNhanVien() != null) {
+            dto.setMaNV(entity.getNhanVien().getMaNhanVien());
+        }
+        if (entity.getPhieuDatPhong() != null) {
+            dto.setMaPDP(entity.getPhieuDatPhong().getMaPDP());
+        }
+
+        return dto;
     }
 
     @Override
@@ -31,32 +39,27 @@ public class HoaDonMapperImpl implements GenericMapper<HoaDon, HoaDonDTO> {
 
         HoaDon hoaDon = new HoaDon();
         hoaDon.setMaHD(dto.getMaHD());
-
-        // Gán đối tượng KhachHang (chỉ gán maKH, không tạo đối tượng đầy đủ)
-        if (dto.getMaKH() != null) {
-            KhachHang kh = new KhachHang();
-            kh.setMaKH(dto.getMaKH());
-            hoaDon.setKhachHang(kh);
-        }
-
-        // Gán đối tượng NhanVien
-        if (dto.getMaNV() != null) {
-            NhanVien nv = new NhanVien();
-            nv.setMaNhanVien(dto.getMaNV());
-            hoaDon.setNhanVien(nv);
-        }
-
-        // Gán đối tượng PhieuDatPhong
-        if (dto.getMaPDP() != null) {
-            PhieuDatPhong pdp = new PhieuDatPhong();
-            pdp.setMaPDP(dto.getMaPDP());
-            hoaDon.setPhieuDatPhong(pdp);
-        }
-
         hoaDon.setNgayLapHD(dto.getNgayLapHD());
         hoaDon.setNgayNhanPhong(dto.getNgayNhanPhong());
         hoaDon.setNgayTraPhong(dto.getNgayTraPhong());
         hoaDon.setSoPhongDat(dto.getSoPhongDat());
+
+        if (dto.getMaKH() != null) {
+            KhachHang khachHang = new KhachHang();
+            khachHang.setMaKH(dto.getMaKH());
+            hoaDon.setKhachHang(khachHang);
+        }
+        if (dto.getMaNV() != null) {
+            NhanVien nhanVien = new NhanVien();
+            nhanVien.setMaNhanVien(dto.getMaNV());
+            hoaDon.setNhanVien(nhanVien);
+        }
+        if (dto.getMaPDP() != null) {
+            PhieuDatPhong phieuDatPhong = new PhieuDatPhong();
+            phieuDatPhong.setMaPDP(dto.getMaPDP());
+            hoaDon.setPhieuDatPhong(phieuDatPhong);
+        }
+
 
         return hoaDon;
     }

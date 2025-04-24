@@ -143,6 +143,22 @@ public class PhongHandler implements RequestHandler {
                 List<String> dsSoPhong = phongDao.getSoPhongByLoaiPhong(tenLoaiPhong);
                 return new Response<>(true, dsSoPhong);
             }
+            case "KIEM_TRA_MA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean exists = phongDao.existsByMaPhong(maPhong.trim());
+                return new Response<>(true, exists); // true nếu mã đã tồn tại
+            }
+            case "XOA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean success = phongDao.delete(maPhong.trim());
+                return new Response<>(success, success ? "Xóa phòng thành công" : "Xóa phòng thất bại");
+            }
         }
         return new Response<>(false, "Hành động không được hỗ trợ");
     }

@@ -61,7 +61,20 @@ public class HandlerManager {
         handlers.put("CHECK_PHIEU_DAT_PHONG_EXISTS", new PhieuDatPhongHandler());
         handlers.put("FIND_PHIEU_BY_MULTIPLE_CRITERIA", new PhieuDatPhongHandler());
         handlers.put("GET_ALL_PHONG_DAT_DICHVU", new DichVuHandler());
-
+        handlers.put("GET_ALL_LOAIPHONG", new LoaiPhongHandler());
+        handlers.put("THEM_PHONG", new PhongHandler());
+        handlers.put("KIEM_TRA_MA_PHONG", new PhongHandler());
+        handlers.put("XOA_PHONG", new PhongHandler());
+        handlers.put("THONG_KE_DOANH_THU_PHONG", new HoaDonHandler());
+        handlers.put("THONG_KE_DOANH_THU_DICH_VU", new HoaDonHandler());
+        handlers.put("READ_HOA_DON", new HoaDonHandler());
+        handlers.put("GET_ALL_HOA_DON", new HoaDonHandler());
+        handlers.put("FIND_BY_CRITERIA", new HoaDonHandler());
+        handlers.put("FIND_BY_MA_KH", new PhieuDatDichVuHandler());
+        handlers.put("GET_ALL_PHIEU_DAT_DICH_VU", new PhieuDatDichVuHandler());
+        handlers.put("GET_ALL_PHIEU_DAT_PHONGG", new PhieuDatPhongHandler());
+        handlers.put("CREATE_PHIEU_DAT_DICH_VU_1", new PhieuDatDichVuHandler());
+        handlers.put("GET_ALL_PHIEU_DAT_DICH_VU_1", new PhieuDatDichVuHandler());
 
 
     }

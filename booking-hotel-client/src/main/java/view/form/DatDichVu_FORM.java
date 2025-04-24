@@ -1095,6 +1095,12 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
         tableModel.setRowCount(0);
 
         try {
+            // Kiểm tra kết nối socket
+            if (!SocketManager.isConnected()) {
+                JOptionPane.showMessageDialog(this, "Không thể kết nối đến server", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Gửi yêu cầu lấy danh sách phiếu đặt phòng
             Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
             SocketManager.send(request);
@@ -1103,19 +1109,32 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             String rawJson = SocketManager.receiveRaw();
             System.out.println("Raw JSON response: " + rawJson);
 
+            // Kiểm tra rawJson
+            if (rawJson == null || rawJson.trim().isEmpty()) {
+                String errorMsg = "Không nhận được dữ liệu từ server hoặc dữ liệu rỗng";
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // Phân tích JSON để kiểm tra trường "data"
             Gson gson = new GsonBuilder()
                     .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
                     .create();
 
             JsonObject jsonObject = gson.fromJson(rawJson, JsonObject.class);
+            if (jsonObject == null) {
+                String errorMsg = "Dữ liệu JSON không hợp lệ";
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             // Kiểm tra trường "success"
             if (!jsonObject.has("success") || !jsonObject.get("success").getAsBoolean()) {
                 String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Yêu cầu không thành công";
                 System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
-                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -1123,8 +1142,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             if (!jsonObject.has("data") || !jsonObject.get("data").isJsonArray()) {
                 String errorMsg = jsonObject.has("data") ? jsonObject.get("data").getAsString() : "Dữ liệu không hợp lệ";
                 System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: Expected array but got: " + errorMsg);
-                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -1133,9 +1151,8 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             Response<List<PhieuDatPhongDTO>> response = gson.fromJson(rawJson, phieuResponseType);
 
             List<PhieuDatPhongDTO> dsPhieuDatPhong = response.getData();
-            if (dsPhieuDatPhong.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Không có dữ liệu phiếu đặt phòng",
-                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            if (dsPhieuDatPhong == null || dsPhieuDatPhong.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu phiếu đặt phòng", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
@@ -1156,8 +1173,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         : !phongResponse.isSuccess() ? "Yêu cầu không thành công"
                         : "Dữ liệu phòng trống";
                 System.out.println("GET_ALL_PHONG failed: " + errorMsg);
-                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phòng: " + errorMsg,
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phòng: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
             // Lấy danh sách khách hàng
@@ -1174,8 +1190,7 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
                         : !khachHangResponse.isSuccess() ? "Yêu cầu không thành công"
                         : "Dữ liệu khách hàng trống";
                 System.out.println("GET_ALL_KHACH_HANG failed: " + errorMsg);
-                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg,
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
             // Xử lý dữ liệu và thêm vào bảng
@@ -1233,15 +1248,17 @@ public class DatDichVu_FORM extends JPanel implements ActionListener, MouseListe
             }
 
         } catch (JsonSyntaxException e) {
-            System.out.println("JSON Syntax Error in loadPhongData: " + e.getMessage());
+            System.out.println("Lỗi cú pháp JSON trong loadPhongData: " + e.getMessage());
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi định dạng dữ liệu từ server: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi định dạng dữ liệu từ server: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            System.out.println("Lỗi mạng trong loadPhongData: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối đến server: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
-            System.out.println("Unexpected error in loadPhongData: " + e.getMessage());
+            System.out.println("Lỗi không mong muốn trong loadPhongData: " + e.getMessage());
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         } finally {
             table.repaint();
             table.revalidate();

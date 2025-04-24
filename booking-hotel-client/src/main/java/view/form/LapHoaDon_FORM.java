@@ -1,51 +1,79 @@
 package view.form;
 
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+//import com.google.zxing.BarcodeFormat;
+//import com.google.zxing.WriterException;
+//import com.google.zxing.client.j2se.MatrixToImageWriter;
+//import com.google.zxing.common.BitMatrix;
+//import com.google.zxing.qrcode.QRCodeWriter;
+import dto.*;
+import model.*;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import socket.SocketManager;
 import utils.custom_element.*;
 import dao.KhachHang_DAO;
-import dao.PhieuDatPhong_DAO;
-import model.PhieuDatPhong;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
+
+import javax.imageio.ImageIO;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.text.Document;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.sql.*;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
+import java.util.regex.Pattern;
 
 
 public class LapHoaDon_FORM extends JPanel implements ActionListener {
     private static final long serialVersionUID = 1L;
     private final DefaultTableModel tableModel3;
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+
     private JTextField txttimkiem;
+    private List<HoaDonDTO> dsHoaDon = new ArrayList<>();
+
     private DefaultTableModel tableModel;
+    private TableRowSorter<DefaultTableModel> sorter1;
+    private TableRowSorter<DefaultTableModel> sorter2;
     private JTable table;
+    private JTable table2;
     private JButton btnlaphd;
     private JLabel day;
+    private JTextField searchField;
     private DefaultTableModel tableModel1;
     private JTable table1;
+    private JLabel lbhoten;
     private JLabel lbhoten1;
     private JLabel lbsophong;
     private JLabel lbsophong1;
@@ -68,21 +96,57 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
     private JButton btnXacNhan;
     private JLabel totalLabel;
     private JLabel totalLabel1;
+    private double giaPhong;
+    private JComboBox<String> searchColumnCombo, tableSelectCombo;
 
-
-    public LapHoaDon_FORM()  {
-//        try {
-//            ConnectDB.getInstance().connect();
-//            this.conn = ConnectDB.getConnection();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+    public LapHoaDon_FORM() {
+        // Kết nối database (đã comment trong mã gốc)
+        /*
+        try {
+            ConnectDB.getInstance().connect();
+            this.conn = ConnectDB.getConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        */
         setBackground(new Color(16, 16, 20));
         Box b = Box.createVerticalBox();
-        b.add(Box.createVerticalStrut(10));
+        b.add(Box.createVerticalStrut(11));
 
-        // Tim kiem
-        JTextField searchField = new JTextField("Tìm kiếm");
+        // Tạo JComboBox cho các tiêu chí tìm kiếm
+        String[] searchColumnsTable1 = {"Tất cả", "Mã đặt phòng", "Loại phòng", "Tên phòng", "Phòng", "Tên khách", "Ngày đến", "Ngày đi", "Số điện thoại", "CCCD","Số đêm"};
+        int[] columnIndicesTable1 = {-1, 0, 1, 2, 3, 5, 6, 7, 9, 10,8}; // -1 cho "Tất cả"
+        String[] searchColumnsTable2 = {"Tất cả", "Mã hóa đơn", "Mã PDP", "Ngày Lập"};
+        int[] columnIndicesTable2 = {-1, 0, 3, 4}; // -1 cho "Tất cả"
+
+        searchColumnCombo = new JComboBox<>(searchColumnsTable1);
+        searchColumnCombo.setForeground(Color.WHITE);
+        searchColumnCombo.setFont(FontManager.getManrope(Font.PLAIN, 14));
+        searchColumnCombo.setBackground(new Color(40, 40, 44));
+        searchColumnCombo.setPreferredSize(new Dimension(150, 45));
+        searchColumnCombo.setMaximumSize(new Dimension(150, 45));
+
+        // Tạo JComboBox chọn bảng
+        String[] tableOptions = {"Phiếu đặt phòng", "Hóa đơn"};
+        tableSelectCombo = new JComboBox<>(tableOptions);
+        tableSelectCombo.setForeground(Color.WHITE);
+        tableSelectCombo.setFont(FontManager.getManrope(Font.PLAIN, 14));
+        tableSelectCombo.setBackground(new Color(40, 40, 44));
+        tableSelectCombo.setPreferredSize(new Dimension(150, 45));
+        tableSelectCombo.setMaximumSize(new Dimension(150, 45));
+
+        // Cập nhật searchColumnCombo khi tableSelectCombo thay đổi
+        tableSelectCombo.addActionListener(e -> {
+            if (tableSelectCombo.getSelectedIndex() == 0) {
+                searchColumnCombo.setModel(new DefaultComboBoxModel<>(searchColumnsTable1));
+            } else {
+                searchColumnCombo.setModel(new DefaultComboBoxModel<>(searchColumnsTable2));
+            }
+            updateFilter(); // Gọi phương thức cấp lớp
+        });
+
+        // Tìm kiếm
+        searchField = new JTextField("Tìm kiếm");
         Border emptyBorder = BorderFactory.createEmptyBorder(13, 52, 12, 0);
         searchField.setBounds(0, 0, 280, 45);
         searchField.setBorder(emptyBorder);
@@ -109,6 +173,22 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
                 }
             }
         });
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateFilter();
+            }
+        });
 
         JLabel searchIcon = new JLabel(new ImageIcon("imgs/TimKiemIcon.png"));
         searchIcon.setBounds(12, 12, 24, 24);
@@ -123,14 +203,20 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
 
         searchPanel.add(searchIcon);
         searchPanel.add(searchField);
+
+        // Tạo Box chứa searchPanel, searchColumnCombo, và tableSelectCombo
         Box bsearch = Box.createHorizontalBox();
-        bsearch.add(Box.createHorizontalStrut(0));
+        bsearch.add(Box.createHorizontalStrut(10));
         bsearch.add(searchPanel);
-        bsearch.add(Box.createGlue());
+        bsearch.add(Box.createHorizontalStrut(20));
+        bsearch.add(searchColumnCombo);
+        bsearch.add(Box.createHorizontalStrut(20));
+        bsearch.add(tableSelectCombo);
+        bsearch.add(Box.createHorizontalGlue());
         b.add(bsearch);
         b.add(Box.createVerticalStrut(20));
 
-        // Tieu de
+        // Tiêu đề bảng phiếu đặt phòng
         JLabel titleLabel = new JLabel("Danh sách khách hàng");
         titleLabel.setFont(FontManager.getManrope(Font.BOLD, 16));
         titleLabel.setForeground(Color.white);
@@ -148,23 +234,42 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         b.add(titlePanel);
         b.add(Box.createVerticalStrut(5));
 
-        // Tạo bang
+        // Tạo bảng phiếu đặt phòng
         Box b2 = Box.createHorizontalBox();
-        String[] colName = {"Mã đặt phòng", "Loại phòng", "Tên phòng", "Phòng", "Trạng thái", "Tên khách", "Ngày đến", "Ngày đi", "Số đêm"};
-        Object[][] data = loadDSKH();
-
-        tableModel = new DefaultTableModel(data, colName);
+        String[] colName = {"Mã đặt phòng", "Loại phòng", "Tên phòng", "Phòng", "Trạng thái", "Tên khách", "Ngày đến", "Ngày đi", "Số đêm", "Số điện thoại", "CCCD", "Mã khách hàng", "Mã nhân viên", "Tiền Phòng"};
+        tableModel = new DefaultTableModel(colName, 0);
         JScrollPane scroll;
+
         b2.add(scroll = new JScrollPane(table = new JTable(tableModel), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
         table.setBackground(new Color(24, 24, 28));
         table.setForeground(Color.WHITE);
         table.setFont(FontManager.getManrope(Font.PLAIN, 16));
-        table.setRowHeight(60);
+        table.setRowHeight(55);
+        table.setSelectionBackground(new Color(66, 99, 235));
+        sorter1 = new TableRowSorter<>(tableModel);
+        table.setRowSorter(sorter1);
+
+        // Ẩn các cột (đã comment trong mã gốc)
+        /*
+        TableColumnModel columnModel = table.getColumnModel();
+        int[] hiddenColumns = {9, 10, 11, 12, 13};
+        for (int col : hiddenColumns) {
+            columnModel.getColumn(col).setMinWidth(0);
+            columnModel.getColumn(col).setMaxWidth(0);
+            columnModel.getColumn(col).setWidth(0);
+        }
+        */
 
         JTableHeader header = table.getTableHeader();
         header.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
         header.setPreferredSize(new Dimension(header.getPreferredSize().width, 55));
         header.setReorderingAllowed(false);
+
+        CustomCellRenderer cellRenderer = new CustomCellRenderer();
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            TableColumn column = table.getColumnModel().getColumn(i);
+            column.setCellRenderer(cellRenderer);
+        }
 
         scroll.setPreferredSize(new Dimension(1642, 300));
         scroll.setBorder(null);
@@ -173,7 +278,7 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         b.add(b2);
         b.add(Box.createVerticalStrut(50));
 
-        // Bang 2
+        // Tiêu đề bảng hóa đơn
         JLabel titleLabel2 = new JLabel("Hóa đơn đã được lập");
         titleLabel2.setFont(FontManager.getManrope(Font.BOLD, 16));
         titleLabel2.setForeground(Color.white);
@@ -193,31 +298,59 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
 
         // Tạo bảng hóa đơn
         Box b3 = Box.createHorizontalBox();
-        String[] colName3 = {"Mã hóa đơn", "Mã PDP", "Mã phòng", "Ngày lập", "Tên khách hàng", "Nhân viên lập", "Thành tiền", "Chi tiết"};
-        Object[][] data3 = loadDataHD();
+        String[] colName3 = {"Mã hóa đơn", "Mã Khách Hàng", "Mã Nhân Viên", "Mã PDP", "Ngày Lập", "Ngày Nhận", "Ngày Trả", "Số Lượng"};
+        tableModel3 = new DefaultTableModel(colName3, 0);
+        table2 = new JTable(tableModel3);
+        sorter2 = new TableRowSorter<>(tableModel3);
+        table2.setRowSorter(sorter2);
+        sorter2.setRowFilter(null);
 
+        // Thêm ListSelectionListener cho table2
+        table2.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    int selectedRow = table2.getSelectedRow();
+                    if (selectedRow != -1) {
+                        System.out.println("Row " + selectedRow + " is selected.");
+                        btnlaphd.setEnabled(true);
+                    } else {
+                        System.out.println("No row selected.");
+                        btnlaphd.setEnabled(false);
+                    }
+                }
+            }
+        });
 
-        tableModel3 = new DefaultTableModel(data3, colName3);
-        JScrollPane scroll3;
-        JTable table2 = new JTable(tableModel3);
-        b3.add(scroll3 = new JScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+        // Cài đặt thuộc tính cho bảng
         table2.setBackground(new Color(24, 24, 28));
         table2.setForeground(Color.WHITE);
         table2.setFont(FontManager.getManrope(Font.PLAIN, 16));
         table2.setRowHeight(60);
+        table2.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table2.setSelectionBackground(new Color(66, 99, 235));
 
+        // Thiết lập Header
         JTableHeader header3 = table2.getTableHeader();
         header3.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
         header3.setPreferredSize(new Dimension(header3.getPreferredSize().width, 55));
         header3.setReorderingAllowed(false);
 
+        // Thêm renderer cho ô
+        for (int i = 0; i < table2.getColumnCount(); i++) {
+            TableColumn column = table2.getColumnModel().getColumn(i);
+            column.setCellRenderer(cellRenderer);
+        }
+
+        // Tạo JScrollPane
+        JScrollPane scroll3 = new JScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scroll3.setPreferredSize(new Dimension(1642, 300));
         scroll3.setBorder(null);
         scroll3.getViewport().setOpaque(false);
         scroll3.setViewportBorder(null);
+        b3.add(scroll3);
         b.add(b3);
         b.add(Box.createVerticalStrut(80));
-        // Custom renderer for the button
 
         // Tạo nút
         Box bbutton = Box.createHorizontalBox();
@@ -236,27 +369,128 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         buttonPanel.add(bbutton);
         b.add(buttonPanel);
         add(b, BorderLayout.CENTER);
+
+        // Tải dữ liệu
+        loadPhongData();
+        loadTableData();
+        table.repaint();
+        table.revalidate();
+        table2.repaint();
+        table2.revalidate();
     }
 
-    //Hoa don
-    public void openHoaDon() {
+    private void updateFilter() {
+        String keyword = searchField.getText().trim();
+
+        // Nếu ô tìm kiếm rỗng hoặc chứa placeholder
+        if (keyword.isEmpty() || keyword.equals("Tìm kiếm")) {
+            sorter1.setRowFilter(null);
+            sorter2.setRowFilter(null);
+            return;
+        }
+
+        // Lấy bảng được chọn
+        boolean isTable1 = tableSelectCombo.getSelectedIndex() == 0;
+        TableRowSorter<DefaultTableModel> sorter = isTable1 ? sorter1 : sorter2;
+        int[] columnIndices = isTable1 ?
+                new int[]{-1, 0, 1, 2, 3, 5, 6, 7, 9, 10} :
+                new int[]{-1, 0, 3, 4};
+
+        // Lấy chỉ số cột từ searchColumnCombo
+        int selectedIndex = searchColumnCombo.getSelectedIndex();
+        RowFilter<DefaultTableModel, Object> rf;
+        if (selectedIndex == 0) {
+            // Tìm kiếm trên tất cả các cột
+            rf = RowFilter.regexFilter("(?i)" + Pattern.quote(keyword));
+        } else {
+            // Tìm kiếm trên cột được chọn
+            int selectedColumn = columnIndices[selectedIndex];
+            rf = RowFilter.regexFilter("(?i)" + Pattern.quote(keyword), selectedColumn);
+        }
+
+        // Áp dụng bộ lọc và xóa bộ lọc của bảng kia
+        sorter.setRowFilter(rf);
+        (isTable1 ? sorter2 : sorter1).setRowFilter(null);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public HoaDonDTO openHoaDon() {
+        // Lấy bảng từ tableModel
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+
+        // Lấy chỉ số dòng được chọn
+        int selectedRow = table.getSelectedRow();
+
+        // Kiểm tra xem có dòng nào được chọn không
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(null, "Vui lòng chọn một dòng trong bảng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+
+        // Lấy thông tin từ bảng
+        String tenKhachHang = model.getValueAt(selectedRow, 5).toString();  // Tên khách
+        String soDienThoai = model.getValueAt(selectedRow, 9).toString();   // Số điện thoại
+        String cccd = model.getValueAt(selectedRow, 10).toString();         // CCCD
+        String maKH = model.getValueAt(selectedRow, 11).toString();         // Mã khách hàng
+        Object ngayDenObj = model.getValueAt(selectedRow, 6);
+        Object ngayDiObj = model.getValueAt(selectedRow, 7);
+        // Lấy giá tiền phòng từ bảng
+        String giaPhongStr = model.getValueAt(selectedRow, 13).toString();  // Lấy giá trị từ cột 13 (giả sử là giá phòng)
+        double giaPhong;
+
+        try {
+            // Loại bỏ dấu phẩy và các ký tự không phải số
+            String numericValue = giaPhongStr.replaceAll("[^0-9.]", "");
+            // Chuyển đổi giá trị thành kiểu double
+            giaPhong = Double.parseDouble(numericValue);
+            // Tiến hành xử lý với 'giaPhong'
+            System.out.println("Giá phòng: " + giaPhong);
+        } catch (NumberFormatException e) {
+            System.out.println("Lỗi định dạng số: " + e.getMessage());
+            return null;
+        }
+
+        // Xử lý ngày nhận và trả phòng
+        String ngayDen = ngayDenObj != null ? ngayDenObj.toString().trim() : "";
+        String ngayDi = ngayDiObj != null ? ngayDiObj.toString().trim() : "";
+
+        // In thông tin để gỡ lỗi
+        System.out.println("Tên khách: " + tenKhachHang);
+        System.out.println("Ngày đến: " + ngayDen);
+        System.out.println("Ngày đi: " + ngayDi);
+        System.out.println("Số điện thoại: " + soDienThoai);
+        System.out.println("CCCD: " + cccd);
+        System.out.println("Mã khách hàng: " + maKH);
+
         // Tạo JDialog hiển thị hóa đơn
         JDialog dialog = new JDialog();
         dialog.setTitle("Hóa đơn");
         dialog.setSize(800, 850);
         dialog.setLayout(new BorderLayout());
-
-        // Thiết lập màu nền cho JDialog
         dialog.getContentPane().setBackground(new Color(40, 40, 44));
+
         Box bdialog = Box.createVerticalBox();
 
-        // Tạo JPanel cho phần header của hóa đơn
-
+        // Tạo header
         JPanel pheader = new JPanel();
         pheader.setLayout(new BoxLayout(pheader, BoxLayout.Y_AXIS));
-        pheader.setBackground(new Color(16, 16, 20));
         pheader.setBackground(new Color(40, 40, 44));
-        // Thêm tiêu đề và ngày tháng vào JPanel
         JLabel titleDialog = new JLabel("   HÓA ĐƠN");
         titleDialog.setForeground(Color.WHITE);
         titleDialog.setFont(new Font("Montserrat", Font.BOLD, 32));
@@ -267,127 +501,156 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         JLabel day = new JLabel(formattedDate);
         day.setForeground(Color.WHITE);
         day.setFont(new Font("Montserrat", Font.PLAIN, 16));
-        Box bheader = Box.createHorizontalBox();
+
         pheader.add(titleDialog);
         pheader.add(day);
+
+        // Thêm nút X vào header
+        Box bheader = Box.createHorizontalBox();
         bheader.add(pheader);
+        bheader.add(Box.createHorizontalGlue());
+        JButton btnX = new JButton("X");
+        btnX.setPreferredSize(new Dimension(40, 40));
+        btnX.setBackground(new Color(200, 50, 50));
+        btnX.setForeground(Color.WHITE);
+        btnX.setFont(new Font("Arial", Font.BOLD, 25));
+        btnX.setBorder(BorderFactory.createEmptyBorder());
+        btnX.addActionListener(e -> dialog.dispose());
+        bheader.add(btnX);
         bdialog.add(bheader);
         bdialog.add(Box.createVerticalStrut(10));
 
-        // Tạo JPanel cho thông tin khách hàng
+        // Tạo panel thông tin khách hàng
         JPanel customerInfoPanel = new JPanel();
         customerInfoPanel.setForeground(Color.WHITE);
         customerInfoPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         customerInfoPanel.setBackground(new Color(40, 40, 44));
-        customerInfoPanel.setBorder(BorderFactory.createTitledBorder(""));
         customerInfoPanel.setPreferredSize(new Dimension(700, 200));
         customerInfoPanel.setMinimumSize(new Dimension(700, 200));
         customerInfoPanel.setMaximumSize(new Dimension(700, 200));
+        customerInfoPanel.setLayout(new BoxLayout(customerInfoPanel, BoxLayout.X_AXIS));
 
-// Thêm các thông tin khách hàng
-        JPanel bcustomerInfoPanel = new JPanel();
-        bcustomerInfoPanel.setLayout(new BoxLayout(bcustomerInfoPanel, BoxLayout.Y_AXIS));
-        bcustomerInfoPanel.setBackground(new Color(40, 40, 44));
-
-//hoten
-        Box bhoten = Box.createHorizontalBox();
-        JLabel lbhoten;
-        bhoten.add(lbhoten = new JLabel("Họ tên khách hàng:"));
-        bhoten.add(lbhoten1 = new JLabel());
-        bhoten.setAlignmentX(LEFT_ALIGNMENT);
-
-        bhoten.add(Box.createHorizontalStrut(120));
-        bhoten.add(lbsophong = new JLabel("Số phòng:"));
-        bhoten.add(lbsophong1 = new JLabel(""));
-        bcustomerInfoPanel.add(bhoten);
-        bcustomerInfoPanel.add(Box.createVerticalStrut(15));
-
-//sdt
-        Box bsodt = Box.createHorizontalBox();
-        bsodt.add(lbsdt = new JLabel("Số điện thoại:"));
-        bsodt.add(lbsdt1 = new JLabel(""));
-        bsodt.add(Box.createHorizontalStrut(195));
-        bsodt.add(lbcccd = new JLabel("Số CCCD:"));
-        bsodt.add(lbcccd1 = new JLabel(""));
-        bsodt.setAlignmentX(LEFT_ALIGNMENT);
-        bcustomerInfoPanel.add(bsodt);
-        bcustomerInfoPanel.add(Box.createVerticalStrut(15));
-
-//ngay
-        Box bngay = Box.createHorizontalBox();
-        bngay.add(lbngaynhan = new JLabel("Ngày nhân phòng:"));
-        bngay.add(lbngaynhan1 = new JLabel(""));
-        bngay.add(Box.createHorizontalStrut(85));
-        bngay.add(lbngaytra = new JLabel("Ngày trả phòng:"));
-        bngay.add(lbngaytra1 = new JLabel(""));
-        bngay.setAlignmentX(LEFT_ALIGNMENT);
-        bcustomerInfoPanel.add(bngay);
-        bcustomerInfoPanel.add(Box.createVerticalStrut(15));
-
-//diachi
-        Box bdiachi = Box.createHorizontalBox();
-        bdiachi.add(lbdiachi = new JLabel("Địa chỉ:"));
-        bdiachi.add(lbdiachi1 = new JLabel(""));
-        bdiachi.setAlignmentX(LEFT_ALIGNMENT);
-        bcustomerInfoPanel.add(bdiachi);
-        bcustomerInfoPanel.add(Box.createVerticalStrut(15));
-
-//masothue
-        Box bmasothue = Box.createHorizontalBox();
-        bmasothue.add(lbmasothue = new JLabel("Mã số thuế:"));
-        bmasothue.add(lbmasothue1 = new JLabel("1012345"));
-        bmasothue.setAlignmentX(LEFT_ALIGNMENT);
-        bcustomerInfoPanel.add(bmasothue);
-
+        // Font
         Font f = new Font("Montserrat", Font.BOLD, 16);
         Font f1 = new Font("Montserrat", Font.PLAIN, 16);
 
+        // Cột trái (4 cặp JLabel)
+        Box bLeft = Box.createVerticalBox();
+        bLeft.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Họ tên
+        Box bhoten = Box.createHorizontalBox();
+        lbhoten = new JLabel("Họ tên khách hàng:");
+        lbhoten1 = new JLabel(tenKhachHang);
+        lbhoten.setPreferredSize(new Dimension(150, 20));
         lbhoten.setForeground(Color.WHITE);
         lbhoten.setFont(f);
         lbhoten1.setForeground(Color.WHITE);
         lbhoten1.setFont(f1);
-        lbsophong1.setForeground(Color.WHITE);
-        lbsophong1.setFont(f1);
-        lbsophong.setForeground(Color.WHITE);
-        lbsophong.setFont(f);
-        lbsdt1.setForeground(Color.WHITE);
-        lbsdt1.setFont(f1);
+        bhoten.add(lbhoten);
+        bhoten.add(lbhoten1);
+        bLeft.add(bhoten);
+        bLeft.add(Box.createVerticalStrut(15));
+
+        // Số điện thoại
+        Box bsodt = Box.createHorizontalBox();
+        lbsdt = new JLabel("Số điện thoại:");
+        lbsdt1 = new JLabel(soDienThoai);
+        lbsdt.setPreferredSize(new Dimension(150, 20));
         lbsdt.setForeground(Color.WHITE);
         lbsdt.setFont(f);
-        lbcccd1.setForeground(Color.WHITE);
-        lbcccd1.setFont(f1);
-        lbcccd.setForeground(Color.WHITE);
-        lbcccd.setFont(f);
-        lbngaynhan1.setForeground(Color.WHITE);
-        lbngaynhan1.setFont(f1);
+        lbsdt1.setForeground(Color.WHITE);
+        lbsdt1.setFont(f1);
+        bsodt.add(lbsdt);
+        bsodt.add(lbsdt1);
+        bLeft.add(bsodt);
+        bLeft.add(Box.createVerticalStrut(15));
+
+        // Ngày nhận phòng
+        Box bngaynhan = Box.createHorizontalBox();
+        lbngaynhan = new JLabel("Ngày nhận phòng:");
+        lbngaynhan1 = new JLabel(ngayDen);
+        lbngaynhan.setPreferredSize(new Dimension(150, 20));
         lbngaynhan.setForeground(Color.WHITE);
         lbngaynhan.setFont(f);
-        lbngaytra.setForeground(Color.WHITE);
-        lbngaytra.setFont(f);
-        lbngaytra1.setForeground(Color.WHITE);
-        lbngaytra1.setFont(f1);
-        lbdiachi.setForeground(Color.WHITE);
-        lbdiachi.setFont(f);
-        lbdiachi1.setForeground(Color.WHITE);
-        lbdiachi1.setFont(f1);
+        lbngaynhan1.setForeground(Color.WHITE);
+        lbngaynhan1.setFont(f1);
+        bngaynhan.add(lbngaynhan);
+        bngaynhan.add(lbngaynhan1);
+        bLeft.add(bngaynhan);
+        bLeft.add(Box.createVerticalStrut(15));
+
+        // Mã số thuế
+        Box bmasothue = Box.createHorizontalBox();
+        lbmasothue = new JLabel("Mã số thuế:");
+        lbmasothue1 = new JLabel(generateTaxCode());
+        lbmasothue.setPreferredSize(new Dimension(150, 20));
         lbmasothue.setForeground(Color.WHITE);
         lbmasothue.setFont(f);
         lbmasothue1.setForeground(Color.WHITE);
         lbmasothue1.setFont(f1);
+        bmasothue.add(lbmasothue);
+        bmasothue.add(lbmasothue1);
+        bLeft.add(bmasothue);
 
-        customerInfoPanel.add(bcustomerInfoPanel);
+        // Cột phải (3 cặp JLabel)
+        Box bRight = Box.createVerticalBox();
+        bRight.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        // Số CCCD
+        Box bcccd = Box.createHorizontalBox();
+        lbcccd = new JLabel("Số CCCD:");
+        lbcccd1 = new JLabel(cccd);
+        lbcccd.setPreferredSize(new Dimension(150, 20));
+        lbcccd.setForeground(Color.WHITE);
+        lbcccd.setFont(f);
+        lbcccd1.setForeground(Color.WHITE);
+        lbcccd1.setFont(f1);
+        bcccd.add(lbcccd);
+        bcccd.add(lbcccd1);
+        bRight.add(bcccd);
+        bRight.add(Box.createVerticalStrut(15));
+
+        // Ngày trả phòng
+        Box bngaytra = Box.createHorizontalBox();
+        lbngaytra = new JLabel("Ngày trả phòng:");
+        lbngaytra1 = new JLabel(ngayDi);
+        lbngaytra.setPreferredSize(new Dimension(150, 20));
+        lbngaytra.setForeground(Color.WHITE);
+        lbngaytra.setFont(f);
+        lbngaytra1.setForeground(Color.WHITE);
+        lbngaytra1.setFont(f1);
+        bngaytra.add(lbngaytra);
+        bngaytra.add(lbngaytra1);
+        bRight.add(bngaytra);
+        bRight.add(Box.createVerticalStrut(15));
+
+        // Giá phòng
+        Box bgiaPhong = Box.createHorizontalBox();
+        JLabel giaPhongLabel = new JLabel("Giá phòng:");
+        JLabel giaPhongValue = new JLabel(String.format("%,.0f VNĐ", giaPhong));
+        giaPhongLabel.setPreferredSize(new Dimension(150, 20));
+        giaPhongLabel.setForeground(Color.WHITE);
+        giaPhongLabel.setFont(f);
+        giaPhongValue.setForeground(Color.WHITE);
+        giaPhongValue.setFont(f1);
+        bgiaPhong.add(giaPhongLabel);
+        bgiaPhong.add(giaPhongValue);
+        bRight.add(bgiaPhong);
+
+        // Thêm hai cột vào customerInfoPanel
+        customerInfoPanel.add(bLeft);
+        customerInfoPanel.add(Box.createHorizontalStrut(20));
+        customerInfoPanel.add(bRight);
         bdialog.add(customerInfoPanel);
         bdialog.add(Box.createVerticalStrut(10));
-        // Tạo bảng hiển thị các dịch vụ
-        String[] columnNames = {"STT", "Tên dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"};
-        int row1 = table.getSelectedRow();
-        String maPhong1 = (String) tableModel.getValueAt(row1, 3);
-        Object[][] data = loadDV(maPhong1);
 
-        tableModel1 = new DefaultTableModel(data, columnNames);
-        JScrollPane scroll1;
-        bdialog.add(scroll1 = new JScrollPane(table1 = new JTable(tableModel1), JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+        // Tạo bảng hiển thị dịch vụ
+        String[] columnNames = {"STT", "Tên dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"};
+        tableModel1 = new DefaultTableModel(null, columnNames);
+        table1 = new JTable(tableModel1);
+        JScrollPane scroll1 = new JScrollPane(table1, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        bdialog.add(scroll1);
 
         table1.setRowHeight(55);
         table1.setBackground(new Color(40, 40, 44));
@@ -406,25 +669,42 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         scroll1.setBorder(BorderFactory.createEmptyBorder(9, 9, 9, 9));
         scroll1.getViewport().setOpaque(false);
         scroll1.setViewportBorder(null);
+
+        // Load dịch vụ lên tableModel1
+        loadPhieuDatDichVu(maKH);
+
         // Tổng tiền
         Box btotal = Box.createHorizontalBox();
-        btotal.add(totalLabel = new JLabel("Tổng tiền: ", SwingConstants.RIGHT));
-        btotal.add(totalLabel1 = new JLabel(""));
+        JLabel totalLabel = new JLabel("Tổng tiền: ", SwingConstants.RIGHT);
+        JLabel totalLabel1 = new JLabel("");
         totalLabel.setForeground(Color.WHITE);
         totalLabel1.setForeground(Color.WHITE);
         totalLabel.setFont(new Font("Montserrat", Font.PLAIN, 16));
-        // totalLabel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Tính tổng tiền
+        double total = 0.0;
+        for (int i = 0; i < tableModel1.getRowCount(); i++) {
+            String thanhTienStr = (String) tableModel1.getValueAt(i, 5);
+            if (!thanhTienStr.equals("N/A")) {
+                total += Double.parseDouble(thanhTienStr.replace(",", ""));
+            }
+        }
+        total += giaPhong;
+        System.out.println("Tổng tiền: " + String.format("%,.0f VNĐ", total));
+        totalLabel1.setText(String.format("%,.0f VNĐ", total));
+
         btotal.add(Box.createHorizontalStrut(500));
         btotal.add(totalLabel);
         btotal.add(totalLabel1);
         bdialog.add(btotal);
         bdialog.add(Box.createVerticalStrut(90));
+
         // Thêm nút Xác nhận và Xuất hóa đơn
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBackground(new Color(40, 40, 44));
 
-        btnXacNhan = new JButton("Xác nhận");
+        JButton btnXacNhan = new JButton("Xác nhận");
         btnXacNhan.setPreferredSize(new Dimension(150, 40));
         btnXacNhan.setBackground(new Color(74, 74, 66));
         btnXacNhan.setForeground(Color.WHITE);
@@ -433,27 +713,33 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
             int confirm = JOptionPane.showConfirmDialog(dialog, "Bạn có muốn lập hóa đơn", "Thành công", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 int row = table.getSelectedRow();
-                int stt = 21;
                 if (row >= 0) {
                     Random random = new Random();
-                    String maHD = String.format("%08d", random.nextInt(100000000));
+                    String maHD = String.format("HD%04d", random.nextInt(1000));
+                    String maNV = (String) table.getValueAt(row, 12);
                     String maPDP = (String) table.getValueAt(row, 0);
-                    String maPhong = (String) table.getValueAt(row, 3);
-                    String tenKhachHang = (String) table.getValueAt(row, 5);
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                    String ngayLap = dateFormat.format(new Date());
-                    String tenNhanVien = "Cao Thành Đông";
-                    String thanhTien = "905000";
-                    String chiTiet = "Xem";
-                    themDuLieuVaoTableModel3(stt++, maHD, maPDP, maPhong, ngayLap, tenKhachHang, tenNhanVien, thanhTien, chiTiet);
-                    tableModel3.fireTableDataChanged();
-                    JOptionPane.showMessageDialog(dialog, "Lập hóa đơn thành công");
+                    String ngayNhan = (String) table.getValueAt(row, 6);
+                    String ngayTra = (String) table.getValueAt(row, 7);
+                    String ngayLap = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+
+                    // Tạo DTO để gửi lên server
+                    HoaDonDTO hoaDon = new HoaDonDTO();
+                    hoaDon.setMaHD(maHD);
+                    hoaDon.setMaKH(maKH);
+                    hoaDon.setMaNV(maNV);
+                    hoaDon.setMaPDP(maPDP);
+                    hoaDon.setNgayLapHD(LocalDateTime.now());
+                    hoaDon.setNgayNhanPhong(LocalDate.parse(ngayNhan).atStartOfDay());
+                    hoaDon.setNgayTraPhong(LocalDate.parse(ngayTra).atStartOfDay());
+                    hoaDon.setSoPhongDat(1);
+
+                    // Gửi về server và cập nhật bảng nếu thành công
+                    themHoaDon(hoaDon);
+
                     dialog.dispose();
                 } else {
                     JOptionPane.showMessageDialog(dialog, "Vui lòng chọn một hàng trong bảng");
                 }
-            } else if (confirm == JOptionPane.NO_OPTION) {
-                dialog.dispose();
             }
         });
 
@@ -462,9 +748,7 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
         btnXuatHD.setBackground(new Color(51, 70, 50));
         btnXuatHD.setForeground(Color.WHITE);
         btnXuatHD.setFont(f1);
-        btnXuatHD.addActionListener(e -> {
-            exportToPDF(table);
-        });
+        btnXuatHD.addActionListener(e -> exportToPDF(table1, giaPhong));
 
         buttonPanel.add(btnXacNhan);
         buttonPanel.add(btnXuatHD);
@@ -472,271 +756,1060 @@ public class LapHoaDon_FORM extends JPanel implements ActionListener {
 
         // Thêm Box chính vào JDialog
         dialog.add(bdialog, BorderLayout.CENTER);
-
-        // Đặt JDialog xuất hiện ở giữa màn hình
         dialog.setLocationRelativeTo(null);
         dialog.setResizable(false);
         dialog.setUndecorated(true);
         dialog.setVisible(true);
+
+        return null;
     }
 
-    private static JLabel createLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setForeground(Color.WHITE);
-        return label;
+
+
+    private LocalDateTime parseDateTime(Object value) {
+        if (value instanceof LocalDateTime) {
+            return (LocalDateTime) value;
+        }
+
+        String dateStr = value != null ? value.toString().trim() : "";
+        if (dateStr.isEmpty()) {
+            System.err.println("Empty date string");
+            return null;
+        }
+
+        // Các định dạng ngày được hỗ trợ
+        DateTimeFormatter[] formatters = {
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME, // e.g., "2025-04-26T12:00:00"
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd") // e.g., "2025-04-26"
+        };
+
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                // Nếu là định dạng chỉ có ngày (yyyy-MM-dd)
+                if (formatter == formatters[3]) { // So sánh trực tiếp với định dạng yyyy-MM-dd
+                    return LocalDate.parse(dateStr, formatter).atStartOfDay();
+                }
+                // Thử parse các định dạng có thời gian
+                return LocalDateTime.parse(dateStr, formatter);
+            } catch (DateTimeParseException e) {
+                // Thử định dạng tiếp theo
+            }
+        }
+
+        System.err.println("Could not parse date: " + dateStr);
+        return null;
     }
 
-    public void themDuLieuVaoTableModel3(int i, String maHD, String maPDP, String maPhong, String ngayLap, String tenKhachHang, String tenNhanVien, String thanhTien, String chiTiet) {
-        Object[] row = new Object[]{maHD, maPDP, maPhong, ngayLap, tenKhachHang, tenNhanVien, thanhTien, chiTiet};
-        tableModel3.addRow(row);
+
+    // Hàm sinh mã số thuế ngẫu nhiên
+    public static String generateTaxCode() {
+        Random random = new Random();
+
+        // Mã tỉnh (6 chữ số)
+        int provinceCode = random.nextInt(1000000); // Mã tỉnh từ 000000 đến 999999
+        String provinceCodeStr = String.format("%06d", provinceCode);
+
+        // Mã số cá nhân (7 chữ số)
+        int personalCode = random.nextInt(10000000); // Mã cá nhân từ 0000000 đến 9999999
+        String personalCodeStr = String.format("%07d", personalCode);
+
+        // Chữ số kiểm tra (1 chữ số)
+        int checkDigit = random.nextInt(10); // Chữ số kiểm tra từ 0 đến 9
+
+        // Kết hợp thành mã số thuế
+        return provinceCodeStr + personalCodeStr + checkDigit;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Override
     public void actionPerformed(ActionEvent e) {
-//        openHoaDon();
-//        int selectedRow = table.getSelectedRow();
-//        if (selectedRow == -1) {
-//            JOptionPane.showMessageDialog(null, "Vui lòng chọn một hàng trong bảng!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-//            return;
-//        }
-//        try {
-//            String maPDP = (String) tableModel.getValueAt(selectedRow, 0);
-//            PhieuDatPhong pdp = new PhieuDatPhong_DAO().getPDPTheoMa(maPDP);
+        if (e.getSource() == btnlaphd) {
+            openHoaDon();
+        }
+    }
+
+
+
+
+    private void loadDichVuData() {
+        // Xóa dữ liệu cũ trong bảng
+        tableModel1.setRowCount(0);
+        // Tạo yêu cầu gửi đến server
+        Request<Void> request = new Request<>("GET_ALL_DICH_VU", null);
+
+        try {
+            // Gửi yêu cầu và nhận phản hồi
+            SocketManager.send(request);
+            Type responseType = new TypeToken<Response<List<DichVuDTO>>>(){}.getType();
+            Response<List<DichVuDTO>> response = SocketManager.receiveType(responseType);
+
+            // Xử lý phản hồi từ server
+            if (response == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không nhận được phản hồi từ server!",
+                        "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!response.isSuccess()) {
+                String errorMsg = response.getData() != null ?
+                        response.getData().toString() : "Lỗi không xác định";
+                JOptionPane.showMessageDialog(this,
+                        "Lỗi từ server: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<DichVuDTO> dsDichVu = response.getData();
+            if (dsDichVu == null || dsDichVu.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Không có dữ liệu dịch vụ!",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Định dạng số tiền
+            DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
+
+            // Thêm dữ liệu vào bảng
+            for (DichVuDTO dv : dsDichVu) {
+                tableModel1.addRow(new Object[]{
+                        dv.getMaDV(),               // Mã dịch vụ
+                        dv.getTenDV(),              // Tên dịch vụ
+                        decimalFormat.format(dv.getDonGia()) + " VNĐ", // Giá dịch vụ
+                        dv.getDonViTinh(),          // Đơn vị tính
+                        dv.getMoTa()                // Mô tả
+                });
+            }
+
+            // Cập nhật giao diện bảng
+            customizeTableAppearance();
+
+            System.out.println("Đã tải " + dsDichVu.size() + " dịch vụ vào bảng");
+
+        } catch (IOException ex) {
+            handleConnectionError(ex);
+        } catch (JsonSyntaxException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Dữ liệu nhận được không hợp lệ: " + ex.getMessage(),
+                    "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    // Hàm tùy chỉnh giao diện bảng (giữ nguyên)
+    private void customizeTableAppearance() {
+        table1.setBackground(new Color(24, 24, 28));
+        table1.setForeground(Color.WHITE);
+        table1.setFont(FontManager.getManrope(Font.PLAIN, 16));
+        table1.setRowHeight(55);
+        table1.getTableHeader().setFont(FontManager.getManrope(Font.BOLD, 16));
+        table1.getTableHeader().setBackground(new Color(40, 40, 45));
+        table1.getTableHeader().setForeground(Color.WHITE);
+//        table1.setShowHorizontalLines(false);
+        table1.setSelectionBackground(new Color(60, 60, 70));
+    }
+    // Hàm xử lý lỗi kết nối (giữ nguyên)
+    private void handleConnectionError(IOException ex) {
+        ex.printStackTrace();
+        int option = JOptionPane.showConfirmDialog(this,
+                "Lỗi kết nối đến server: " + ex.getMessage() +
+                        "\nBạn có muốn thử lại không?",
+                "Lỗi hệ thống",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.ERROR_MESSAGE);
+
+        if (option == JOptionPane.YES_OPTION) {
+            loadDichVuData(); // Thử lại nếu người dùng chọn Yes
+        }
+    }
+
+    // Hàm này sẽ được gọi khi bạn muốn tải dữ liệu hóa đơn
+    private void loadPhongData() {
+        tableModel.setRowCount(0);
+
+        try {
+            // 1. Lấy danh sách phiếu đặt phòng
+            Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
+            SocketManager.send(request);
+            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>() {}.getType();
+            Response<List<PhieuDatPhongDTO>> response = SocketManager.receiveType(phieuResponseType);
+
+            if (response == null || !response.isSuccess() || response.getData() == null) {
+                String errorMsg = response == null ? "Không nhận được phản hồi từ server"
+                        : (response.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            List<PhieuDatPhongDTO> dsPhieuDatPhong = response.getData();
+            if (dsPhieuDatPhong.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu phiếu đặt phòng",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // 2. Lấy danh sách phòng
+            Map<String, PhongDTO> phongMap = new HashMap<>();
+            Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
+            SocketManager.send(phongRequest);
+            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>() {}.getType();
+            Response<List<PhongDTO>> phongResponse = SocketManager.receiveType(phongResponseType);
+
+            if (phongResponse != null && phongResponse.isSuccess() && phongResponse.getData() != null) {
+                phongResponse.getData().forEach(phong -> {
+                    System.out.println("Phòng: " + phong.getMaPhong() + " - " + phong.getTenPhong());
+                    phongMap.put(phong.getMaPhong(), phong);
+                });
+            } else {
+                String errorMsg = phongResponse == null ? "Không nhận được phản hồi từ server"
+                        : !phongResponse.isSuccess() ? "Yêu cầu không thành công"
+                        : "Dữ liệu phòng trống";
+                System.out.println("GET_ALL_PHONG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phòng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // 3. Lấy danh sách khách hàng
+            Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
+            Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
+            SocketManager.send(khachHangRequest);
+            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>() {}.getType();
+            Response<List<KhachHangDTO>> khachHangResponse = SocketManager.receiveType(khachHangResponseType);
+
+            if (khachHangResponse != null && khachHangResponse.isSuccess() && khachHangResponse.getData() != null) {
+                khachHangResponse.getData().forEach(kh -> khachHangMap.put(kh.getMaKH(), kh));
+            } else {
+                String errorMsg = khachHangResponse == null ? "Không nhận được phản hồi từ server"
+                        : !khachHangResponse.isSuccess() ? "Yêu cầu không thành công"
+                        : "Dữ liệu khách hàng trống";
+                System.out.println("GET_ALL_KHACH_HANG failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // 4. Xử lý dữ liệu và hiển thị
+            StringBuilder errorMessages = new StringBuilder();
+            int errorCount = 0;
+
+            for (PhieuDatPhongDTO pdp : dsPhieuDatPhong) {
+                // Xử lý thông tin khách hàng
+                String tenKhachHang = "Không xác định";
+                String soDienThoai = "Không xác định";
+                String cccd = "Không xác định";
+                if (pdp.getMaKH() != null) {
+                    KhachHangDTO kh = khachHangMap.get(pdp.getMaKH());
+                    tenKhachHang = kh != null ? kh.getHoTen() : "Khách hàng không tồn tại";
+                    soDienThoai = kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "Không có số điện thoại";
+                    cccd = kh.getSoCCCD() != null ? kh.getSoCCCD() : "Không có CCCD";
+                }
+
+                // Xử lý danh sách phòng
+                List<String> dsMaPhong = pdp.getDsMaPhong();
+                if (dsMaPhong == null || dsMaPhong.isEmpty()) {
+                    tableModel.addRow(new Object[]{
+                            pdp.getMaPDP(),
+                            "N/A", "N/A", "N/A", "N/A",
+                            tenKhachHang,
+                            formatDate(pdp.getNgayNhanPhongDuKien()),
+                            formatDate(pdp.getNgayTraPhongDuKien())
+                    });
+                    continue;
+                }
+
+                // Thêm từng phòng vào bảng
+                for (String maPhong : dsMaPhong) {
+                    PhongDTO phong = phongMap.get(maPhong);
+                    if (phong == null) {
+                        errorMessages.append("Không tìm thấy phòng ").append(maPhong)
+                                .append(" trong phiếu ").append(pdp.getMaPDP()).append("\n");
+                        errorCount++;
+                        continue;
+                    }
+
+                    if (phong.getTinhTrang() != 0) {
+                        long soDemO = 0;
+                        if (pdp.getNgayNhanPhongDuKien() != null && pdp.getNgayTraPhongDuKien() != null) {
+                            soDemO = ChronoUnit.DAYS.between(pdp.getNgayNhanPhongDuKien(), pdp.getNgayTraPhongDuKien());
+                            if (soDemO < 0) soDemO = 0; // tránh lỗi nếu ngày đến sau ngày đi
+                        }
+
+                        // Tính tiền phòng
+                        double tongTienPhong = phong.getGiaPhong() * soDemO;
+
+                        // Thêm thông tin vào bảng
+                        tableModel.addRow(new Object[]{
+                                pdp.getMaPDP(),
+                                phong.getMaLoai() != null ? phong.getMaLoai() : "N/A",
+                                phong.getTenPhong() != null ? phong.getTenPhong() : "N/A",
+                                phong.getMaPhong() != null ? phong.getMaPhong() : "N/A",
+                                getTrangThaiPhong(phong.getTinhTrang()),
+                                tenKhachHang,
+                                formatDate(pdp.getNgayNhanPhongDuKien()),
+                                formatDate(pdp.getNgayTraPhongDuKien()),
+                                soDemO,
+                                soDienThoai,
+                                cccd,
+                                pdp.getMaKH(),
+                                pdp.getMaNV(),
+                                String.format("%,.0f", tongTienPhong) + " VNĐ" // Hiển thị tiền phòng
+                        });
+                    }
+                }
+            }
+
+            // Hiển thị lỗi nếu có
+            if (errorCount > 0) {
+                JOptionPane.showMessageDialog(this,
+                        "Có " + errorCount + " lỗi xảy ra:\n" + errorMessages.toString(),
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            System.out.println("Unexpected error in loadPhongData: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            table.repaint();
+            table.revalidate();
+        }
+    }
+
+    // Hàm hỗ trợ
+    private String formatDate(LocalDate date) {
+        return date != null ? date.toString() : "N/A";
+    }
+
+    private String getTrangThaiPhong(int tinhTrang) {
+        switch (tinhTrang) {
+            case 0: return "Trống";
+            case 1: return "Đã đặt";
+            case 2: return "Đang sử dụng";
+            default: return "Không xác định";
+        }
+    }
+
+
+    //    private void loadPhongData() {
+//        tableModel.setRowCount(0);
 //
-//            if (pdp == null) {
-//                JOptionPane.showMessageDialog(null, "Không tìm thấy phiếu đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+//        try {
+//            // 1. Lấy danh sách phiếu đặt phòng
+//            Request<Void> request = new Request<>("GET_ALL_PHIEU_DAT_PHONG", null);
+//            SocketManager.send(request);
+//            Type phieuResponseType = new TypeToken<Response<List<PhieuDatPhongDTO>>>() {}.getType();
+//            Response<List<PhieuDatPhongDTO>> response = SocketManager.receiveType(phieuResponseType);
+//
+//            if (response == null || !response.isSuccess() || response.getData() == null) {
+//                String errorMsg = response == null ? "Không nhận được phản hồi từ server"
+//                        : (response.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+//                System.out.println("GET_ALL_PHIEU_DAT_PHONG failed: " + errorMsg);
+//                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu: " + errorMsg,
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
 //                return;
 //            }
 //
-//            // Hiển thị thông tin khách hàng
-//            lbhoten1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getHoTen() : "Chưa xác định");
-//            lbcccd1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getcCCD() : "Chưa xác định");
-//            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
-//            lbsdt1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getSdt() : "Chưa xác định");
-//            lbsophong1.setText(pdp.getPhong() != null ? pdp.getPhong().getMaPhong() : "Chưa xác định");
-//            lbdiachi1.setText(pdp.getKhachHang() != null ? pdp.getKhachHang().getDiaChi() : "Chưa xác định");
-//
-//            // Hiển thị thông tin ngày
-//            lbngaynhan1.setText(pdp.getNgayDen() != null ? pdp.getNgayDen().toString() : "Chưa xác định");
-//            lbngaytra1.setText(pdp.getNgayDi() != null ? pdp.getNgayDi().toString() : "Chưa xác định");
-//        } catch (Exception ex) {
-//            JOptionPane.showMessageDialog(null, "Đã xảy ra lỗi khi lấy thông tin phiếu đặt phòng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-//            ex.printStackTrace();
-//        }
-    }
-
-
-    //load dữ liệu
-    public Object[][] loadDataHD()  {
-//        String sql = "SELECT hd.maHD, pdp.maPDP, p.maPhong, hd.ngayLapHD, kh.hoTen AS KhachHang, nv.hoTen AS NhanVien " +
-//                "FROM HoaDon hd " +
-//                "JOIN KhachHang kh ON hd.maKH = kh.maKH " +
-//                "JOIN NhanVien nv ON hd.maNV = nv.maNV " +
-//                "JOIN PhieuDatPhong pdp ON pdp.maKH = hd.maKH " +
-//                "JOIN Phong p ON p.maPhong = pdp.maPhong";
-//        List<Object[]> dataList = new ArrayList<>();
-//        ConnectDB.getInstance().connect();
-//        this.conn = ConnectDB.getConnection();
-//        try (
-//                Statement stmt = conn.createStatement();
-//                ResultSet rs = stmt.executeQuery(sql)) {
-//            int stt = 1;
-//            while (rs.next()) {
-//                String maHoaDon = rs.getString("maHD");
-//                String maPDP = rs.getString("maPDP");
-//                String maPhong = rs.getString("maPhong");
-//                String ngayLap = rs.getString("ngayLapHD");
-//                String tenKhachHang = rs.getString("KhachHang");
-//                String tenNhanVien = rs.getString("NhanVien");
-//                // Add the actual data to the list
-//                dataList.add(new Object[]{maHoaDon, maPDP, maPhong, ngayLap, tenKhachHang, tenNhanVien, 400000, "Xem"});
+//            List<PhieuDatPhongDTO> dsPhieuDatPhong = response.getData();
+//            if (dsPhieuDatPhong.isEmpty()) {
+//                JOptionPane.showMessageDialog(this, "Không có dữ liệu phiếu đặt phòng",
+//                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                return;
 //            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//        return dataList.toArray(new Object[0][]);
-        return null;
-    }
-
-    public Object[][] loadDV(String maPhong) {
-//        String sql = "SELECT dv.tenDV, dv.donViTinh, ct.soLuongDV, ct.soLuongDV * dv.giaDV as donGia " +
-//                "FROM DichVu dv " +
-//                "JOIN ChiTietHoaDon ct ON dv.maDV = ct.maDV " +
-//                "WHERE ct.maPhong = ? AND ct.soLuongDV > 0"; // Thêm điều kiện soLuongDV > 0
 //
-//        List<Object[]> dataList = new ArrayList<>();
-//        ConnectDB.getInstance().connect();
-//        this.conn = ConnectDB.getConnection();
-//        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//            pstmt.setString(1, maPhong);
-//            try (ResultSet rs = pstmt.executeQuery()) {
-//                int stt = 1;
-//                float tongTien = 0;
-//                while (rs.next()) {
-//                    String tenDV = rs.getString(1);
-//                    String donViTinh = rs.getString(2);
-//                    String soLuong = rs.getString(3);
-//                    String donGia = rs.getString(4);
-//                    float thanhTien = Float.parseFloat(soLuong) * Float.parseFloat(donGia);
-//                    tongTien += thanhTien;
-//                    dataList.add(new Object[]{stt++, tenDV, donViTinh, soLuong, donGia, thanhTien});
+//            // 2. Lấy danh sách phòng
+//            Map<String, PhongDTO> phongMap = new HashMap<>();
+//            Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
+//            SocketManager.send(phongRequest);
+//            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>() {}.getType();
+//            Response<List<PhongDTO>> phongResponse = SocketManager.receiveType(phongResponseType);
+//
+//            if (phongResponse != null && phongResponse.isSuccess() && phongResponse.getData() != null) {
+//                phongResponse.getData().forEach(phong -> {
+//                    System.out.println("Phòng: " + phong.getMaPhong() + " - " + phong.getTenPhong());
+//                    phongMap.put(phong.getMaPhong(), phong);
+//                });
+//            } else {
+//                String errorMsg = phongResponse == null ? "Không nhận được phản hồi từ server"
+//                        : !phongResponse.isSuccess() ? "Yêu cầu không thành công"
+//                        : "Dữ liệu phòng trống";
+//                System.out.println("GET_ALL_PHONG failed: " + errorMsg);
+//                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách phòng: " + errorMsg,
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//
+//            // 3. Lấy danh sách khách hàng
+//            Map<String, KhachHangDTO> khachHangMap = new HashMap<>();
+//            Request<Void> khachHangRequest = new Request<>("GET_ALL_KHACH_HANG", null);
+//            SocketManager.send(khachHangRequest);
+//            Type khachHangResponseType = new TypeToken<Response<List<KhachHangDTO>>>() {}.getType();
+//            Response<List<KhachHangDTO>> khachHangResponse = SocketManager.receiveType(khachHangResponseType);
+//
+//            if (khachHangResponse != null && khachHangResponse.isSuccess() && khachHangResponse.getData() != null) {
+//                khachHangResponse.getData().forEach(kh -> khachHangMap.put(kh.getMaKH(), kh));
+//            } else {
+//                String errorMsg = khachHangResponse == null ? "Không nhận được phản hồi từ server"
+//                        : !khachHangResponse.isSuccess() ? "Yêu cầu không thành công"
+//                        : "Dữ liệu khách hàng trống";
+//                System.out.println("GET_ALL_KHACH_HANG failed: " + errorMsg);
+//                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách khách hàng: " + errorMsg,
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//
+//            // 4. Xử lý dữ liệu và hiển thị
+//            StringBuilder errorMessages = new StringBuilder();
+//            int errorCount = 0;
+//
+//            for (PhieuDatPhongDTO pdp : dsPhieuDatPhong) {
+//                // Xử lý thông tin khách hàng
+//                String tenKhachHang = "Không xác định";
+//                String soDienThoai = "Không xác định";
+//                String cccd = "Không xác định";
+//                if (pdp.getMaKH() != null) {
+//                    KhachHangDTO kh = khachHangMap.get(pdp.getMaKH());
+//                    tenKhachHang = kh != null ? kh.getHoTen() : "Khách hàng không tồn tại";
+//                    soDienThoai = kh.getSoDienThoai() != null ? kh.getSoDienThoai() : "Không có số điện thoại";
+//                    cccd = kh.getSoCCCD() != null ? kh.getSoCCCD() : "Không có CCCD";
 //                }
-////            totalLabel1.setText(String.format("%.0f", tongTien)); // Nếu cần, bạn có thể hiển thị tổng tiền
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
 //
-//        return dataList.toArray(new Object[0][]);
-        return null;
-    }
-
-    //load DSKH
-    public Object[][] loadDSKH() {
-//        String sql = "SELECT pdp.maPDP, p.loaiPhong, p.tenPhong, p.maPhong, p.trangThai, kh.hoTen, pdp.ngayDen, pdp.ngayDi " +
-//                "FROM PhieuDatPhong pdp " +
-//                "JOIN KhachHang kh ON kh.maKH = pdp.maKH " +
-//                "JOIN Phong p ON p.maPhong = pdp.maPhong ";
-//        List<Object[]> dataList = new ArrayList<>();
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//        try (Connection con = ConnectDB.getConnection();
-//             Statement stmt = con.createStatement();
-//             ResultSet rs = stmt.executeQuery(sql)) {
-//            while (rs.next()) {
-//                String maDatPhong = rs.getString("maPDP");
-//                String loaiPhong = rs.getString("loaiPhong");
-//                String tenPhong = rs.getString("tenPhong");
-//                String maPhong = rs.getString("maPhong");
-//                String trangThai = rs.getString("trangThai");
-//                String trangThaiHienThi = "1".equals(trangThai) ? "Đang sử dụng" : "không sử dụng";
-//                String tenKhachHang = rs.getString("hoTen");
-//                Date ngayDen = rs.getDate("ngayDen");
-//                Date ngayDi = rs.getDate("ngayDi");
-//                String ngayDenStr = ngayDen != null ? dateFormat.format(ngayDen) : "";
-//                String ngayDiStr = ngayDi != null ? dateFormat.format(ngayDi) : "";
-//                int soDem = 0;
-//                if (ngayDen != null && ngayDi != null) {
-//                    long diffInMillis = ngayDi.getTime() - ngayDen.getTime();
-//                    soDem = (int) (diffInMillis / (1000 * 60 * 60 * 24));
+//                // Xử lý danh sách phòng
+//                List<String> dsMaPhong = pdp.getDsMaPhong();
+//                if (dsMaPhong == null || dsMaPhong.isEmpty()) {
+//                    tableModel.addRow(new Object[]{
+//                            pdp.getMaPDP(),
+//                            "N/A", "N/A", "N/A", "N/A",
+//                            tenKhachHang,
+//                            formatDate(pdp.getNgayNhanPhongDuKien()),
+//                            formatDate(pdp.getNgayTraPhongDuKien())
+//                    });
+//                    continue;
 //                }
-//                dataList.add(new Object[]{maDatPhong, loaiPhong, tenPhong, maPhong, trangThaiHienThi, tenKhachHang, ngayDenStr, ngayDiStr, soDem});
+//
+//                // Thêm từng phòng vào bảng
+//                for (String maPhong : dsMaPhong) {
+//                    PhongDTO phong = phongMap.get(maPhong);
+//                    if (phong == null) {
+//                        errorMessages.append("Không tìm thấy phòng ").append(maPhong)
+//                                .append(" trong phiếu ").append(pdp.getMaPDP()).append("\n");
+//                        errorCount++;
+//                        continue;
+//                    }
+//
+//                    if (phong.getTinhTrang() != 0) {
+//                        long soDemO = 0;
+//                        if (pdp.getNgayNhanPhongDuKien() != null && pdp.getNgayTraPhongDuKien() != null) {
+//                            soDemO = ChronoUnit.DAYS.between(pdp.getNgayNhanPhongDuKien(), pdp.getNgayTraPhongDuKien());
+//                            if (soDemO < 0) soDemO = 0; // tránh lỗi nếu ngày đến sau ngày đi
+//                        }
+//
+//                        tableModel.addRow(new Object[]{
+//                                pdp.getMaPDP(),
+//                                phong.getMaLoai() != null ? phong.getMaLoai() : "N/A",
+//                                phong.getTenPhong() != null ? phong.getTenPhong() : "N/A",
+//                                phong.getMaPhong() != null ? phong.getMaPhong() : "N/A",
+//                                getTrangThaiPhong(phong.getTinhTrang()),
+//                                tenKhachHang,
+//                                formatDate(pdp.getNgayNhanPhongDuKien()),
+//                                formatDate(pdp.getNgayTraPhongDuKien()),
+//                                soDemO,
+//                                soDienThoai,
+//                                cccd,
+//                                pdp.getMaKH(),
+//                                pdp.getMaNV()
+//
+//
+//                        });
+//                    }
+//                }
 //            }
-//        } catch (SQLException e) {
+//
+//            // Hiển thị lỗi nếu có
+//            if (errorCount > 0) {
+//                JOptionPane.showMessageDialog(this,
+//                        "Có " + errorCount + " lỗi xảy ra:\n" + errorMessages.toString(),
+//                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+//            }
+//
+//        } catch (Exception e) {
+//            System.out.println("Unexpected error in loadPhongData: " + e.getMessage());
 //            e.printStackTrace();
+//            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(),
+//                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+//        } finally {
+//            table.repaint();
+//            table.revalidate();
 //        }
-//        return dataList.toArray(new Object[0][]);
-        return null;
-    }
+//    }
+//
+//    // Hàm hỗ trợ
+//    private String formatDate(LocalDate date) {
+//        return date != null ? date.toString() : "N/A";
+//    }
+//
+//    private String getTrangThaiPhong(int tinhTrang) {
+//        switch (tinhTrang) {
+//            case 0: return "Trống";
+//            case 1: return "Đã đặt";
+//            case 2: return "Đang sử dụng";
+//            default: return "Không xác định";
+//        }
+//    }
+    private void loadPhieuDatDichVu(String maKH) {
+        tableModel1.setRowCount(0);
 
+        try {
+            // 1. Kiểm tra mã khách hàng
+            if (maKH == null || maKH.trim().isEmpty()) {
+                System.out.println("Mã khách hàng rỗng hoặc null");
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập mã khách hàng",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            System.out.println("Đang tải phiếu đặt dịch vụ cho maKH: " + maKH);
 
-    public void exportToPDF(JTable table) {
-        String filePath = "C:/Users/TRAN HAU/Desktop/hoa_don_" + System.currentTimeMillis() + ".pdf"; // Đường dẫn tệp PDF đầu ra
+            // 2. Lấy danh sách phiếu đặt dịch vụ theo mã khách hàng
+            Request<String> request = new Request<>("FIND_BY_MA_KH", maKH);
+            SocketManager.send(request);
+            Type phieuResponseType = new TypeToken<Response<List<PhieuDatDichVuDTO>>>() {}.getType();
+            Response<List<PhieuDatDichVuDTO>> response = SocketManager.receiveType(phieuResponseType);
 
-        try (PDDocument document = new PDDocument()) {
-            // Tạo trang PDF mới
-            PDPage page = new PDPage();
-            document.addPage(page);
-
-            // Bắt đầu vẽ nội dung vào trang
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                // Tạo đối tượng File cho font chữ
-                File fontFile = new File("C:/Windows/Fonts/times.ttf");
-
-                // Kiểm tra sự tồn tại của tệp font
-                if (!fontFile.exists()) {
-                    throw new IOException("Font file không tồn tại: " + fontFile.getAbsolutePath());
-                }
-
-                // Tải phông chữ từ File sử dụng PDType0Font (hỗ trợ Unicode)
-                PDType0Font font = PDType0Font.load(document, fontFile);
-
-                // Cài đặt font và kích thước chữ
-                contentStream.setFont(font, 12);
-                contentStream.setLeading(14f);
-                contentStream.beginText(); // Mở văn bản
-                contentStream.newLineAtOffset(50, 750); // Vị trí bắt đầu viết nội dung
-
-                // Tiêu đề hóa đơn
-                contentStream.showText("HÓA ĐƠN");
-                contentStream.newLine();
-
-                // Thêm ngày tháng hiện tại
-                LocalDate currentDate = LocalDate.now();
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'Ngày' dd 'tháng' MM 'năm' yyyy");
-                String formattedDate = currentDate.format(formatter);
-                contentStream.showText("Ngày lập: " + formattedDate);
-                contentStream.newLine();
-
-                // Thông tin khách hàng
-                contentStream.showText("Họ tên khách hàng: " + lbhoten1.getText());
-                contentStream.newLine();
-                contentStream.showText("Số điện thoại: " + lbsdt1.getText());
-                contentStream.newLine();
-                contentStream.showText("Số CCCD: " + lbcccd1.getText());
-                contentStream.newLine();
-                contentStream.showText("Địa chỉ: " + lbdiachi1.getText());
-                contentStream.newLine();
-                contentStream.showText("Mã số thuế: " + lbmasothue1.getText());
-                contentStream.newLine();
-
-                // Thông tin phòng
-                contentStream.showText("Mã phòng: " + lbsophong1.getText());
-                contentStream.newLine();
-                contentStream.showText("Ngày nhận phòng: " + lbngaynhan1.getText());
-                contentStream.newLine();
-                contentStream.showText("Ngày trả phòng: " + lbngaytra1.getText());
-                contentStream.newLine();
-
-                // Đóng phần văn bản của thông tin khách hàng và phòng
-                contentStream.endText();
-
-                // Mở lại văn bản để in thông tin từ bảng
-                contentStream.beginText();
-                contentStream.newLineAtOffset(50, 500); // Vị trí bắt đầu xuất thông tin bảng
-
-                contentStream.showText("Danh sách dịch vụ:");
-                contentStream.newLine();
-
-                // Cấu trúc cột cho thông tin bảng
-                String[] columnNames = {"STT", "Tên dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"};
-
-                // In tên cột
-                contentStream.setFont(font, 10);
-                float yPosition = 500; // Vị trí bắt đầu cho bảng
-
-                // Căn chỉnh vị trí các cột
-                for (int i = 0; i < columnNames.length; i++) {
-                    contentStream.newLineAtOffset(50 + i * 100, yPosition);  // Điều chỉnh vị trí cho các cột
-                }
-
-                yPosition -= 20; // Khoảng cách giữa tên cột và dữ liệu
-
-                // Lấy dữ liệu từ bảng và xuất vào PDF theo cột
-                for (int i = 0; i < table.getRowCount(); i++) {
-                    for (int j = 0; j < table.getColumnCount(); j++) {
-                        Object cellValue = table.getValueAt(i, j);
-                        contentStream.newLineAtOffset(50 + j * 100, yPosition);  // Điều chỉnh vị trí cho từng cột
-                    }
-                    yPosition -= 20; // Khoảng cách giữa các hàng
-                }
-
-                contentStream.endText(); // Đóng phần văn bản của bảng dịch vụ  
+            if (response == null || !response.isSuccess() || response.getData() == null) {
+                String errorMsg = response == null ? "Không nhận được phản hồi từ server"
+                        : (response.getData() == null ? "Dữ liệu trống" : "Lỗi không xác định");
+                System.out.println("FIND_BY_MA_KH failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy dữ liệu phiếu đặt dịch vụ: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
-            // Lưu tệp PDF vào đường dẫn
-            document.save(filePath);
+            List<PhieuDatDichVuDTO> dsPhieuDatDichVu = response.getData();
+            System.out.println("Số phiếu đặt dịch vụ tìm thấy: " + dsPhieuDatDichVu.size());
+            if (dsPhieuDatDichVu.isEmpty()) {
+                System.out.println("Không có phiếu đặt dịch vụ cho maKH: " + maKH);
+                JOptionPane.showMessageDialog(this, "Không có phiếu đặt dịch vụ cho khách hàng " + maKH,
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
 
-            // Hiển thị thông báo thành công cho người dùng
-            JOptionPane.showMessageDialog(null, "Hóa đơn đã được xuất ra file PDF: " + filePath, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            // 3. Lấy danh sách dịch vụ
+            Map<String, DichVuDTO> dichVuMap = new HashMap<>();
+            Request<Void> dichVuRequest = new Request<>("GET_ALL_DICH_VU", null);
+            SocketManager.send(dichVuRequest);
+            Type dichVuResponseType = new TypeToken<Response<List<DichVuDTO>>>() {}.getType();
+            Response<List<DichVuDTO>> dichVuResponse = SocketManager.receiveType(dichVuResponseType);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Lỗi khi tải font hoặc lưu file PDF! " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            if (dichVuResponse != null && dichVuResponse.isSuccess() && dichVuResponse.getData() != null) {
+                dichVuResponse.getData().forEach(dv -> {
+                    System.out.println("Dịch vụ: " + dv.getMaDV() + " - " + dv.getTenDV() + " - Đơn giá: " + dv.getDonGia());
+                    dichVuMap.put(dv.getMaDV(), dv);
+                });
+                System.out.println("Số dịch vụ tìm thấy: " + dichVuMap.size());
+            } else {
+                String errorMsg = dichVuResponse == null ? "Không nhận được phản hồi từ server"
+                        : !dichVuResponse.isSuccess() ? "Yêu cầu không thành công"
+                        : "Dữ liệu dịch vụ trống";
+                System.out.println("GET_ALL_DICH_VU failed: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi khi lấy danh sách dịch vụ: " + errorMsg,
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // 4. Xử lý dữ liệu và hiển thị
+            StringBuilder errorMessages = new StringBuilder();
+            int errorCount = 0;
+            int stt = 1; // Biến đếm STT
+
+            for (PhieuDatDichVuDTO pddv : dsPhieuDatDichVu) {
+                System.out.println("Xử lý phiếu: " + pddv.getMaPDDV() + ", dsMaDV: " + pddv.getDsMaDV());
+
+                // Xử lý danh sách dịch vụ
+                List<String> dsMaDV = pddv.getDsMaDV();
+                if (dsMaDV == null || dsMaDV.isEmpty()) {
+                    System.out.println("Phiếu " + pddv.getMaPDDV() + " không có dsMaDV");
+                    tableModel1.addRow(new Object[]{
+                            stt++,
+                            "N/A",
+                            "N/A",
+                            pddv.getSoLuongDichVu(),
+                            "N/A",
+                            "N/A"
+                    });
+                    continue;
+                }
+
+                // Thêm từng dịch vụ vào bảng
+                for (String maDV : dsMaDV) {
+                    System.out.println("Kiểm tra maDV: " + maDV);
+                    DichVuDTO dichVu = dichVuMap.get(maDV);
+                    if (dichVu == null) {
+                        errorMessages.append("Không tìm thấy dịch vụ ").append(maDV)
+                                .append(" trong phiếu ").append(pddv.getMaPDDV()).append("\n");
+                        errorCount++;
+                        System.out.println("Dịch vụ " + maDV + " không tồn tại trong dichVuMap");
+                        continue;
+                    }
+
+                    // Tính thành tiền: số lượng * đơn giá
+                    double thanhTien = pddv.getSoLuongDichVu() * dichVu.getDonGia();
+                    System.out.println("Thêm hàng: " + dichVu.getTenDV() + ", Thành tiền: " + thanhTien);
+
+                    tableModel1.addRow(new Object[]{
+                            stt++,
+                            dichVu.getTenDV() != null ? dichVu.getTenDV() : "N/A",
+                            dichVu.getDonViTinh() != null ? dichVu.getDonViTinh() : "Cái",
+                            pddv.getSoLuongDichVu(),
+                            dichVu.getDonGia() == 0.0 ? "N/A" : String.format("%,.0f", dichVu.getDonGia()),
+                            thanhTien == 0.0 ? "N/A" : String.format("%,.0f", thanhTien)
+                    });
+                }
+            }
+
+            // Hiển thị lỗi nếu có
+            if (errorCount > 0) {
+                System.out.println("Có " + errorCount + " lỗi: " + errorMessages.toString());
+                JOptionPane.showMessageDialog(this,
+                        "Có " + errorCount + " lỗi xảy ra:\n" + errorMessages.toString(),
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            }
+
         } catch (Exception e) {
+            System.out.println("Unexpected error in loadPhieuDatDichVu: " + e.getMessage());
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Xuất file thất bại! " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi hệ thống: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            if (table1 != null) {
+                table1.repaint();
+                table1.revalidate();
+            } else {
+                System.err.println("table1 chưa được khởi tạo khi loadPhieuDatDichVu.");
+            }
+        }
+
+    }
+
+
+    // Hàm hỗ trợ
+    private String formatDateTime(LocalDateTime dateTime) {
+        return dateTime != null ? dateTime.toString() : "N/A";
+    }
+
+
+
+
+
+
+    //    private void loadTableData() {
+//        // Xóa tất cả các dòng cũ trong tableModel3
+//        tableModel3.setRowCount(0);
+//
+//        // Gửi request và nhận dữ liệu hóa đơn
+//        Request<Void> request = new Request<>("GET_ALL_HOA_DON", null);
+//        SocketManager.send(request);
+//
+//        try {
+//            // Dùng TypeToken để deserialize đúng kiểu
+//            Type responseType = new TypeToken<Response<List<HoaDonDTO>>>() {}.getType();
+//            Response<List<HoaDonDTO>> response = SocketManager.receiveType(responseType);
+//
+//            if (response != null && response.isSuccess()) {
+//                List<HoaDonDTO> dsHoaDon = response.getData();
+//
+//                if (dsHoaDon == null || dsHoaDon.isEmpty()) {
+//                    JOptionPane.showMessageDialog(this,
+//                            "Không có dữ liệu hóa đơn!",
+//                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                    return;
+//                }
+//
+//                // Duyệt qua danh sách hóa đơn và thêm vào table
+//                for (HoaDonDTO hd : dsHoaDon) {
+//                    tableModel3.addRow(new Object[]{
+//                            hd.getMaHD(),
+//                            hd.getMaKH(),
+//                            hd.getMaNV(),
+//                            hd.getMaPDP(),
+//                            hd.getNgayLapHD(),
+//                            hd.getNgayNhanPhong(),
+//                            hd.getNgayTraPhong(),
+//                            hd.getSoPhongDat()
+//                    });
+//                }
+//                System.out.println("Loaded " + dsHoaDon.size() + " invoices into table");
+//            } else {
+//                JOptionPane.showMessageDialog(this,
+//                        "Không thể lấy dữ liệu hóa đơn từ server!",
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this,
+//                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
+//                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+//        }
+//
+//
+//// Hàm hỗ trợ
+//
+//
+//
+    ////        // Cập nhật bảng sau khi dữ liệu được tải
+    ////        table2.repaint();
+    ////        table2.revalidate();
+//    }
+    private void loadTableData() {
+        // Xóa tất cả các dòng cũ trong tableModel3
+        tableModel3.setRowCount(0);
+
+        // Gửi request và nhận dữ liệu hóa đơn
+        Request<Void> request = new Request<>("GET_ALL_HOA_DON", null);
+        SocketManager.send(request);
+
+        try {
+            // Dùng TypeToken để deserialize đúng kiểu
+            Type responseType = new TypeToken<Response<List<HoaDonDTO>>>() {}.getType();
+            Response<List<HoaDonDTO>> response = SocketManager.receiveType(responseType);
+
+            if (response != null && response.isSuccess()) {
+                List<HoaDonDTO> dsHoaDon = response.getData();
+
+                if (dsHoaDon == null || dsHoaDon.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không có dữ liệu hóa đơn!",
+                            "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                // Sắp xếp danh sách hóa đơn theo ngày lập (ngayLapHD) tăng dần
+                dsHoaDon.sort((hd1, hd2) -> {
+                    if (hd1.getNgayLapHD() == null || hd2.getNgayLapHD() == null) {
+                        return 0; // Nếu một trong hai ngày lập là null, giữ nguyên thứ tự
+                    }
+                    return hd1.getNgayLapHD().compareTo(hd2.getNgayLapHD());
+                });
+
+                System.out.println(dsHoaDon);
+                // Duyệt qua danh sách hóa đơn và thêm vào table
+                for (HoaDonDTO hd : dsHoaDon) {
+                    // Kiểm tra và chuyển đổi các giá trị LocalDateTime
+                    String ngayLapHD = (hd.getNgayLapHD() != null) ? formatLocalDateTime(hd.getNgayLapHD()) : "N/A";
+                    String ngayNhanPhong = (hd.getNgayNhanPhong() != null) ? formatLocalDateTime(hd.getNgayNhanPhong()) : "N/A";
+                    String ngayTraPhong = (hd.getNgayTraPhong() != null) ? formatLocalDateTime(hd.getNgayTraPhong()) : "N/A";
+
+                    tableModel3.addRow(new Object[]{
+                            hd.getMaHD(),
+                            hd.getMaKH(),
+                            hd.getMaNV(),
+                            hd.getMaPDP(),
+                            ngayLapHD,
+                            ngayNhanPhong,
+                            ngayTraPhong,
+                            hd.getSoPhongDat()
+                    });
+                }
+                System.out.println("Loaded " + dsHoaDon.size() + " invoices into table");
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể lấy dữ liệu hóa đơn từ server!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi kết nối đến server khi tải dữ liệu: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private String formatLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime != null) {
+            // Đảm bảo sử dụng định dạng chuẩn ISO khi hiển thị
+            return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        }
+        return "N/A";
+    }
+
+
+    public void themHoaDon(HoaDonDTO hoaDon) {
+        // Kiểm tra trùng maPDP
+        for (HoaDonDTO hd : dsHoaDon) {
+            if (hd.getMaPDP() != null && hd.getMaPDP().equals(hoaDon.getMaPDP())) {
+                JOptionPane.showMessageDialog(this,
+                        "Mã phiếu đặt phòng này đã được lập hóa đơn trước đó!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return; // Không gửi yêu cầu nếu bị trùng
+            }
+        }
+
+        Request<HoaDonDTO> request = new Request<>("CREATE_HOA_DON", hoaDon);
+        try {
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+                    .create();
+
+            String json = gson.toJson(request);
+            System.out.println("JSON sent to server: " + json);
+
+            SocketManager.send(request);
+            Response<String> response = SocketManager.receive(Response.class);
+
+            if (response != null) {
+                JOptionPane.showMessageDialog(this,
+                        response.getData(),
+                        response.isSuccess() ? "Thành công" : "Lỗi",
+                        response.isSuccess() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+
+                if (response.isSuccess()) {
+                    loadTableData();
+                    table2.repaint();
+                    table2.revalidate();
+                }
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Không nhận được phản hồi từ server",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi gửi dữ liệu: " + ex.getMessage(),
+                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+//    public void themHoaDon(HoaDonDTO hoaDon) {
+//        Request<HoaDonDTO> request = new Request<>("CREATE_HOA_DON", hoaDon);
+//        try {
+//            // Tạo Gson với LocalDateTimeAdapter để xử lý kiểu LocalDateTime
+//            Gson gson = new GsonBuilder()
+//                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+//                    .create();
+//
+//            // In JSON để kiểm tra dữ liệu gửi đi
+//            String json = gson.toJson(request);
+//            System.out.println("JSON sent to server: " + json);
+//
+//            // Gửi yêu cầu đến server
+//            SocketManager.send(request);
+//
+//            // Nhận phản hồi từ server
+//            Response<String> response = SocketManager.receive(Response.class);
+//
+//            if (response != null) {
+//                // Hiển thị thông báo thành công hoặc lỗi
+//                JOptionPane.showMessageDialog(this,
+//                        response.getData(),
+//                        response.isSuccess() ? "Thành công" : "Lỗi",
+//                        response.isSuccess() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+//
+//                // Nếu tạo hóa đơn thành công, tải lại toàn bộ dữ liệu từ server
+//                if (response.isSuccess()) {
+//                    loadTableData(); // Tải lại danh sách hóa đơn đã được sắp xếp
+//                    table2.repaint();
+//                    table2.revalidate();
+//                }
+//            } else {
+//                JOptionPane.showMessageDialog(this,
+//                        "Không nhận được phản hồi từ server",
+//                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(this,
+//                    "Lỗi khi gửi dữ liệu: " + ex.getMessage(),
+//                    "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+//        }
+//    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    public BufferedImage generateQRCodeImage(String content, int width, int height) throws WriterException {
+//        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+//        BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, width, height);
+//        return MatrixToImageWriter.toBufferedImage(bitMatrix);
+//    }
+
+    public void exportToPDF(JTable table1, double giaPhong) {
+        String filePath = "C:/Users/MSI/Desktop/hoadon/hoa_don_" + System.currentTimeMillis() + ".pdf";
+
+        PDDocument document = new PDDocument();
+        PDPage page = new PDPage(PDRectangle.A4);
+        document.addPage(page);
+
+        PDPageContentStream contentStream = null;
+
+        try {
+            File fontFile = new File("C:/Windows/Fonts/times.ttf");
+            if (!fontFile.exists()) {
+                throw new IOException("Font file không tồn tại: " + fontFile.getAbsolutePath());
+            }
+
+            PDType0Font font = PDType0Font.load(document, fontFile);
+            contentStream = new PDPageContentStream(document, page);
+            contentStream.setFont(font, 12);
+            contentStream.setLeading(14f);
+
+            // === THÔNG TIN HÓA ĐƠN ===
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 750);
+            contentStream.showText("HÓA ĐƠN");
+            contentStream.newLine();
+
+            LocalDate currentDate = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("'Ngày' dd 'tháng' MM 'năm' yyyy");
+            contentStream.showText("Ngày lập: " + currentDate.format(formatter));
+            contentStream.newLine();
+            contentStream.showText("Họ tên khách hàng: " + lbhoten1.getText());
+            contentStream.newLine();
+            contentStream.showText("Số điện thoại: " + lbsdt1.getText());
+            contentStream.newLine();
+            contentStream.showText("Số CCCD: " + lbcccd1.getText());
+            contentStream.newLine();
+            contentStream.showText("Mã số thuế: " + lbmasothue1.getText());
+            contentStream.newLine();
+            contentStream.showText("Ngày nhận phòng: " + lbngaynhan1.getText());
+            contentStream.newLine();
+            contentStream.showText("Ngày trả phòng: " + lbngaytra1.getText());
+            contentStream.newLine();
+
+            // Hiển thị giá phòng dưới ngày trả phòng
+            contentStream.showText("Giá phòng: " + String.format("%,.0f", giaPhong) + " VNĐ");
+            contentStream.newLine();
+            contentStream.newLine();
+
+//            contentStream.showText("Danh sách dịch vụ:");
+            contentStream.endText();
+
+            float marginLeft = 50;
+            float startY = 620;
+            float rowHeight = 15;
+            float currentY = startY;
+
+            String[] columnNames = {"STT", "Tên dịch vụ", "Đơn vị tính", "Số lượng", "Đơn giá", "Thành tiền"};
+            contentStream.setFont(font, 10);
+
+            // In tiêu đề cột
+            contentStream.beginText();
+            contentStream.newLineAtOffset(marginLeft, currentY);
+            for (String col : columnNames) {
+                contentStream.showText(String.format("%-20s", col));
+            }
+            contentStream.endText();
+            currentY -= rowHeight;
+
+            double tongTien = 0;
+
+            // Tính tổng tiền từ bảng dịch vụ
+            for (int i = 0; i < table1.getRowCount(); i++) {
+                if (currentY < 50) {
+                    contentStream.close();
+                    page = new PDPage();
+                    document.addPage(page);
+                    contentStream = new PDPageContentStream(document, page);
+                    contentStream.setFont(font, 10);
+                    currentY = 750;
+                }
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(marginLeft, currentY);
+                for (int j = 0; j < table1.getColumnCount(); j++) {
+                    Object cell = table1.getValueAt(i, j);
+                    contentStream.showText(String.format("%-20s", cell != null ? cell.toString() : ""));
+                }
+                contentStream.endText();
+
+                // Cộng tổng tiền dịch vụ
+                Object thanhTienObj = table1.getValueAt(i, table1.getColumnCount() - 1);
+                try {
+                    if (thanhTienObj != null) {
+                        tongTien += Double.parseDouble(thanhTienObj.toString().replace(",", ""));
+                    }
+                } catch (NumberFormatException ignored) {}
+
+                currentY -= rowHeight;
+            }
+
+            // Cộng giá phòng vào tổng tiền
+            tongTien += giaPhong;
+
+            // Hiển thị tổng tiền sau khi đã cộng thêm giá phòng
+            contentStream.beginText();
+            contentStream.newLineAtOffset(marginLeft, currentY - 20);
+            contentStream.setFont(font, 12);
+            contentStream.showText("TỔNG TIỀN: " + String.format("%,.0f VNĐ", tongTien));
+            contentStream.endText();
+
+            // === TẠO MÃ QR THANH TOÁN ===
+//            String qrContent = "Thanh toán hóa đơn: " + String.format("%,.0f", tongTien) + " VND";
+//            BufferedImage qrImage = generateQRCodeImage(qrContent, 150, 150);
+//            File qrFile = new File("temp_qr.png");
+//            ImageIO.write(qrImage, "png", qrFile);
+//
+//            PDImageXObject pdImage = PDImageXObject.createFromFileByContent(qrFile, document);
+//            contentStream.drawImage(pdImage, 400, currentY - 150, 120, 120);
+            // === CHÈN ẢNH CÓ SẴN (ví dụ: mã QR MoMo) ===
+            File imageFile = new File("C:/Users/MSI/Desktop/Momo.jpg"); // Đường dẫn ảnh có sẵn
+            if (!imageFile.exists()) {
+                throw new IOException("Ảnh QR không tồn tại: " + imageFile.getAbsolutePath());
+            }
+
+            PDImageXObject pdImage = PDImageXObject.createFromFileByContent(imageFile, document);
+            contentStream.drawImage(pdImage, 400, currentY - 150, 120, 120); // Vị trí và kích thước ảnh
+
+
+            contentStream.close();
+            document.save(filePath);
+            document.close();
+
+//            if (qrFile.exists()) qrFile.delete();
+
+            JOptionPane.showMessageDialog(null, "Hóa đơn đã được xuất ra PDF kèm mã QR thanh toán: " + filePath,
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            try {
+                if (contentStream != null) contentStream.close();
+                if (document != null) document.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
+
 
 
 

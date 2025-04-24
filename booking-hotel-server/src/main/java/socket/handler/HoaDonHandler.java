@@ -57,6 +57,13 @@ public class HoaDonHandler implements RequestHandler {
                     return new Response<>(false, "Lỗi hệ thống: " + e.getMessage());
                 }
             }
+            case "GET_ALL_HOADON" -> {
+                List<HoaDonDTO> ds = hoaDonDao.getAllHoaDonDTOs();
+                if (ds.isEmpty()) {
+                    return new Response<>(false, "Không có hóa đơn nào trong cơ sở dữ liệu");
+                }
+                return new Response<>(true, ds);
+            }
             case "FIND_BY_MA_KH" -> {
                 String maKH = gson.fromJson(gson.toJson(request.getData()), String.class);
                 if (maKH == null || maKH.isEmpty()) {
@@ -75,6 +82,30 @@ public class HoaDonHandler implements RequestHandler {
                 Integer soPhongDat = criteria[2].isEmpty() ? null : Integer.parseInt(criteria[2]);
                 List<HoaDonDTO> hoaDonList = hoaDonDao.findByMultipleCriteria(maKH, maNV, soPhongDat);
                 return new Response<>(true, hoaDonList);
+            }
+            case "KIEM_TRA_MA_HOADON" -> {
+                String maHoaDon = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maHoaDon == null || maHoaDon.trim().isEmpty()) {
+                    return new Response<>(false, "Mã hóa đơn không hợp lệ");
+                }
+                boolean exists = hoaDonDao.existsByMaHoaDon(maHoaDon.trim());
+                return new Response<>(true, exists);
+            }
+            case "THONG_KE_DOANH_THU_PHONG" -> {
+                List<Object[]> ds = hoaDonDao.getDoanhThuPhongTheoNamThang();
+                System.out.println("Dữ liệu doanh thu phòng: " + ds); // Debug
+                if (ds.isEmpty()) {
+                    return new Response<>(false, "Không có dữ liệu doanh thu phòng");
+                }
+                return new Response<>(true, ds);
+            }
+            case "THONG_KE_DOANH_THU_DICH_VU" -> {
+                List<Object[]> ds = hoaDonDao.getDoanhThuDichVuTheoNamThang();
+                System.out.println("Dữ liệu doanh thu dịch vụ: " + ds); // Debug
+                if (ds.isEmpty()) {
+                    return new Response<>(false, "Không có dữ liệu doanh thu dịch vụ");
+                }
+                return new Response<>(true, ds);
             }
             default -> {
                 return new Response<>(false, "Hành động không được hỗ trợ");
