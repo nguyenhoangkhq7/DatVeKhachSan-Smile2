@@ -1,8 +1,7 @@
-package utils.custom_element;
+package utils;
 
 
 import com.google.gson.*;
-
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

@@ -26,6 +26,22 @@ public class PhongHandler implements RequestHandler {
                 List<PhongDTO> ds = phongDao.getAllPhongDTOs();
                 return new Response<>(true, ds);
             }
+            case "READ_PHONG" -> {
+                String maPhong = (String) request.getData(); // Giả sử dữ liệu yêu cầu là maPhong (mã phòng)
+
+                if (maPhong == null || maPhong.isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+
+                PhongDTO phongDTO = phongDao.read(maPhong); // Gọi phương thức read() từ DAO để lấy thông tin phòng
+
+                if (phongDTO != null) {
+                    return new Response<>(true, phongDTO); // Trả về thông tin phòng nếu tìm thấy
+                } else {
+                    return new Response<>(false, "Không tìm thấy phòng với mã: " + maPhong); // Trường hợp không tìm thấy phòng
+                }
+            }
+
             case "THEM_PHONG" -> {
                 PhongDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), PhongDTO.class
@@ -40,11 +56,24 @@ public class PhongHandler implements RequestHandler {
                 PhongDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), PhongDTO.class
                 );
+                System.out.println("Nhận yêu cầu SUA_PHONG với dữ liệu: " + gson.toJson(dto));
+                if (dto == null || dto.getMaPhong() == null || dto.getMaPhong().isEmpty()) {
+                    System.out.println("Lỗi: Mã phòng không hợp lệ");
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean success = phongDao.update(dto);
+                System.out.println("Kết quả cập nhật phòng: " + success);
+                return new Response<>(success, success ? "Cập nhật phòng thành công" : "Cập nhật phòng thất bại");
+            }
+            case "SUA_PHONG_BOOLEAN" -> {
+                PhongDTO dto = gson.fromJson(
+                        gson.toJson(request.getData()), PhongDTO.class
+                );
                 if (dto == null || dto.getMaPhong() == null || dto.getMaPhong().isEmpty()) {
                     return new Response<>(false, "Mã phòng không hợp lệ");
                 }
                 boolean success = phongDao.update(dto);
-                return new Response<>(success, success ? "Cập nhật phòng thành công" : "Cập nhật phòng thất bại");
+                return new Response<>(success, success); // Trả về success dưới dạng Boolean
             }
             case "TIM_PHONG_THEO_TEN" -> {
                 String tenPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
@@ -60,11 +89,9 @@ public class PhongHandler implements RequestHandler {
                 if (keyword == null || keyword.trim().isEmpty()) {
                     return new Response<>(false, "Từ khóa tìm kiếm không hợp lệ");
                 }
-
                 List<PhongDTO> ds = phongDao.findByKeyword(keyword.trim());
                 return new Response<>(true, ds);
             }
-
             case "GET_PHONG_BY_MA_PHONG" -> {
                 String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
                 PhongDTO phong = phongDao.read(maPhong);
@@ -72,6 +99,65 @@ public class PhongHandler implements RequestHandler {
                     return new Response<>(false, "Không tìm thấy phòng với mã: " + maPhong);
                 }
                 return new Response<>(true, phong);
+            }
+            case "GET_TEN_LOAI_PHONG_BY_MA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                System.out.println("Nhận yêu cầu GET_TEN_LOAI_PHONG_BY_MA_PHONG với maPhong: " + maPhong);
+
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    System.out.println("Lỗi: maPhong không hợp lệ (null hoặc rỗng)");
+                    return new Response<>(false, "Mã phòng không hợp lệ: null hoặc rỗng");
+                }
+
+                try {
+                    String tenLoai = phongDao.getTenLoaiPhongByMaPhong(maPhong);
+                    if (tenLoai == null) {
+                        System.out.println("Không tìm thấy tenLoai cho maPhong: " + maPhong);
+                        // Kiểm tra thêm để xác định nguyên nhân
+                        PhongDTO phong = phongDao.read(maPhong);
+                        if (phong == null) {
+                            System.out.println("Lỗi: maPhong " + maPhong + " không tồn tại trong bảng phong");
+                            return new Response<>(false, "Không tìm thấy phòng với mã: " + maPhong);
+                        } else if (phong.getMaLoai() == null) {
+                            System.out.println("Lỗi: maPhong " + maPhong + " có ma_loai_phong null hoặc không hợp lệ");
+                            return new Response<>(false, "Phòng " + maPhong + " không có loại phòng được liên kết");
+                        } else {
+                            System.out.println("Lỗi: ma_loai_phong của " + maPhong + " không khớp với bảng loai_phong");
+                            return new Response<>(false, "Không tìm thấy loại phòng cho mã phòng: " + maPhong);
+                        }
+                    }
+
+                    System.out.println("Trả về tenLoai: " + tenLoai + " cho maPhong: " + maPhong);
+                    return new Response<>(true, tenLoai);
+                } catch (Exception e) {
+                    System.out.println("Lỗi khi xử lý GET_TEN_LOAI_PHONG_BY_MA_PHONG cho maPhong " + maPhong + ": " + e.getMessage());
+                    e.printStackTrace();
+                    return new Response<>(false, "Lỗi server khi lấy loại phòng cho mã phòng " + maPhong + ": " + e.getMessage());
+                }
+            }
+            case "GET_SO_PHONG_BY_LOAI_PHONG" -> {
+                String tenLoaiPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (tenLoaiPhong == null || tenLoaiPhong.isEmpty()) {
+                    return new Response<>(false, "Tên loại phòng không hợp lệ");
+                }
+                List<String> dsSoPhong = phongDao.getSoPhongByLoaiPhong(tenLoaiPhong);
+                return new Response<>(true, dsSoPhong);
+            }
+            case "KIEM_TRA_MA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean exists = phongDao.existsByMaPhong(maPhong.trim());
+                return new Response<>(true, exists); // true nếu mã đã tồn tại
+            }
+            case "XOA_PHONG" -> {
+                String maPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
+                if (maPhong == null || maPhong.trim().isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean success = phongDao.delete(maPhong.trim());
+                return new Response<>(success, success ? "Xóa phòng thành công" : "Xóa phòng thất bại");
             }
         }
         return new Response<>(false, "Hành động không được hỗ trợ");

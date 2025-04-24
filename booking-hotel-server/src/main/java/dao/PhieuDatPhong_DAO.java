@@ -1,20 +1,26 @@
 package dao;
 
+import com.google.gson.reflect.TypeToken;
 import dto.PhieuDatPhongDTO;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.*;
 import mapper.GenericMapper;
 import mapper.impl.PhieuDatPhongMapperImpl;
 import model.PhieuDatPhong;
+import model.Request;
+import model.Response;
 import org.hibernate.Hibernate;
+import socket.SocketManager;
 import utils.HibernateUtil;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
-    private final GenericMapper<PhieuDatPhong, PhieuDatPhongDTO> mapper;
+    public final GenericMapper<PhieuDatPhong, PhieuDatPhongDTO> mapper;
 
     public PhieuDatPhong_DAO() {
         super(PhieuDatPhong.class);
@@ -147,6 +153,40 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             return em.createQuery(cq).getResultList().stream()
                     .map(mapper::toDTO)
                     .collect(Collectors.toList());
+        } finally {
+            em.close();
+        }
+    }
+    public boolean create3(PhieuDatPhongDTO dto) {
+        if (dto == null || dto.getMaPDP() == null || dto.getMaPDP().isEmpty()) {
+            System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
+            return false;
+        }
+        try {
+            PhieuDatPhong entity = mapper.toEntity(dto); // Sửa toEntityDTO thành toEntity
+            System.out.println("Entity trước khi lưu: " + entity);
+            return super.create(entity); // Đảm bảo GenericDAO có phương thức create3
+        } catch (Exception e) {
+            System.out.println("Lỗi khi thêm phiếu đặt phòng: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean existsByMaPDP(String maPDP) {
+        if (maPDP == null || maPDP.isEmpty()) {
+            return false;
+        }
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            em.createQuery("SELECT p FROM PhieuDatPhong p WHERE p.maPDP = :maPDP", PhieuDatPhong.class)
+                    .setParameter("maPDP", maPDP)
+                    .getSingleResult();
+            return true; // Nếu tìm thấy, trả về true
+        } catch (NoResultException e) {
+            return false; // Nếu không tìm thấy, trả về false
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         } finally {
             em.close();
         }

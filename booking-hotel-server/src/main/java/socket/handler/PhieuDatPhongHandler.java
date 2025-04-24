@@ -1,18 +1,25 @@
 package socket.handler;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import dao.PhieuDatPhong_DAO;
 import dao.Phong_DAO;
 import dto.PhieuDatPhongDTO;
 import dto.PhongDTO;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.*;
+import model.PhieuDatPhong;
 import model.Phong;
 import model.Request;
 import model.Response;
 import utils.HibernateUtil;
+import utils.custom_element.LocalDateAdapter;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,11 +27,14 @@ import java.util.stream.Collectors;
 
 public class PhieuDatPhongHandler implements RequestHandler {
     private final PhieuDatPhong_DAO phieuDatPhongDao;
-    private final Gson gson;
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
+
 
     public PhieuDatPhongHandler() {
         this.phieuDatPhongDao = new PhieuDatPhong_DAO();
-        this.gson = new Gson();
+//        this.gson = new Gson();
     }
 
     @Override
@@ -32,12 +42,17 @@ public class PhieuDatPhongHandler implements RequestHandler {
         String action = request.getAction();
         switch (action) {
             case "CREATE_PHIEU_DAT_PHONG" -> {
-                PhieuDatPhongDTO pdpDTO = gson.fromJson(gson.toJson(request.getData()), PhieuDatPhongDTO.class);
-                if (pdpDTO == null || pdpDTO.getMaPDP() == null || pdpDTO.getMaPDP().isEmpty()) {
+                PhieuDatPhongDTO dto = gson.fromJson(
+                        gson.toJson(request.getData()), PhieuDatPhongDTO.class
+                );
+                System.out.println("Nhận yêu cầu CREATE_PHIEU_DAT_PHONG với dữ liệu: " + gson.toJson(dto));
+                if (dto == null || dto.getMaPDP() == null || dto.getMaPDP().isEmpty()) {
+                    System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
                     return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ");
                 }
-                boolean success = phieuDatPhongDao.create(pdpDTO);
-                return new Response<>(success, success ? "Thêm phiếu đặt phòng thành công" : "Thêm phiếu đặt phòng thất bại");
+                boolean success = phieuDatPhongDao.create3(dto);
+                System.out.println("Kết quả thêm phiếu đặt phòng: " + success);
+                return new Response<>(success, success);
             }
             case "READ_PHIEU_DAT_PHONG" -> {
                 String maPhieu = gson.fromJson(gson.toJson(request.getData()), String.class);
@@ -108,62 +123,6 @@ public class PhieuDatPhongHandler implements RequestHandler {
                     return new Response<>(false, errorMessage);
                 }
             }
-//            case "GET_PHIEU_DAT_PHONG_DA_DAT_IN_LINE" -> {
-//                try {
-//                    System.out.println("Bắt đầu xử lý yêu cầu GET_PHIEU_DAT_PHONG_DA_DAT...");
-//
-//                    // Bước 1: Lấy danh sách tất cả phiếu đặt phòng
-//                    System.out.println("Bước 1: Lấy danh sách phiếu đặt phòng...");
-//                    PhieuDatPhong_DAO phieuDatPhongDao = new PhieuDatPhong_DAO();
-//                    List<PhieuDatPhongDTO> allPhieuDatPhong = phieuDatPhongDao.getAllPhieuDatPhongDTOs();
-//                    if (allPhieuDatPhong == null || allPhieuDatPhong.isEmpty()) {
-//                        System.out.println("Không có phiếu đặt phòng nào trong hệ thống.");
-//                        return new Response<>(true, "Không có phiếu đặt phòng nào trong hệ thống.");
-//                    }
-//                    System.out.println("Số lượng phiếu đặt phòng: " + allPhieuDatPhong.size());
-//
-//                    // Bước 2: Lấy danh sách tất cả phòng
-//                    System.out.println("Bước 2: Lấy danh sách phòng...");
-//                    Phong_DAO phongDao = new Phong_DAO();
-//                    List<PhongDTO> phongList = phongDao.getAllPhongDTOs();
-//                    if (phongList == null || phongList.isEmpty()) {
-//                        System.out.println("Không có phòng nào trong hệ thống.");
-//                        return new Response<>(true, "Không có phòng nào trong hệ thống.");
-//                    }
-//                    System.out.println("Số lượng phòng: " + phongList.size());
-//
-//                    // Bước 3: Tạo map trạng thái phòng
-//                    System.out.println("Bước 3: Tạo map trạng thái phòng...");
-//                    Map<String, Integer> phongTinhTrangMap = phongList.stream()
-//                            .collect(Collectors.toMap(
-//                                    PhongDTO::getMaPhong,
-//                                    PhongDTO::getTinhTrang,
-//                                    (existing, replacement) -> existing
-//                            ));
-//
-//                    // Bước 4: Lọc phiếu đặt phòng
-//                    System.out.println("Bước 4: Lọc phiếu đặt phòng...");
-//                    List<PhieuDatPhongDTO> filteredPhieuDatPhong = allPhieuDatPhong.stream()
-//                            .filter(pdp -> pdp.getDsMaPhong() != null && !pdp.getDsMaPhong().isEmpty())
-//                            .filter(pdp -> pdp.getDsMaPhong().stream()
-//                                    .anyMatch(maPhong -> {
-//                                        Integer tinhTrang = phongTinhTrangMap.get(maPhong);
-//                                        return tinhTrang != null && tinhTrang == 1;
-//                                    }))
-//                            .collect(Collectors.toList());
-//
-//                    System.out.println("Số lượng phiếu đặt phòng sau lọc: " + filteredPhieuDatPhong.size());
-//                    if (filteredPhieuDatPhong.isEmpty()) {
-//                        return new Response<>(true, "Không có phiếu đặt phòng nào với phòng đã đặt");
-//                    }
-//                    return new Response<>(true, filteredPhieuDatPhong);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    String errorMessage = "Lỗi hệ thống khi lấy dữ liệu phiếu đặt phòng: " + e.getMessage();
-//                    System.err.println(errorMessage);
-//                    return new Response<>(false, errorMessage);
-//                }
-//            }
 
             case "GET_PHIEU_DAT_PHONG_DA_DAT" -> {
                 try {
@@ -487,6 +446,75 @@ public class PhieuDatPhongHandler implements RequestHandler {
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     return new Response<>(false, "Lỗi hệ thống khi trả phòng: " + ex.getMessage());
+                }
+            }
+            case "CHECK_PHIEU_DAT_PHONG_EXISTS" -> {
+                String maPDP = (String) request.getData();
+                System.out.println("Nhận yêu cầu CHECK_PHIEU_DAT_PHONG_EXISTS với maPDP: " + maPDP);
+                if (maPDP == null || maPDP.isEmpty()) {
+                    System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
+                    return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ");
+                }
+                boolean exists = phieuDatPhongDao.existsByMaPDP(maPDP);
+                System.out.println("Kết quả kiểm tra mã PDP: " + maPDP + " -> Tồn tại: " + exists);
+                return new Response<>(true, exists);
+            }
+            case "FIND_PHIEU_BY_MULTIPLE_CRITERIA" -> {
+                try {
+                    System.out.println("Bắt đầu xử lý yêu cầu FIND_PHIEU_BY_MULTIPLE_CRITERIA...");
+                    Map<String, String> criteria = gson.fromJson(gson.toJson(request.getData()), new TypeToken<Map<String, String>>(){}.getType());
+
+                    if (criteria == null || criteria.isEmpty()) {
+                        System.out.println("Lỗi: Tiêu chí tìm kiếm không hợp lệ");
+                        return new Response<>(false, "Tiêu chí tìm kiếm không hợp lệ");
+                    }
+
+                    EntityManager em = HibernateUtil.getEntityManager();
+                    try {
+                        CriteriaBuilder cb = em.getCriteriaBuilder();
+                        CriteriaQuery<PhieuDatPhong> cq = cb.createQuery(PhieuDatPhong.class);
+                        Root<PhieuDatPhong> root = cq.from(PhieuDatPhong.class);
+                        List<Predicate> predicates = new ArrayList<>();
+
+                        // Fetch các liên kết cần thiết
+                        root.fetch("phongs", JoinType.LEFT);
+                        root.fetch("khachHang", JoinType.LEFT);
+                        root.fetch("nhanVien", JoinType.LEFT);
+                        root.fetch("phieuDatDichVus", JoinType.LEFT);
+
+                        // Xử lý các tiêu chí tìm kiếm
+                        if (criteria.containsKey("maPDP") && !criteria.get("maPDP").isEmpty()) {
+                            predicates.add(cb.equal(root.get("maPDP"), criteria.get("maPDP")));
+                        }
+                        if (criteria.containsKey("tenKhachHang") && !criteria.get("tenKhachHang").isEmpty()) {
+                            predicates.add(cb.like(cb.lower(root.get("khachHang").get("hoTen")), "%" + criteria.get("tenKhachHang").toLowerCase() + "%"));
+                        }
+                        if (criteria.containsKey("soCCCD") && !criteria.get("soCCCD").isEmpty()) {
+                            predicates.add(cb.equal(root.get("khachHang").get("soCCCD"), criteria.get("soCCCD")));
+                        }
+                        if (criteria.containsKey("soDienThoai") && !criteria.get("soDienThoai").isEmpty()) {
+                            predicates.add(cb.equal(root.get("khachHang").get("soDienThoai"), criteria.get("soDienThoai")));
+                        }
+                        if (criteria.containsKey("email") && !criteria.get("email").isEmpty()) {
+                            predicates.add(cb.equal(root.get("khachHang").get("email"), criteria.get("email")));
+                        }
+
+                        cq.select(root).where(predicates.toArray(new Predicate[0])).distinct(true);
+                        List<PhieuDatPhong> resultList = em.createQuery(cq).getResultList();
+                        List<PhieuDatPhongDTO> dtos = resultList.stream()
+                                .map(phieuDatPhongDao.mapper::toDTO)
+                                .collect(Collectors.toList());
+
+                        System.out.println("Số lượng phiếu đặt phòng tìm thấy: " + dtos.size());
+                        return new Response<>(true, dtos);
+                    } finally {
+                        em.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    String errorMessage = "Lỗi hệ thống khi tìm kiếm phiếu đặt phòng: " + e.getMessage();
+                    System.err.println(errorMessage);
+                    return new Response<>(false, errorMessage);
                 }
             }
         }

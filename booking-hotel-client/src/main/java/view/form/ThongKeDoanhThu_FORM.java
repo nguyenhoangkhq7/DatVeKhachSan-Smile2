@@ -1,5 +1,8 @@
 package view.form;
 
+import model.Request;
+import model.Response;
+import socket.SocketManager;
 import utils.custom_element.*;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -19,11 +22,9 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.util.*;
+import java.util.List;
 
 public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
 
@@ -33,8 +34,7 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
     private final JTable table;
     private final JRadioButton radNam;
 
-    public ThongKeDoanhThu_FORM(){
-
+    public ThongKeDoanhThu_FORM() {
         setBackground(new Color(16, 16, 20));
         Box mainBox = Box.createVerticalBox();
         mainBox.add(Box.createVerticalStrut(10));
@@ -43,15 +43,12 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         Box b1 = Box.createVerticalBox();
         Box b2 = Box.createHorizontalBox();
 
+        b2.add(createFormBox("Năm", cbNam = new JComboBox<>()));
+        // Tải danh sách năm từ dữ liệu doanh thu
+        loadYearsFromRevenueData();
 
-
-
-        b2.add(createFormBox("Năm",cbNam = new JComboBox<>()));
-        for (int i = 2022; i <= 2024; i++) {
-            cbNam.addItem(i);
-        }
-        b2.add(createFormBox1("Theo năm",radNam = new JRadioButton()));
-        b2.add(createFormBox1("Theo tháng",radThang = new JRadioButton()));
+        b2.add(createFormBox1("Theo năm", radNam = new JRadioButton()));
+        b2.add(createFormBox1("Theo tháng", radThang = new JRadioButton()));
 
         ButtonGroup group = new ButtonGroup();
         group.add(radNam);
@@ -61,18 +58,14 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         b2.setMinimumSize(b2Size);
         b2.setMaximumSize(b2Size);
 
-
         Box b3 = Box.createHorizontalBox();
         Box b4 = Box.createHorizontalBox();
-
 
         RoundedButton btnThongKe = createHandleButton("Thống kê");
         RoundedButton btnLamMoi = createHandleButton("Làm mới");
         RoundedButton btnExport = createHandleButton("Xuất báo cáo");
 
-
         b4.add(Box.createHorizontalGlue());
-
         b4.add(Box.createHorizontalStrut(72));
         b4.add(btnThongKe);
         b4.add(Box.createHorizontalStrut(72));
@@ -81,13 +74,9 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         b4.add(btnLamMoi);
         b4.add(Box.createHorizontalStrut(55));
 
-
         b3.add(b4);
-
-
         b1.add(b2);
         b1.add(b3);
-
 
         // Tieu de
         JLabel titleLabel = new JLabel("Thống kê doanh thu");
@@ -104,7 +93,6 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         titlePanel.add(Box.createHorizontalStrut(15));
         titlePanel.add(titleLabel);
         titlePanel.add(Box.createHorizontalGlue());
-
 
         // Tạo bang
         Box b6 = Box.createHorizontalBox();
@@ -135,12 +123,11 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
             column.setCellRenderer(cellRenderer);
         }
 
-        scroll.setBounds(30, 380, 1642, 200);
+        scroll.setPreferredSize(new Dimension(1642, 800));
         scroll.setBorder(null);
         scroll.getViewport().setOpaque(false);
         scroll.setViewportBorder(null);
-
-
+        scroll.getViewport().setBackground(Color.DARK_GRAY);
 
         mainBox.add(b1);
         mainBox.add(Box.createVerticalStrut(20));
@@ -149,17 +136,93 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         mainBox.add(b6);
         add(mainBox);
 
-
-        //loadTableData();
-
-
+        btnThongKe.addActionListener(this);
+        btnLamMoi.addActionListener(this);
+        btnExport.addActionListener(this);
     }
-    private Box createFormBox(String label,  JComboBox jbc) {
+
+    private void loadYearsFromRevenueData() {
+        Set<Integer> years = new TreeSet<>(); // Sử dụng TreeSet để lưu các năm duy nhất và sắp xếp
+
+        try {
+            // Lấy dữ liệu doanh thu phòng
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_PHONG để lấy năm...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_PHONG", null));
+            Response<?> resPhong = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_PHONG: " + resPhong);
+            if (resPhong != null && resPhong.isSuccess()) {
+                List<?> dsPhong = (List<?>) resPhong.getData();
+                System.out.println("Dữ liệu phòng: " + dsPhong);
+                if (dsPhong.isEmpty()) {
+                    System.out.println("Danh sách phòng rỗng!");
+                }
+                for (Object rowObj : dsPhong) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue(); // Lấy năm
+                    years.add(nam); // Thêm năm vào tập hợp
+                    System.out.println("Năm từ phòng: " + nam);
+                }
+            } else {
+                String errorMsg = resPhong != null && resPhong.getData() != null ? resPhong.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu phòng. Lỗi: " + errorMsg);
+            }
+
+            // Lấy dữ liệu doanh thu dịch vụ
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_DICH_VU để lấy năm...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_DICH_VU", null));
+            Response<?> resDV = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_DICH_VU: " + resDV);
+            if (resDV != null && resDV.isSuccess()) {
+                List<?> dsDV = (List<?>) resDV.getData();
+                System.out.println("Dữ liệu dịch vụ: " + dsDV);
+                if (dsDV.isEmpty()) {
+                    System.out.println("Danh sách dịch vụ rỗng!");
+                }
+                for (Object rowObj : dsDV) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue(); // Lấy năm
+                    years.add(nam); // Thêm năm vào tập hợp
+                    System.out.println("Năm từ dịch vụ: " + nam);
+                }
+            } else {
+                String errorMsg = resDV != null && resDV.getData() != null ? resDV.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu dịch vụ. Lỗi: " + errorMsg);
+            }
+
+            // Cập nhật JComboBox
+            if (years.isEmpty()) {
+                System.out.println("Không tìm thấy năm nào trong dữ liệu doanh thu!");
+                JOptionPane.showMessageDialog(this, "Không có năm nào trong cơ sở dữ liệu.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                // Thêm năm mặc định
+                cbNam.addItem(2025);
+            } else {
+                cbNam.removeAllItems(); // Xóa các mục hiện tại
+                for (Integer year : years) {
+                    cbNam.addItem(year); // Thêm các năm vào JComboBox
+                }
+                // Chọn năm mới nhất
+                cbNam.setSelectedIndex(cbNam.getItemCount() - 1);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối khi tải danh sách năm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            // Thêm năm mặc định nếu có lỗi
+            cbNam.addItem(2025);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi xử lý dữ liệu năm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            // Thêm năm mặc định nếu có lỗi
+            cbNam.addItem(2025);
+        }
+    }
+
+    private Box createFormBox(String label, JComboBox jbc) {
         Box b = Box.createVerticalBox();
         Dimension boxSize = new Dimension(332, 110);
         b.setPreferredSize(boxSize);
         b.setMaximumSize(boxSize);
-        b.setMaximumSize(boxSize);
+        b.setMinimumSize(boxSize);
 
         JLabel lbl = new JLabel(label);
         lbl.setFont(FontManager.getManrope(Font.PLAIN, 15));
@@ -170,9 +233,6 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
         lblBox.setMaximumSize(new Dimension(255, 20));
         lblBox.setMinimumSize(new Dimension(255, 20));
         lblBox.add(lbl);
-
-
-
 
         jbc.setBackground(new Color(40, 40, 44));
         Dimension jbcFieldSize = new Dimension(260, 45);
@@ -196,61 +256,60 @@ public class ThongKeDoanhThu_FORM extends JPanel implements ActionListener {
             }
         });
 
-
         b.add(lblBox);
         b.add(Box.createVerticalStrut(6));
         b.add(jbc);
-
         b.setBorder(BorderFactory.createEmptyBorder(0, 0, 35, 72));
 
         return b;
     }
 
-private Box createFormBox1(String label, JRadioButton rad){
-    Box b = Box.createVerticalBox();
-    Dimension boxSize = new Dimension(332, 110);
-    b.setPreferredSize(boxSize);
-    b.setMaximumSize(boxSize);
-    b.setMaximumSize(boxSize);
+    private Box createFormBox1(String label, JRadioButton rad) {
+        Box b = Box.createVerticalBox();
+        Dimension boxSize = new Dimension(332, 110);
+        b.setPreferredSize(boxSize);
+        b.setMaximumSize(boxSize);
+        b.setMinimumSize(boxSize);
 
-    JLabel lbl = new JLabel(label);
-    lbl.setFont(FontManager.getManrope(Font.PLAIN, 15));
-    lbl.setForeground(Color.WHITE);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(FontManager.getManrope(Font.PLAIN, 15));
+        lbl.setForeground(Color.WHITE);
 
-    Box lblBox = Box.createHorizontalBox();
-    lblBox.setPreferredSize(new Dimension(255, 20));
-    lblBox.setMaximumSize(new Dimension(255, 20));
-    lblBox.setMinimumSize(new Dimension(255, 20));
-    lblBox.add(lbl);
+        Box lblBox = Box.createHorizontalBox();
+        lblBox.setPreferredSize(new Dimension(255, 20));
+        lblBox.setMaximumSize(new Dimension(255, 20));
+        lblBox.setMinimumSize(new Dimension(255, 20));
+        lblBox.add(lbl);
 
-    rad.setBackground(new Color(40, 40, 44));
-    Dimension radFieldSize = new Dimension(260, 45);
-    rad.setPreferredSize(radFieldSize);
-    rad.setMaximumSize(radFieldSize);
-    rad.setMinimumSize(radFieldSize);
-    rad.setForeground(Color.white);
-    rad.setFont(FontManager.getManrope(Font.PLAIN, 14));
-    Border rademptyBorder = BorderFactory.createEmptyBorder(0, 10, 0, 0);
-    CompoundBorder radcombinedBorder = BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(83, 152, 255)), rademptyBorder);
-    rad.setBorder(rademptyBorder);
-    rad.addFocusListener(new FocusAdapter() {
-        @Override
-        public void focusGained(FocusEvent e) {
-            rad.setBorder(radcombinedBorder);
-        }
+        rad.setBackground(new Color(40, 40, 44));
+        Dimension radFieldSize = new Dimension(260, 45);
+        rad.setPreferredSize(radFieldSize);
+        rad.setMaximumSize(radFieldSize);
+        rad.setMinimumSize(radFieldSize);
+        rad.setForeground(Color.white);
+        rad.setFont(FontManager.getManrope(Font.PLAIN, 14));
+        Border rademptyBorder = BorderFactory.createEmptyBorder(0, 10, 0, 0);
+        CompoundBorder radcombinedBorder = BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(83, 152, 255)), rademptyBorder);
+        rad.setBorder(rademptyBorder);
+        rad.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                rad.setBorder(radcombinedBorder);
+            }
 
-        @Override
-        public void focusLost(FocusEvent e) {
-            rad.setBorder(rademptyBorder);
-        }
-    });
-    b.add(lblBox);
-    b.add(Box.createVerticalStrut(6));
-    b.add(rad);
-    b.setBorder(BorderFactory.createEmptyBorder(0, 0, 35, 72));
+            @Override
+            public void focusLost(FocusEvent e) {
+                rad.setBorder(rademptyBorder);
+            }
+        });
+        b.add(lblBox);
+        b.add(Box.createVerticalStrut(6));
+        b.add(rad);
+        b.setBorder(BorderFactory.createEmptyBorder(0, 0, 35, 72));
 
-    return b;
-}
+        return b;
+    }
+
     private RoundedButton createHandleButton(String buttonLabel) {
         RoundedButton button = new RoundedButton(buttonLabel, 5);
         Dimension buttonSize = new Dimension(259, 45);
@@ -266,7 +325,6 @@ private Box createFormBox1(String label, JRadioButton rad){
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-        button.addActionListener(this);
 
         button.addMouseListener(new MouseAdapter() {
             @Override
@@ -288,122 +346,240 @@ private Box createFormBox1(String label, JRadioButton rad){
         Object source = e.getSource();
         if (source instanceof RoundedButton) {
             RoundedButton button = (RoundedButton) source;
+            System.out.println("Nút được nhấn: " + button.getText() + ", radNam: " + radNam.isSelected() + ", radThang: " + radThang.isSelected());
             if ("Thống kê".equals(button.getText())) {
                 if (radNam.isSelected()) {
-                    // Thống kê theo năm
                     loadRevenueDataByYear();
                 } else if (radThang.isSelected()) {
-                    // Kiểm tra xem năm đã được chọn chưa
                     Object selectedYear = cbNam.getSelectedItem();
                     if (selectedYear == null) {
                         JOptionPane.showMessageDialog(this, "Vui lòng chọn năm trước khi thống kê theo tháng.");
                     } else {
-                        // Thống kê theo tháng
                         loadRevenueDataByMonth((int) selectedYear);
                     }
                 } else {
                     JOptionPane.showMessageDialog(this, "Vui lòng chọn loại thống kê (theo năm hoặc theo tháng).");
                 }
             } else if ("Làm mới".equals(button.getText())) {
-                // Làm mới giao diện
                 resetForm();
-            }else if ("Xuất báo cáo".equals(button.getText())) {
+            } else if ("Xuất báo cáo".equals(button.getText())) {
                 exportReport();
             }
-
         }
     }
 
-
-
     private void loadRevenueDataByYear() {
-//        String query = "SELECT YEAR(hd.ngayLapHD) AS Nam, " +
-//                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
-//                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
-//                "FROM HoaDon hd " +
-//                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
-//                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
-//                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
-//                "GROUP BY YEAR(hd.ngayLapHD)";
-//        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query);
-//             ResultSet rs = stmt.executeQuery()) {
-//
-//            tableModel.setRowCount(0); // Làm mới bảng
-//            DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
-//
-//            while (rs.next()) {
-//                int year = rs.getInt("Nam");
-//                double revenueService = rs.getDouble("DoanhThuDichVu");
-//                double revenueRoom = rs.getDouble("DoanhThuPhong");
-//                double totalRevenue = revenueService + revenueRoom;
-//
-//                // Định dạng doanh thu để tránh giá trị "E"
-//                String formattedRevenueService = df.format(revenueService);
-//                String formattedRevenueRoom = df.format(revenueRoom);
-//                String formattedTotalRevenue = df.format(totalRevenue);
-//
-//                tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, year, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
-//            }
-//            table.repaint(); // Cập nhật giao diện bảng
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
-//        }
+        tableModel.setRowCount(0);
+        System.out.println("Bắt đầu tải dữ liệu doanh thu theo năm...");
+
+        Map<Integer, Double> phongMap = new HashMap<>();
+        Map<Integer, Double> dvMap = new HashMap<>();
+
+        try {
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_PHONG...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_PHONG", null));
+            Response<?> resPhong = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_PHONG: " + resPhong);
+            if (resPhong != null && resPhong.isSuccess()) {
+                List<?> dsPhong = (List<?>) resPhong.getData();
+                System.out.println("Dữ liệu phòng: " + dsPhong);
+                if (dsPhong.isEmpty()) {
+                    System.out.println("Danh sách phòng rỗng!");
+                }
+                for (Object rowObj : dsPhong) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue();
+                    double dtPhong = ((Number) row.get(2)).doubleValue();
+                    phongMap.put(nam, phongMap.getOrDefault(nam, 0.0) + dtPhong);
+                    System.out.println("Hàng phòng: Năm " + nam + ", " + dtPhong);
+                }
+            } else {
+                String errorMsg = resPhong != null && resPhong.getData() != null ? resPhong.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu phòng. Lỗi: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi tải doanh thu phòng: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_DICH_VU...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_DICH_VU", null));
+            Response<?> resDV = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_DICH_VU: " + resDV);
+            if (resDV != null && resDV.isSuccess()) {
+                List<?> dsDV = (List<?>) resDV.getData();
+                System.out.println("Dữ liệu dịch vụ: " + dsDV);
+                if (dsDV.isEmpty()) {
+                    System.out.println("Danh sách dịch vụ rỗng!");
+                }
+                for (Object rowObj : dsDV) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue();
+                    double dtDV = ((Number) row.get(2)).doubleValue();
+                    dvMap.put(nam, dvMap.getOrDefault(nam, 0.0) + dtDV);
+                    System.out.println("Hàng dịch vụ: Năm " + nam + ", " + dtDV);
+                }
+            } else {
+                String errorMsg = resDV != null && resDV.getData() != null ? resDV.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu dịch vụ. Lỗi: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi tải doanh thu dịch vụ: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            Set<Integer> tatCaNam = new TreeSet<>();
+            tatCaNam.addAll(phongMap.keySet());
+            tatCaNam.addAll(dvMap.keySet());
+            System.out.println("Tất cả năm: " + tatCaNam);
+
+            DecimalFormat df = new DecimalFormat("#,###");
+            int stt = 1;
+
+            for (Integer nam : tatCaNam) {
+                double dtPhong = phongMap.getOrDefault(nam, 0.0);
+                double dtDV = dvMap.getOrDefault(nam, 0.0);
+                double tong = dtPhong + dtDV;
+
+                tableModel.addRow(new Object[]{
+                        stt++,
+                        String.valueOf(nam),
+                        df.format(dtDV),
+                        df.format(dtPhong),
+                        df.format(tong)
+                });
+                System.out.println("Đã thêm hàng: Năm " + nam);
+            }
+
+            System.out.println("Số hàng trong bảng: " + tableModel.getRowCount());
+            table.repaint();
+            table.revalidate();
+
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để hiển thị.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi xử lý dữ liệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadRevenueDataByMonth(int year) {
-//        String query = "SELECT MONTH(hd.ngayLapHD) AS Thang, " +
-//                "SUM(CASE WHEN dv.giaDV IS NOT NULL THEN cthd.soLuongDV * dv.giaDV ELSE 0 END) AS DoanhThuDichVu, " +
-//                "SUM(CASE WHEN p.giaPhong IS NOT NULL THEN DATEDIFF(DAY, hd.ngayNhanPhong, hd.ngayTraPhong) * p.giaPhong ELSE 0 END) AS DoanhThuPhong " +
-//                "FROM HoaDon hd " +
-//                "LEFT JOIN ChiTietHoaDon cthd ON hd.maHD = cthd.maHD " +
-//                "LEFT JOIN DichVu dv ON cthd.maDV = dv.maDV " +
-//                "LEFT JOIN Phong p ON hd.maPhong = p.maPhong " +
-//                "WHERE YEAR(hd.ngayLapHD) = ? " +
-//                "GROUP BY MONTH(hd.ngayLapHD)";
-//        try (PreparedStatement stmt = ConnectDB.getConnection().prepareStatement(query)) {
-//
-//            stmt.setInt(1, year);
-//            try (ResultSet rs = stmt.executeQuery()) {
-//                tableModel.setRowCount(0); // Làm mới bảng
-//                DecimalFormat df = new DecimalFormat("#,###.00"); // Định dạng số với 2 chữ số thập phân
-//
-//                while (rs.next()) {
-//                    int month = rs.getInt("Thang");
-//                    double revenueService = rs.getDouble("DoanhThuDichVu");
-//                    double revenueRoom = rs.getDouble("DoanhThuPhong");
-//                    double totalRevenue = revenueService + revenueRoom;
-//
-//                    // Định dạng doanh thu để tránh giá trị "E"
-//                    String formattedRevenueService = df.format(revenueService);
-//                    String formattedRevenueRoom = df.format(revenueRoom);
-//                    String formattedTotalRevenue = df.format(totalRevenue);
-//
-//                    tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, "Tháng " + month, formattedRevenueService, formattedRevenueRoom, formattedTotalRevenue});
-//                }
-//                table.repaint(); // Cập nhật giao diện bảng
-//            }
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//            JOptionPane.showMessageDialog(this, "Lỗi khi tải dữ liệu: " + ex.getMessage());
-//        }
+        tableModel.setRowCount(0);
+        System.out.println("Bắt đầu tải dữ liệu doanh thu theo tháng cho năm: " + year);
+
+        Map<String, Double> phongMap = new HashMap<>();
+        Map<String, Double> dvMap = new HashMap<>();
+
+        try {
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_PHONG...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_PHONG", null));
+            Response<?> resPhong = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_PHONG: " + resPhong);
+            if (resPhong != null && resPhong.isSuccess()) {
+                List<?> ds = (List<?>) resPhong.getData();
+                System.out.println("Dữ liệu phòng: " + ds);
+                if (ds.isEmpty()) {
+                    System.out.println("Danh sách phòng rỗng!");
+                }
+                for (Object rowObj : ds) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue();
+                    int thang = ((Number) row.get(1)).intValue();
+                    String thangNam = nam + "/" + thang;
+                    if (nam == year) {
+                        double dtPhong = ((Number) row.get(2)).doubleValue();
+                        phongMap.put(thangNam, dtPhong);
+                        System.out.println("Hàng phòng: " + thangNam + ", " + dtPhong);
+                    }
+                }
+            } else {
+                String errorMsg = resPhong != null && resPhong.getData() != null ? resPhong.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu phòng. Lỗi: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi tải doanh thu phòng: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            System.out.println("Gửi yêu cầu THONG_KE_DOANH_THU_DICH_VU...");
+            SocketManager.send(new Request<>("THONG_KE_DOANH_THU_DICH_VU", null));
+            Response<?> resDV = SocketManager.receive(Response.class);
+            System.out.println("Phản hồi THONG_KE_DOANH_THU_DICH_VU: " + resDV);
+            if (resDV != null && resDV.isSuccess()) {
+                List<?> ds = (List<?>) resDV.getData();
+                System.out.println("Dữ liệu dịch vụ: " + ds);
+                if (ds.isEmpty()) {
+                    System.out.println("Danh sách dịch vụ rỗng!");
+                }
+                for (Object rowObj : ds) {
+                    List<?> row = (List<?>) rowObj;
+                    int nam = ((Number) row.get(0)).intValue();
+                    int thang = ((Number) row.get(1)).intValue();
+                    String thangNam = nam + "/" + thang;
+                    if (nam == year) {
+                        double dtDV = ((Number) row.get(2)).doubleValue();
+                        dvMap.put(thangNam, dtDV);
+                        System.out.println("Hàng dịch vụ: " + thangNam + ", " + dtDV);
+                    }
+                }
+            } else {
+                String errorMsg = resDV != null && resDV.getData() != null ? resDV.getData().toString() : "Không nhận được dữ liệu từ server";
+                System.out.println("Không nhận được dữ liệu dịch vụ. Lỗi: " + errorMsg);
+                JOptionPane.showMessageDialog(this, "Lỗi tải doanh thu dịch vụ: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+            Set<String> tatCaThang = new TreeSet<>((a, b) -> {
+                int thangA = Integer.parseInt(a.split("/")[1]);
+                int thangB = Integer.parseInt(b.split("/")[1]);
+                return Integer.compare(thangA, thangB);
+            });
+
+            tatCaThang.addAll(phongMap.keySet());
+            tatCaThang.addAll(dvMap.keySet());
+            System.out.println("Tất cả tháng: " + tatCaThang);
+
+            DecimalFormat df = new DecimalFormat("#,###");
+            int stt = 1;
+
+            for (String thangNam : tatCaThang) {
+                double dtPhong = phongMap.getOrDefault(thangNam, 0.0);
+                double dtDV = dvMap.getOrDefault(thangNam, 0.0);
+                double tong = dtPhong + dtDV;
+
+                tableModel.addRow(new Object[]{
+                        stt++,
+                        thangNam,
+                        df.format(dtDV),
+                        df.format(dtPhong),
+                        df.format(tong)
+                });
+                System.out.println("Đã thêm hàng: " + thangNam);
+            }
+
+            System.out.println("Số hàng trong bảng: " + tableModel.getRowCount());
+            table.repaint();
+            table.revalidate();
+
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để hiển thị cho năm " + year + ".", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi xử lý dữ liệu: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void resetForm() {
-        // Xóa dữ liệu bảng
         tableModel.setRowCount(0);
-
-        // Đặt lại radio button
         radNam.setSelected(false);
         radThang.setSelected(false);
-
-        // Đặt lại combo box năm về trạng thái mặc định (chọn mục đầu tiên)
         if (cbNam.getItemCount() > 0) {
             cbNam.setSelectedIndex(0);
         }
-
-        // Hiển thị thông báo (tùy chọn)
+        System.out.println("Form đã được làm mới, số hàng: " + tableModel.getRowCount());
         JOptionPane.showMessageDialog(this, "Form đã được làm mới.");
+        table.repaint();
+        table.revalidate();
     }
 
     private void exportReport() {
@@ -417,14 +593,12 @@ private Box createFormBox1(String label, JRadioButton rad){
             try (Workbook workbook = new XSSFWorkbook()) {
                 Sheet sheet = workbook.createSheet("Thống kê doanh thu");
 
-                // Ghi tiêu đề cột
                 Row headerRow = sheet.createRow(0);
                 for (int i = 0; i < tableModel.getColumnCount(); i++) {
                     Cell cell = headerRow.createCell(i);
                     cell.setCellValue(tableModel.getColumnName(i));
                 }
 
-                // Ghi dữ liệu từ bảng
                 for (int i = 0; i < tableModel.getRowCount(); i++) {
                     Row row = sheet.createRow(i + 1);
                     for (int j = 0; j < tableModel.getColumnCount(); j++) {
@@ -433,7 +607,6 @@ private Box createFormBox1(String label, JRadioButton rad){
                     }
                 }
 
-                // Lưu file Excel
                 try (FileOutputStream fileOut = new FileOutputStream(fileToSave)) {
                     workbook.write(fileOut);
                     JOptionPane.showMessageDialog(this, "Báo cáo đã được lưu thành công!");
@@ -444,9 +617,4 @@ private Box createFormBox1(String label, JRadioButton rad){
             }
         }
     }
-
 }
-
-
-
-

@@ -1,21 +1,32 @@
 package socket.handler;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dao.GenericDAO;
 import dao.PhieuDatDichVu_DAO;
 import dto.PhieuDatDichVuDTO;
 import model.*;
+import utils.custom_element.LocalDateTimeAdapter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 
 public class PhieuDatDichVuHandler implements RequestHandler {
-
-        private final PhieuDatDichVu_DAO dao = new PhieuDatDichVu_DAO();
-
+        private final Gson gson;
+//        private final PhieuDatDichVu_DAO dao = new PhieuDatDichVu_DAO();
+        private final PhieuDatDichVu_DAO dao;
+        public PhieuDatDichVuHandler() {
+            this.dao = new PhieuDatDichVu_DAO();
+            this.gson = new GsonBuilder()
+                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+                    .serializeNulls()
+                    .create();
+    }
         @Override
         public Response<?> handle(Request<?> request) throws IOException {
             if (request == null || request.getAction() == null) {
@@ -28,6 +39,14 @@ public class PhieuDatDichVuHandler implements RequestHandler {
                     case "GET_ALL_PHIEU_DAT_DICH_VU":
                         return handleGetAll();
 
+                    case "GET_ALL_PHIEU_DAT_DICH_VU_1" :
+                        try {
+                            List<PhieuDatDichVuDTO> ds = dao.getAllPhieuDatDichVuDTOs();
+                            return new Response<>(true, ds);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            return new Response<>(false, "Lỗi hệ thống: " + e.getMessage());
+                        }
                     case "GET_PHIEU_DAT_DICH_VU_BY_ID":
                         String id = (String) request.getData();
                         if (id == null || id.isEmpty()) {
@@ -41,6 +60,13 @@ public class PhieuDatDichVuHandler implements RequestHandler {
                             return new Response<>(false, false);
                         }
                         return handleCreate(createDto);
+                    case "CREATE_PHIEU_DAT_DICH_VU_1" :
+                        PhieuDatDichVuDTO dto = gson.fromJson(gson.toJson(request.getData()), PhieuDatDichVuDTO.class);
+                        if (dto == null || dto.getMaPDDV() == null || dto.getMaPDDV().isEmpty()) {
+                            return new Response<>(false, "Mã phiếu đặt dịch vụ không hợp lệ");
+                        }
+                        boolean success = dao.create1(dto);
+                        return new Response<>(success, success ? "Thêm phiếu đặt dịch vụ thành công" : "Thêm phiếu đặt dịch vụ thất bại");
 
                     case "UPDATE_PHIEU_DAT_DICH_VU":
                         PhieuDatDichVuDTO updateDto = (PhieuDatDichVuDTO) request.getData();
@@ -93,22 +119,34 @@ public class PhieuDatDichVuHandler implements RequestHandler {
 //                        System.out.println("Handling GET_PHIEU_DAT_DICH_VU_BY_MA_PDP for maPDP: " + maPDP);
 //                        return handleGetByMaPDP(maPDP);
 
+//                    case "FIND_BY_MA_KH" :
+//                        String maKH = gson.fromJson(gson.toJson(request.getData()), String.class);
+//                        if (maKH == null || maKH.isEmpty()) {
+//                            return new Response<>(false, "Mã khách hàng không hợp lệ");
+//                        }
+//                        List<PhieuDatDichVuDTO> phieuDatDichVuList = dao.findByMaKH(maKH);
+//                        return new Response<>(true, phieuDatDichVuList);
                     case "GET_ALL_PHONG_DAT_DICHVU":
                         @SuppressWarnings("unchecked")
                         List<String> maPDPList = (List<String>) request.getData();
+                        System.out.println("Nhận yêu cầu GET_ALL_PHONG_DAT_DICHVU với maPDPList: " + maPDPList);
+
+                        if (maPDPList == null || maPDPList.isEmpty()) {
+                            System.out.println("maPDPList rỗng hoặc null, trả về mảng rỗng.");
+                            return new Response<>(true, new String[0][]);
+                        }
 
                         GenericDAO<PhieuDatDichVu> pddvDAO = new GenericDAO<>(PhieuDatDichVu.class);
                         List<PhieuDatDichVu> danhSachPhieuDatDichVu = pddvDAO.findByCondition(pddv ->
                                 pddv.getPhieuDatPhong() != null &&
                                         maPDPList.contains(pddv.getPhieuDatPhong().getMaPDP())
                         );
+                        System.out.println("Số lượng PhieuDatDichVu tìm thấy: " + danhSachPhieuDatDichVu.size());
 
                         List<String[]> resultList = new ArrayList<>();
-
                         for (PhieuDatDichVu pddv : danhSachPhieuDatDichVu) {
                             String maPDP = pddv.getPhieuDatPhong().getMaPDP();
                             String tenKhachHang = pddv.getKhachHang().getHoTen();
-
                             Set<Phong> danhSachPhong = pddv.getPhieuDatPhong().getPhongs();
                             Set<DichVu> danhSachDichVu = pddv.getDichVus();
 
@@ -119,13 +157,14 @@ public class PhieuDatDichVuHandler implements RequestHandler {
                                     resultList.add(new String[]{maPDP, maPhong, tenKhachHang, tenDV});
                                 }
                             }
+                        }
 
                         String[][] resultArray = resultList.toArray(new String[0][]);
+                        System.out.println("GET_ALL_PHONG_DAT_DICHVU: Trả về " + resultList.size() + " hàng dữ liệu: " + Arrays.deepToString(resultArray));
                         return new Response<>(true, resultArray);
-                    }
 
 
-                return new Response<>(false, null);
+//                return new Response<>(false, null);
 
                 default:
                         return new Response<>(false, null);

@@ -272,7 +272,11 @@ public class DangNhap_GUI extends JFrame {
                 // Gửi thông tin đăng nhập
                 TaiKhoanDTO taiKhoanDTO = new TaiKhoanDTO(tenDN, matKhau);
                 Request<TaiKhoanDTO> request = new Request<>("DANG_NHAP", taiKhoanDTO);
-                SocketManager.send(request);
+                try {
+                    SocketManager.send(request);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
 
                 try {
                     // Nhận response từ server

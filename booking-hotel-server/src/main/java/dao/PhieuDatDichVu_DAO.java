@@ -247,4 +247,20 @@ public class PhieuDatDichVu_DAO extends GenericDAO<PhieuDatDichVu> {
         PhieuDatDichVuDTO result = read(maPDDV);
         return result != null;
     }
+    public boolean create1(PhieuDatDichVuDTO phieuDatDichVuDTO) {
+        if (phieuDatDichVuDTO == null || phieuDatDichVuDTO.getMaPDDV() == null || phieuDatDichVuDTO.getMaPDDV().isEmpty()) {
+            System.err.println("Mã phiếu đặt dịch vụ không hợp lệ");
+            return false;
+        }
+        if (phieuDatDichVuDTO.getMaKH() == null || phieuDatDichVuDTO.getMaKH().isEmpty()) {
+            System.err.println("Mã khách hàng không hợp lệ");
+            return false;
+        }
+        return super.create1(mapper.toEntity(phieuDatDichVuDTO));
+    }
+    public List<PhieuDatDichVuDTO> getAllPhieuDatDichVuDTOs() {
+        return super.findAll().stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
 }

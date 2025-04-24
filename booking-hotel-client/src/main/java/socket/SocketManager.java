@@ -52,5 +52,11 @@ public class SocketManager {
         System.out.println("RECEIVED JSON: " + json);
         return gson.fromJson(json, responseType);
     }
-
+    public static <T> T receive2(Type type) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String json = reader.readLine();
+        System.out.println("Nhận dữ liệu: " + json);
+        Gson gson = new Gson();
+        return gson.fromJson(json, type);
+    }
 }

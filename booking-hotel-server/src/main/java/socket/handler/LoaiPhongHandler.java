@@ -3,8 +3,11 @@ package socket.handler;
 import com.google.gson.Gson;
 import dao.LoaiPhong_DAO;
 import dto.LoaiPhongDTO;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import model.Request;
 import model.Response;
+import utils.HibernateUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -61,6 +64,42 @@ public class LoaiPhongHandler implements RequestHandler {
                 }
                 List<LoaiPhongDTO> ds = loaiPhongDao.findByTenLoaiPhong(tenLoai);
                 return new Response<>(true, ds);
+            }
+            case "GET_TEN_LOAI_BY_MA_LOAI" -> {
+                String maLoai = gson.fromJson(gson.toJson(request.getData()), String.class);
+                System.out.println("Nhận yêu cầu GET_TEN_LOAI_BY_MA_LOAI với maLoai: " + maLoai);
+
+                if (maLoai == null || maLoai.trim().isEmpty()) {
+                    System.out.println("Lỗi: maLoai không hợp lệ (null hoặc rỗng)");
+                    return new Response<>(false, "Mã loại phòng không hợp lệ: null hoặc rỗng");
+                }
+
+                try {
+                    EntityManager em = HibernateUtil.getEntityManager();
+                    try {
+                        String jpql = "SELECT lp.tenLoai FROM LoaiPhong lp WHERE lp.maLoai = :maLoai";
+                        String tenLoai = em.createQuery(jpql, String.class)
+                                .setParameter("maLoai", maLoai)
+                                .getSingleResult();
+
+                        if (tenLoai == null) {
+                            System.out.println("Không tìm thấy tenLoai cho maLoai: " + maLoai);
+                            return new Response<>(false, "Không tìm thấy loại phòng với mã: " + maLoai);
+                        }
+
+                        System.out.println("Trả về tenLoai: " + tenLoai + " cho maLoai: " + maLoai);
+                        return new Response<>(true, tenLoai);
+                    } catch (NoResultException e) {
+                        System.out.println("Không tìm thấy loại phòng cho maLoai: " + maLoai);
+                        return new Response<>(false, "Không tìm thấy loại phòng với mã: " + maLoai);
+                    } finally {
+                        em.close();
+                    }
+                } catch (Exception e) {
+                    System.out.println("Lỗi khi xử lý GET_TEN_LOAI_BY_MA_LOAI cho maLoai " + maLoai + ": " + e.getMessage());
+                    e.printStackTrace();
+                    return new Response<>(false, "Lỗi server khi lấy tên loại phòng: " + e.getMessage());
+                }
             }
         }
 
