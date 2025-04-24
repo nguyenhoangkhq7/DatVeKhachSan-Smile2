@@ -47,6 +47,10 @@ public class HandlerManager {
         handlers.put("NHAN_PHONG", new PhieuDatPhongHandler());
         handlers.put("TRA_PHONG", new PhieuDatPhongHandler());
         handlers.put("XOA_DICH_VU", new DichVuHandler());
+        handlers.put("GET_TEN_LOAI_PHONG_BY_MA_PHONG", new PhongHandler());
+        handlers.put("GET_SO_PHONG_BY_LOAI_PHONG", new PhongHandler());
+        handlers.put("GET_TEN_LOAI_BY_MA_LOAI", new LoaiPhongHandler());
+        handlers.put("TIM_KHACH_HANG_THEO_TEN", new KhachHangHandler());
 
 
 

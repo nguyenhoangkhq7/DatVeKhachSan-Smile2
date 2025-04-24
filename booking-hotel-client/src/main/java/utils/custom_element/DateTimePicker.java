@@ -93,7 +93,7 @@ public class DateTimePicker extends JXDatePicker {
 
     }
 
-    private void setTimeSpinners() {
+    public void setTimeSpinners() {
         Date date = getDate();
         if (date != null) {
             timeSpinner.setValue( date );

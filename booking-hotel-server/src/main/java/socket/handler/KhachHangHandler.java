@@ -43,16 +43,19 @@ public class KhachHangHandler implements RequestHandler {
                     return new Response<>(false, "Mã khách hàng không hợp lệ");
                 }
                 boolean success = khachHangDao.update(dto);
-                String message = success ? "Sửa khách hàngthành công" : "Sửa khách hàng thất bại";
+                String message = success ? "Sửa khách hàng thành công" : "Sửa khách hàng thất bại";
                 System.out.println("SUA_KHACH_HANG result: " + message);
                 return new Response<>(success, message);
             }
             case "TIM_KHACH_HANG_THEO_TEN" -> {
                 String hoTen = gson.fromJson(gson.toJson(request.getData()), String.class);
+                System.out.println("Nhận yêu cầu TIM_KHACH_HANG_THEO_TEN với hoTen: " + hoTen);
                 if (hoTen == null || hoTen.isEmpty()) {
+                    System.out.println("Lỗi: Họ tên không hợp lệ (null hoặc rỗng)");
                     return new Response<>(false, "Họ tên không hợp lệ");
                 }
                 List<KhachHangDTO> ds = khachHangDao.findByHoTen(hoTen);
+                System.out.println("Trả về danh sách khách hàng: " + ds);
                 return new Response<>(true, ds);
             }
             case "TIM_KHACH_HANG_NANG_CAO" -> {
@@ -61,7 +64,6 @@ public class KhachHangHandler implements RequestHandler {
                 if (keyword == null || keyword.trim().isEmpty()) {
                     return new Response<>(false, "Từ khóa tìm kiếm không hợp lệ");
                 }
-
                 List<KhachHangDTO> ds = khachHangDao.findByKeyword(keyword.trim());
                 return new Response<>(true, ds);
             }
@@ -73,7 +75,9 @@ public class KhachHangHandler implements RequestHandler {
                 }
                 return new Response<>(true, khachHang);
             }
+            default -> {
+                return new Response<>(false, "Hành động không được hỗ trợ: " + action);
+            }
         }
-        return new Response<>(false, "Hành động không được hỗ trợ");
     }
 }
