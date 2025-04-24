@@ -1,6 +1,7 @@
 package socket.handler;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import dao.PhieuDatPhong_DAO;
 import dao.Phong_DAO;
@@ -11,8 +12,10 @@ import model.Phong;
 import model.Request;
 import model.Response;
 import utils.HibernateUtil;
+import utils.custom_element.LocalDateAdapter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,11 +23,14 @@ import java.util.stream.Collectors;
 
 public class PhieuDatPhongHandler implements RequestHandler {
     private final PhieuDatPhong_DAO phieuDatPhongDao;
-    private final Gson gson;
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
+
 
     public PhieuDatPhongHandler() {
         this.phieuDatPhongDao = new PhieuDatPhong_DAO();
-        this.gson = new Gson();
+//        this.gson = new Gson();
     }
 
     @Override
@@ -32,12 +38,17 @@ public class PhieuDatPhongHandler implements RequestHandler {
         String action = request.getAction();
         switch (action) {
             case "CREATE_PHIEU_DAT_PHONG" -> {
-                PhieuDatPhongDTO pdpDTO = gson.fromJson(gson.toJson(request.getData()), PhieuDatPhongDTO.class);
-                if (pdpDTO == null || pdpDTO.getMaPDP() == null || pdpDTO.getMaPDP().isEmpty()) {
+                PhieuDatPhongDTO dto = gson.fromJson(
+                        gson.toJson(request.getData()), PhieuDatPhongDTO.class
+                );
+                System.out.println("Nhận yêu cầu CREATE_PHIEU_DAT_PHONG với dữ liệu: " + gson.toJson(dto));
+                if (dto == null || dto.getMaPDP() == null || dto.getMaPDP().isEmpty()) {
+                    System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
                     return new Response<>(false, "Mã phiếu đặt phòng không hợp lệ");
                 }
-                boolean success = phieuDatPhongDao.create(pdpDTO);
-                return new Response<>(success, success ? "Thêm phiếu đặt phòng thành công" : "Thêm phiếu đặt phòng thất bại");
+                boolean success = phieuDatPhongDao.create3(dto);
+                System.out.println("Kết quả thêm phiếu đặt phòng: " + success);
+                return new Response<>(success, success);
             }
             case "READ_PHIEU_DAT_PHONG" -> {
                 String maPhieu = gson.fromJson(gson.toJson(request.getData()), String.class);

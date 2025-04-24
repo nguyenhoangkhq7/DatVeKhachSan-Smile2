@@ -1,8 +1,10 @@
 package view.form;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -11,25 +13,26 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import dto.KhachHangDTO;
-import dto.NhanVienDTO;
-import dto.PhieuDatPhongDTO;
-import dto.PhongDTO;
+import dto.*;
 import socket.SocketManager;
 import utils.custom_element.*;
 import dao.*;
 import model.*;
 import org.jdesktop.swingx.JXDatePicker;
+import utils.session.SessionManager;
 
 public class DatPhong_FORM extends JPanel implements Openable {
     private JTextField txtNgayDat;
@@ -37,16 +40,18 @@ public class DatPhong_FORM extends JPanel implements Openable {
     private final int rowsPerPage = 5;
     private DefaultTableModel tableModel;
     private DateTimePicker dateTimeNgayDen, dateTimeNgayDi;
-    private JXDatePicker dateNgayDat, dateNgaySinh;
+    private JXDatePicker dateNgayDat;
     private JComboBox<String> cmbLoaiPhong, cmbSoPhong;
-    private JTextField txtSDT, txtTenKhachHang, txtDiaChi, txtEmail, txtCCCD, txtSoKhach;
+    private JTextField txtSDT, txtTenKhachHang, txtEmail, txtCCCD, txtSoKhach;
     private PhieuDatPhong_DAO phieuDatPhongDAO;
     private Phong_DAO phongDAO;
     private JTextField txtSearch;
     private JTable table;
     private TaiKhoan_DAO taiKhoanDAO;
     private KhachHang_DAO khachHangDAO;
-    //    @Override
+    private boolean isUpdating = false;
+
+    @Override
     public void open() {
         khachHangDAO = new KhachHang_DAO();
         taiKhoanDAO = new TaiKhoan_DAO();
@@ -56,15 +61,12 @@ public class DatPhong_FORM extends JPanel implements Openable {
     }
 
     public DatPhong_FORM() {
-
         setLayout(new BorderLayout());
         setBackground(new Color(16, 16, 20));
-        // north
         JPanel northPanel = new JPanel();
         northPanel.setOpaque(false);
         northPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 30, 0));
         Box northPanelBox = Box.createVerticalBox();
-        // Tim kiem
         txtSearch = new JTextField("Tìm kiếm");
         Border emptyBorder = BorderFactory.createEmptyBorder(13, 52, 12, 0);
         txtSearch.setBounds(0, 0, 280, 45);
@@ -114,14 +116,11 @@ public class DatPhong_FORM extends JPanel implements Openable {
         JPanel form = new JPanel();
         form.setPreferredSize(new Dimension(1400, 350));
         form.setOpaque(false);
-        // BoxForm
         Box boxForm1 = createFormBox("Ngày đặt", dateNgayDat = new JXDatePicker());
         Box boxForm2 = createFormBox("Ngày đến", dateTimeNgayDen = new DateTimePicker());
         Box boxForm3 = createFormBox("Ngày đi", dateTimeNgayDi = new DateTimePicker());
         Box boxForm4 = createFormBox("CCCD", txtCCCD = new JTextField());
-//        Box boxForm5 = createFormBox("Ngày sinh", dateNgaySinh = new JXDatePicker());
         Box boxForm6 = createFormBox("Tên khách hàng", txtTenKhachHang = new JTextField());
-//        Box boxForm7 = createFormBox("Địa chỉ", txtDiaChi = new JTextField());
         Box boxForm8 = createFormBox("Email", txtEmail = new JTextField());
         Box boxForm9 = createFormBox("Số điện thoại", txtSDT = new JTextField());
         Box boxForm10 = createFormBox("Loại phòng", cmbLoaiPhong = new JComboBox<>(new String[]{"Chọn", "Phòng Deluxe", "Phòng Đôi", "Phòng Gia Đình", "Phòng Đơn"}));
@@ -132,21 +131,37 @@ public class DatPhong_FORM extends JPanel implements Openable {
         cmbSoPhong.setEnabled(false);
         cmbLoaiPhong.addActionListener(e -> handleChonLoaiPhong());
         cmbSoPhong.addActionListener(e -> updateTenPhong((String) cmbSoPhong.getSelectedItem()));
-        txtCCCD.addActionListener(e -> handleSearchCustomer());
-        txtCCCD.addFocusListener(new FocusAdapter() {
+
+        DocumentListener searchListener = new DocumentListener() {
             @Override
-            public void focusLost(FocusEvent e) {
-                handleSearchCustomer();
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdating && e.getDocument() == txtCCCD.getDocument()) {
+                    handleSearchCustomer();
+                }
             }
-        });
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdating && e.getDocument() == txtCCCD.getDocument()) {
+                    handleSearchCustomer();
+                }
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                if (!isUpdating && e.getDocument() == txtCCCD.getDocument()) {
+                    handleSearchCustomer();
+                }
+            }
+        };
+
+        txtCCCD.getDocument().addDocumentListener(searchListener);
 
         form.add(boxForm1);
         form.add(boxForm2);
         form.add(boxForm3);
         form.add(boxForm4);
-//        form.add(boxForm5);
         form.add(boxForm6);
-//        form.add(boxForm7);
         form.add(boxForm8);
         form.add(boxForm9);
         form.add(boxForm10);
@@ -157,7 +172,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
         northPanelBox.add(form);
         northPanelBox.setPreferredSize(new Dimension(1642, 380));
         northPanel.add(northPanelBox);
-        // center
+
         JLabel titleLabel = new JLabel("Lịch sử đặt phòng");
         titleLabel.setFont(FontManager.getManrope(Font.BOLD, 16));
         titleLabel.setForeground(Color.white);
@@ -172,7 +187,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
         titlePanel.add(titleLabel);
         titlePanel.add(Box.createHorizontalGlue());
 
-
         String[] headers = {"Mã phiếu đặt phòng", "Số phòng", "Tên khách hàng", "Ngày đặt", "Ngày đến", "Ngày đi", "Nhân viên tạo phiếu", "Tình trạng"};
         tableModel = new DefaultTableModel(headers, 0) {
             private static final long serialVersionUID = 1L;
@@ -183,13 +197,11 @@ public class DatPhong_FORM extends JPanel implements Openable {
             }
         };
 
-
         table = new JTable(tableModel);
         table.setBackground(new Color(24, 24, 28));
         table.setForeground(Color.WHITE);
         table.setFont(FontManager.getManrope(Font.PLAIN, 14));
         table.setRowHeight(55);
-
 
         JTableHeader header = table.getTableHeader();
         header.setDefaultRenderer(new CustomHeaderRenderer(new Color(38, 38, 42), Color.white));
@@ -208,7 +220,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
         scroll.getViewport().setOpaque(false);
         scroll.setViewportBorder(null);
 
-
         JPanel centerPanel = new JPanel();
         centerPanel.setOpaque(false);
         centerPanel.add(titlePanel);
@@ -223,6 +234,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
         add(southPanel, BorderLayout.SOUTH);
+        setupFocusLossOnClick();
 
         submitButton.addActionListener(e -> handleSubmit());
         refreshButton.addActionListener(e -> handleRefresh());
@@ -243,7 +255,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
             tableModel.setRowCount(0);
 
             try {
-                // Lấy danh sách khách hàng
                 System.out.println("Gửi yêu cầu: GET_ALL_KHACH_HANG");
                 Request<Void> khRequest = new Request<>("GET_ALL_KHACH_HANG", null);
                 SocketManager.send(khRequest);
@@ -258,7 +269,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     khachHangMap.put(kh.getMaKH(), kh.getHoTen());
                 }
 
-                // Lấy danh sách nhân viên
                 System.out.println("Gửi yêu cầu: GET_ALL_NHAN_VIEN");
                 Request<Void> nvRequest = new Request<>("GET_ALL_NHAN_VIEN", null);
                 SocketManager.send(nvRequest);
@@ -273,7 +283,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     nhanVienMap.put(nv.getMaNhanVien(), nv.getHoTen());
                 }
 
-                // Lấy danh sách phòng để tra cứu tình trạng và loại phòng
                 System.out.println("Gửi yêu cầu: GET_ALL_PHONG");
                 Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
                 SocketManager.send(phongRequest);
@@ -289,7 +298,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     phongTinhTrangMap.put(phong.getMaPhong(), phong.getTinhTrang());
                     String tenLoai = "Không xác định";
                     if (phong.getMaLoai() != null && !phong.getMaLoai().isEmpty()) {
-                        // Gửi yêu cầu lấy tenLoai dựa trên maLoai
                         System.out.println("Gửi yêu cầu GET_TEN_LOAI_BY_MA_LOAI cho maLoai: " + phong.getMaLoai());
                         Request<String> tenLoaiRequest = new Request<>("GET_TEN_LOAI_BY_MA_LOAI", phong.getMaLoai());
                         SocketManager.send(tenLoaiRequest);
@@ -307,7 +315,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     System.out.println("Lưu tenLoai: " + tenLoai + " cho maPhong: " + phong.getMaPhong());
                 }
 
-                // Lấy danh sách phiếu đặt phòng với phòng có tình trạng "Đã đặt" (tinh_trang = 1)
                 System.out.println("Gửi yêu cầu: GET_PHIEU_DAT_PHONG_DA_DAT");
                 Request<Void> request = new Request<>("GET_PHIEU_DAT_PHONG_DA_DAT", null);
                 SocketManager.send(request);
@@ -327,7 +334,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     return;
                 }
 
-                // Hiển thị từng mã phòng riêng lẻ
                 for (PhieuDatPhongDTO pdp : pdpListDTO) {
                     String maPDP = pdp.getMaPDP() != null ? pdp.getMaPDP() : "";
                     String maKH = pdp.getMaKH() != null ? pdp.getMaKH() : "";
@@ -343,7 +349,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     for (String maPhong : dsMaPhong) {
                         if (!phongTinhTrangMap.containsKey(maPhong)) {
                             System.out.println("Bỏ qua maPhong không hợp lệ: " + maPhong);
-                            continue; // Bỏ qua maPhong không tồn tại
+                            continue;
                         }
 
                         Integer tinhTrangPhong = phongTinhTrangMap.getOrDefault(maPhong, -1);
@@ -357,7 +363,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
                             default -> "Không xác định";
                         };
 
-                        // Sử dụng Timestamp cho tất cả các ngày
                         Timestamp ngayDatTimestamp = ngayDat != null ? Timestamp.valueOf(ngayDat.atStartOfDay()) : null;
                         Timestamp ngayDenTimestamp = ngayDen != null ? Timestamp.valueOf(ngayDen.atStartOfDay()) : null;
                         Timestamp ngayDiTimestamp = ngayDi != null ? Timestamp.valueOf(ngayDi.atStartOfDay()) : null;
@@ -410,7 +415,7 @@ public class DatPhong_FORM extends JPanel implements Openable {
 
     private void handleChonLoaiPhong() {
         String selectedLoaiPhong = (String) cmbLoaiPhong.getSelectedItem();
-        if (!selectedLoaiPhong.equals("Chọn")) {
+        if (selectedLoaiPhong != null && !selectedLoaiPhong.equals("Chọn")) {
             updateSoPhongList(selectedLoaiPhong);
             cmbSoPhong.setEnabled(true);
         } else {
@@ -420,50 +425,111 @@ public class DatPhong_FORM extends JPanel implements Openable {
     }
 
     private void updateSoPhongList(String loaiPhong) {
-//        Date ngayDen = dateTimeNgayDen.getDate();
-//        Date ngayDi = dateTimeNgayDi.getDate();
-//
-//        cmbSoPhong.removeAllItems();
-//        cmbSoPhong.addItem("Chọn");
-//        ArrayList<String> dsSoPhong = phongDAO.getSoPhongByLoaiPhong(loaiPhong);
-//
-//        ArrayList<String> dsSoPhongDaDat = phieuDatPhongDAO.getSoPhongDaDat(ngayDen, ngayDi);
-//
-//        for (String soPhong : dsSoPhong) {
-//            if (!dsSoPhongDaDat.contains(soPhong)) {
-//                cmbSoPhong.addItem(soPhong);
-//            }
-//        }
+        try {
+            Request<Void> phongRequest = new Request<>("GET_ALL_PHONG", null);
+            SocketManager.send(phongRequest);
+            Type phongResponseType = new TypeToken<Response<List<PhongDTO>>>() {}.getType();
+            Response<List<PhongDTO>> phongResponse = SocketManager.receiveType(phongResponseType);
+
+            if (!phongResponse.isSuccess() || phongResponse.getData() == null) {
+                JOptionPane.showMessageDialog(this, "Không thể lấy danh sách phòng: " + (phongResponse.getData() != null ? phongResponse.getData().toString() : "Không có phản hồi từ server"), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                cmbSoPhong.removeAllItems();
+                cmbSoPhong.setEnabled(false);
+                return;
+            }
+
+            Map<String, String> loaiPhongMap = new HashMap<>();
+            for (PhongDTO phong : phongResponse.getData()) {
+                String tenLoai = "Không xác định";
+                if (phong.getMaLoai() != null && !phong.getMaLoai().isEmpty()) {
+                    Request<String> tenLoaiRequest = new Request<>("GET_TEN_LOAI_BY_MA_LOAI", phong.getMaLoai());
+                    SocketManager.send(tenLoaiRequest);
+                    Type tenLoaiResponseType = new TypeToken<Response<String>>() {}.getType();
+                    Response<String> tenLoaiResponse = SocketManager.receiveType(tenLoaiResponseType);
+                    if (tenLoaiResponse.isSuccess() && tenLoaiResponse.getData() != null) {
+                        tenLoai = tenLoaiResponse.getData();
+                    }
+                }
+                loaiPhongMap.put(phong.getMaPhong(), tenLoai);
+            }
+
+            List<String> dsMaPhong = phongResponse.getData().stream()
+                    .filter(phong -> phong.getTinhTrang() == 0)
+                    .filter(phong -> loaiPhong.equals(loaiPhongMap.get(phong.getMaPhong())))
+                    .map(PhongDTO::getMaPhong)
+                    .collect(Collectors.toList());
+
+            cmbSoPhong.removeAllItems();
+            if (dsMaPhong.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có phòng nào còn trống thuộc loại " + loaiPhong, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                cmbSoPhong.setEnabled(false);
+            } else {
+                for (String maPhong : dsMaPhong) {
+                    cmbSoPhong.addItem(maPhong);
+                }
+                cmbSoPhong.setEnabled(true);
+            }
+
+        } catch (Exception e) {
+            String errorMessage = "Lỗi khi cập nhật danh sách số phòng: " + e.getMessage();
+            JOptionPane.showMessageDialog(this, errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            cmbSoPhong.removeAllItems();
+            cmbSoPhong.setEnabled(false);
+        }
     }
 
     private void updateTenPhong(String soPhong) {
-//        Phong_DAO phongDAO = new Phong_DAO();
-//        String tenPhong = phongDAO.getTenPhongBySoPhong(soPhong);
+        // Giữ nguyên
     }
 
-    private void handleSearchCustomer() {
-//        String cccd = txtCCCD.getText().trim();
-//        if (!cccd.isEmpty()) {
-//            KhachHang khachHang = khachHangDAO.searchKhachHangBangCCCD(cccd);
-//
-//            if (khachHang != null) {
-//                txtTenKhachHang.setText(khachHang.getHoTen());
-//                txtDiaChi.setText(khachHang.getDiaChi());
-//                txtEmail.setText(khachHang.getEmail());
-//                txtSDT.setText(khachHang.getSdt());
-//                dateNgaySinh.setDate(khachHang.getNgaySinh());
-//            }
-//        }
+    private KhachHangDTO handleSearchCustomer() {
+        String cccd = txtCCCD.getText().trim();
+        if (cccd.isEmpty()) {
+            return null;
+        }
+
+        try {
+            System.out.println("Tìm kiếm khách hàng theo CCCD: " + cccd);
+            Request<String> request = new Request<>("TIM_KHACH_HANG_THEO_CCCD", cccd);
+            SocketManager.send(request);
+            Type type = new TypeToken<Response<List<KhachHangDTO>>>() {}.getType();
+            Response<List<KhachHangDTO>> response = SocketManager.receiveType(type);
+
+            KhachHangDTO khachHang = null;
+            if (response != null && response.isSuccess() && response.getData() != null && !response.getData().isEmpty()) {
+                khachHang = response.getData().get(0);
+                System.out.println("Tìm thấy khách hàng: " + khachHang.getHoTen());
+
+                isUpdating = true;
+                try {
+                    txtTenKhachHang.setText(khachHang.getHoTen() != null ? khachHang.getHoTen() : "");
+                    txtSDT.setText(khachHang.getSoDienThoai() != null ? khachHang.getSoDienThoai() : "");
+                    txtEmail.setText(khachHang.getEmail() != null ? khachHang.getEmail() : "");
+                } finally {
+                    isUpdating = false;
+                }
+            }
+
+            return khachHang;
+
+        } catch (Exception e) {
+            String errorMessage = "Lỗi khi tìm kiếm khách hàng: " + e.getMessage();
+            System.out.println(errorMessage);
+            JOptionPane.showMessageDialog(this, errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String generateMaKH() {
+        Random random = new Random();
+        int randomNumber = random.nextInt(9000) + 1000;
+        return "KH" + randomNumber;
     }
 
     private void loadLoaiPhong() {
-//        LoaiPhong_DAO loaiPhongDAO = new LoaiPhong_DAO();
-//        ArrayList<LoaiPhong> dsLoaiPhong = loaiPhongDAO.getDSLoaiPhong();
-//
-//        for (LoaiPhong loaiPhong : dsLoaiPhong) {
-//            cmbLoaiPhong.addItem(loaiPhong.getTenLoaiPhong());
-//        }
-
+        // Giữ nguyên
     }
 
     private JButton createButton(String buttonLabel, Color buttonColor) {
@@ -602,19 +668,34 @@ public class DatPhong_FORM extends JPanel implements Openable {
     }
 
     private String getRandomMa() {
-        Random random = new Random();
-        StringBuilder letters = new StringBuilder();
-        for (int i = 0; i < 3; i++) {
-            char randomLetter = (char) ('A' + random.nextInt(26));
-            letters.append(randomLetter);
-        }
+        String maPDP;
+        do {
+            Random random = new Random();
+            StringBuilder letters = new StringBuilder();
+            for (int i = 0; i < 3; i++) {
+                char randomLetter = (char) ('A' + random.nextInt(26));
+                letters.append(randomLetter);
+            }
+            StringBuilder numbers = new StringBuilder();
+            for (int i = 0; i < 3; i++) {
+                int randomNumber = random.nextInt(10);
+                numbers.append(randomNumber);
+            }
+            maPDP = letters.toString() + "-" + numbers.toString();
 
-        StringBuilder numbers = new StringBuilder();
-        for (int i = 0; i < 3; i++) {
-            int randomNumber = random.nextInt(10);
-            numbers.append(randomNumber);
-        }
-        return letters.toString() + "-" + numbers.toString();
+            try {
+                Request<String> checkRequest = new Request<>("CHECK_PHIEU_DAT_PHONG_EXISTS", maPDP);
+                SocketManager.send(checkRequest);
+                Type checkResponseType = new TypeToken<Response<Boolean>>() {}.getType();
+                Response<Boolean> checkResponse = SocketManager.receiveType(checkResponseType);
+                if (checkResponse.isSuccess() && checkResponse.getData()) {
+                    maPDP = null; // Nếu mã đã tồn tại, thử tạo mã mới
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } while (maPDP == null);
+        return maPDP;
     }
 
     private void fillFormFromSelectedRow() {
@@ -625,7 +706,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
         }
 
         try {
-            // Lấy dữ liệu từ dòng được chọn
             String maPDP = (String) table.getValueAt(selectedRow, 0);
             String maPhong = (String) table.getValueAt(selectedRow, 1);
             String tenKhachHang = (String) table.getValueAt(selectedRow, 2);
@@ -634,10 +714,13 @@ public class DatPhong_FORM extends JPanel implements Openable {
             Timestamp ngayDi = (Timestamp) table.getValueAt(selectedRow, 5);
             String tenNhanVien = (String) table.getValueAt(selectedRow, 6);
 
-            // Cập nhật các trường nhập liệu
-            txtTenKhachHang.setText(tenKhachHang != null ? tenKhachHang : "");
+            isUpdating = true;
+            try {
+                txtTenKhachHang.setText(tenKhachHang != null ? tenKhachHang : "");
+            } finally {
+                isUpdating = false;
+            }
 
-            // Truy vấn thông tin khách hàng dựa trên tenKhachHang
             if (tenKhachHang != null && !tenKhachHang.isEmpty()) {
                 try {
                     System.out.println("Gửi yêu cầu TIM_KHACH_HANG_THEO_TEN cho tenKhachHang: " + tenKhachHang);
@@ -647,39 +730,54 @@ public class DatPhong_FORM extends JPanel implements Openable {
                     Response<List<KhachHangDTO>> khResponse = SocketManager.receiveType(khachHangResponseType);
 
                     if (khResponse != null && khResponse.isSuccess() && khResponse.getData() != null && !khResponse.getData().isEmpty()) {
-                        // Lấy khách hàng đầu tiên khớp với tên
                         KhachHangDTO khachHang = khResponse.getData().get(0);
-                        txtCCCD.setText(khachHang.getSoCCCD() != null ? khachHang.getSoCCCD() : "");
-                        txtEmail.setText(khachHang.getEmail() != null ? khachHang.getEmail() : "");
-                        txtSDT.setText(khachHang.getSoDienThoai() != null ? khachHang.getSoDienThoai() : "");
+                        isUpdating = true;
+                        try {
+                            txtCCCD.setText(khachHang.getSoCCCD() != null ? khachHang.getSoCCCD() : "");
+                            txtEmail.setText(khachHang.getEmail() != null ? khachHang.getEmail() : "");
+                            txtSDT.setText(khachHang.getSoDienThoai() != null ? khachHang.getSoDienThoai() : "");
+                        } finally {
+                            isUpdating = false;
+                        }
                         System.out.println("Đã điền thông tin khách hàng: CCCD=" + khachHang.getSoCCCD() + ", Email=" + khachHang.getEmail() + ", SDT=" + khachHang.getSoDienThoai());
                     } else {
                         String errorMessage = khResponse != null && khResponse.getData() != null
                                 ? khResponse.getData().toString()
                                 : "Không tìm thấy thông tin khách hàng với tên: " + tenKhachHang;
                         System.out.println("Lỗi: " + errorMessage);
-                        // Xóa các trường nếu không tìm thấy khách hàng
-                        txtCCCD.setText("");
-                        txtEmail.setText("");
-                        txtSDT.setText("");
+                        isUpdating = true;
+                        try {
+                            txtCCCD.setText("");
+                            txtEmail.setText("");
+                            txtSDT.setText("");
+                        } finally {
+                            isUpdating = false;
+                        }
                     }
                 } catch (Exception e) {
                     String errorMessage = "Lỗi khi truy vấn thông tin khách hàng: " + e.getMessage();
                     System.out.println(errorMessage);
                     JOptionPane.showMessageDialog(this, errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    // Xóa các trường nếu có lỗi
+                    isUpdating = true;
+                    try {
+                        txtCCCD.setText("");
+                        txtEmail.setText("");
+                        txtSDT.setText("");
+                    } finally {
+                        isUpdating = false;
+                    }
+                }
+            } else {
+                isUpdating = true;
+                try {
                     txtCCCD.setText("");
                     txtEmail.setText("");
                     txtSDT.setText("");
+                } finally {
+                    isUpdating = false;
                 }
-            } else {
-                // Nếu tenKhachHang rỗng, xóa các trường
-                txtCCCD.setText("");
-                txtEmail.setText("");
-                txtSDT.setText("");
             }
 
-            // Cập nhật các trường ngày
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             dateNgayDat.setDate(ngayDat != null ? new Date(ngayDat.getTime()) : null);
             dateTimeNgayDen.getEditor().setText(ngayDen != null ? dateFormat.format(ngayDen) : "");
@@ -687,7 +785,6 @@ public class DatPhong_FORM extends JPanel implements Openable {
             dateTimeNgayDi.getEditor().setText(ngayDi != null ? dateFormat.format(ngayDi) : "");
             dateTimeNgayDi.setTimeSpinners();
 
-            // Lấy tên loại phòng từ mã phòng
             String tenLoai = layTenLoaiPhong(maPhong);
             if (tenLoai == null) return;
 
@@ -764,79 +861,239 @@ public class DatPhong_FORM extends JPanel implements Openable {
         }
     }
 
+    private boolean isValidCCCD(String cccd) {
+        return cccd != null && cccd.matches("\\d{12}");
+    }
+
+    private boolean isValidTenKhachHang(String ten) {
+        return ten != null && ten.matches("[a-zA-Z\\s0-9]+");
+    }
+
+    private boolean isValidEmail(String email) {
+        return email != null && email.matches("^[a-zA-Z0-9._%+-]+@gmail\\.com$");
+    }
+
+    private boolean isValidSDT(String sdt) {
+        return sdt != null && sdt.matches("\\d{10}");
+    }
+
     private void handleSubmit() {
-//        Date ngayDat = dateNgayDat.getDate();
-//        Date ngayDen = dateTimeNgayDen.getDate();
-//        Date ngayDi = dateTimeNgayDi.getDate();
-//        String sdt = txtSDT.getText().trim();
-//        Date ngaySinh = dateNgaySinh.getDate();
-//        String tenKhachHang = txtTenKhachHang.getText().trim();
-//        String email = txtEmail.getText().trim();
-//        String diaChi = txtDiaChi.getText().trim();
-//        String cccd = txtCCCD.getText().trim();
-//        String loaiPhong = (String) cmbLoaiPhong.getSelectedItem();
-//        String soPhong = (String) cmbSoPhong.getSelectedItem();
-//        String soKhach = txtSoKhach.getText().trim();
+        try {
+            // 1. Lấy dữ liệu từ form
+            String tenKhachHang = txtTenKhachHang.getText().trim();
+            String cccd = txtCCCD.getText().trim();
+            String sdt = txtSDT.getText().trim();
+            String email = txtEmail.getText().trim();
+            String soPhong = (String) cmbSoPhong.getSelectedItem();
+
+            // 2. Kiểm tra dữ liệu đầu vào
+            if (tenKhachHang.isEmpty() || cccd.isEmpty() || sdt.isEmpty() || email.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin khách hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (soPhong == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn số phòng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (dateNgayDat.getDate() == null || dateTimeNgayDen.getDate() == null || dateTimeNgayDi.getDate() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ ngày đặt, ngày đến và ngày đi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isValidCCCD(cccd)) {
+                JOptionPane.showMessageDialog(this, "Số CCCD phải đủ 12 số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isValidTenKhachHang(tenKhachHang)) {
+                JOptionPane.showMessageDialog(this, "Tên khách hàng không được chứa ký tự đặc biệt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                JOptionPane.showMessageDialog(this, "Email phải có định dạng hợp lệ (ví dụ: example@gmail.com)!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isValidSDT(sdt)) {
+                JOptionPane.showMessageDialog(this, "Số điện thoại phải đủ 10 số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 3. Kiểm tra ràng buộc ngày
+            LocalDate ngayHienTai = LocalDate.now();
+            LocalDate ngayDat = dateNgayDat.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate ngayDen = dateTimeNgayDen.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate ngayDi = dateTimeNgayDi.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+            if (ngayDat.isBefore(ngayHienTai)) {
+                JOptionPane.showMessageDialog(this, "Ngày đặt phải bằng hoặc lớn hơn ngày hiện tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (ngayDen.isBefore(ngayDat)) {
+                JOptionPane.showMessageDialog(this, "Ngày đến phải bằng hoặc sau ngày đặt!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!ngayDi.isAfter(ngayDen)) {
+                JOptionPane.showMessageDialog(this, "Ngày đi phải sau ngày đến!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 4. Kiểm tra khách hàng
+            KhachHangDTO khachHang = handleSearchCustomer();
+            String maKH;
+
+            if (khachHang == null) {
+                // Tạo khách hàng mới
+                KhachHangDTO newCustomer = new KhachHangDTO();
+                newCustomer.setMaKH(generateMaKH());
+                newCustomer.setHoTen(tenKhachHang);
+                newCustomer.setSoCCCD(cccd);
+                newCustomer.setSoDienThoai(sdt);
+                newCustomer.setEmail(email);
+
+                Request<KhachHangDTO> createCustomerRequest = new Request<>("THEM_KHACH_HANG_BOOLEAN", newCustomer);
+                SocketManager.send(createCustomerRequest);
+                Type createResponseType = new TypeToken<Response<Boolean>>() {
+                }.getType();
+                Response<Boolean> createResponse = SocketManager.receiveType(createResponseType);
+
+                if (!createResponse.isSuccess() || !createResponse.getData()) {
+                    JOptionPane.showMessageDialog(this, "Tạo khách hàng mới thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                maKH = newCustomer.getMaKH();
+                System.out.println("Tạo khách hàng mới thành công: " + maKH);
+            } else {
+                // Sử dụng khách hàng hiện có
+                maKH = khachHang.getMaKH();
+                System.out.println("Sử dụng khách hàng hiện có: " + maKH);
+            }
+
+            // 5. Tạo phiếu đặt phòng
+            PhieuDatPhongDTO phieuDatPhong = new PhieuDatPhongDTO();
+            phieuDatPhong.setMaPDP(getRandomMa());
+            phieuDatPhong.setMaKH(maKH);
+            phieuDatPhong.setMaNV(SessionManager.getCurrentUser().getMaNhanVien());
+            phieuDatPhong.setDsMaPhong(Arrays.asList(soPhong));
+            phieuDatPhong.setNgayDatPhong(ngayDat);
+            phieuDatPhong.setNgayNhanPhongDuKien(ngayDen);
+            phieuDatPhong.setNgayTraPhongDuKien(ngayDi);
+            phieuDatPhong.setMaHD("HD-" + UUID.randomUUID().toString());
+
+            // 6. Cập nhật trạng thái phòng
+            Request<String> phongRequest = new Request<>("GET_PHONG_BY_MA_PHONG", soPhong);
+            SocketManager.send(phongRequest);
+            Type phongResponseType = new TypeToken<Response<PhongDTO>>() {}.getType();
+            Response<PhongDTO> phongResponse = SocketManager.receiveType(phongResponseType);
+
+            if (!phongResponse.isSuccess() || phongResponse.getData() == null) {
+                JOptionPane.showMessageDialog(this, "Không thể lấy thông tin phòng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            PhongDTO phongDTO = phongResponse.getData();
+            if (phongDTO.getTinhTrang() != 0) {
+                JOptionPane.showMessageDialog(this, "Phòng đã được đặt hoặc đang sử dụng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            phongDTO.setTinhTrang(1); // Đã đặt
+            System.out.println("Dữ liệu gửi đi cho SUA_PHONG: " + new Gson().toJson(phongDTO));
+            Request<PhongDTO> updatePhongRequest = new Request<>("SUA_PHONG_BOOLEAN", phongDTO);
+            SocketManager.send(updatePhongRequest);
+            Type updatePhongResponseType = new TypeToken<Response<Boolean>>() {}.getType();
+            Response<Boolean> updatePhongResponse = SocketManager.receiveType(updatePhongResponseType);
+
+            if (!updatePhongResponse.isSuccess() || !updatePhongResponse.getData()) {
+                System.out.println("Phản hồi từ SUA_PHONG: " + new Gson().toJson(updatePhongResponse));
+                JOptionPane.showMessageDialog(this, "Cập nhật trạng thái phòng thất bại! Chi tiết: " + updatePhongResponse.getData(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 7. Gửi yêu cầu tạo phiếu đặt phòng
+            Request<PhieuDatPhongDTO> createPhieuRequest = new Request<>("CREATE_PHIEU_DAT_PHONG", phieuDatPhong);
+            SocketManager.send(createPhieuRequest);
+            Type createPhieuResponseType = new TypeToken<Response<Boolean>>() {}.getType();
+            Response<Boolean> createPhieuResponse = SocketManager.receiveType(createPhieuResponseType);
+
+            if (!createPhieuResponse.isSuccess() || !createPhieuResponse.getData()) {
+                JOptionPane.showMessageDialog(this, "Tạo phiếu đặt phòng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Tạo HoaDon sau khi PhieuDatPhong được lưu thành công
+            HoaDonDTO hoaDon = new HoaDonDTO();
+            hoaDon.setMaHD(phieuDatPhong.getMaHD());
+            hoaDon.setMaPDP(phieuDatPhong.getMaPDP());
+//            // Điền các thông tin khác cho HoaDon (nếu cần)
 //
-//        if (ngayDat == null || ngayDen == null || ngayDi == null || ngaySinh == null || sdt.isEmpty() || tenKhachHang.isEmpty() || cccd.isEmpty() || loaiPhong.equals("Chọn") || soPhong.equals("Chọn") || soKhach.isEmpty()) {
-//            JOptionPane.showMessageDialog(this, "Vui lòng điền đủ thông tin.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-//            return;
-//        }
+//            Request<HoaDonDTO> createHoaDonRequest = new Request<>("CREATE_HOA_DON", hoaDon);
+//            SocketManager.send(createHoaDonRequest);
+//            Type createHoaDonResponseType = new TypeToken<Response<Boolean>>() {}.getType();
+//            Response<Boolean> createHoaDonResponse = SocketManager.receiveType(createHoaDonResponseType);
 //
-//        if (!ngayDi.after(ngayDen)) {
-//            JOptionPane.showMessageDialog(this, "Ngày đi phải sau ngày đến.", "Thông báo", JOptionPane.WARNING_MESSAGE);
-//            return;
-//        }
-//        Phong p = new Phong(soPhong);
-//        NhanVien nv = new NhanVien(taiKhoanDAO.getCurrentNhanVien().getMaNV(), taiKhoanDAO.getCurrentNhanVien().getHoTen());
-//
-//        KhachHang kh = null;
-//        if (khachHangDAO.doesCustomerExist(cccd)) {
-//            kh = khachHangDAO.searchKhachHangBangCCCD(cccd);
-//            kh.setSdt(sdt);
-//            kh.setEmail(email);
-//            kh.setDiaChi(diaChi);
-//        } else {
-//            String maKH = getRandomMa();
-//            while (khachHangDAO.doesCustomerIdExist(maKH)) {
-//                maKH = getRandomMa();
+//            if (!createHoaDonResponse.isSuccess() || !createHoaDonResponse.getData()) {
+//                JOptionPane.showMessageDialog(this, "Tạo hóa đơn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+//                return;
 //            }
-//            kh = new KhachHang(maKH, tenKhachHang, diaChi, sdt, email, cccd, 1, ngaySinh);
-//        }
-//        String maPDP = getRandomMa();
-//        while (phieuDatPhongDAO.doesPDPIdExist(maPDP)){
-//            maPDP = getRandomMa();
-//        }
-//        PhieuDatPhong phieuDatPhong = new PhieuDatPhong(maPDP, p, nv, kh, ngayDi, ngayDen, ngayDat, 0);
-//        if (phieuDatPhongDAO.datPhong(phieuDatPhong)) {
-//            JOptionPane.showMessageDialog(this, "Đã đặt phòng thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-//            tableModel.insertRow(0, new Object[]{
-//                    maPDP,
-//                    soPhong,
-//                    tenKhachHang,
-//                    new java.sql.Date(ngayDat.getTime()),
-//                    new Timestamp(ngayDen.getTime()),
-//                    new Timestamp(ngayDi.getTime()),
-//                    nv.getHoTen(),
-//                    phieuDatPhong.getTinhTrangPDP()
-//            });
-//            handleRefresh();
-//        } else {
-//            JOptionPane.showMessageDialog(this, "Có lỗi xảy ra khi đặt phòng!", "Thông báo", JOptionPane.ERROR_MESSAGE);
-//        }
+
+            // 8. Thông báo thành công và làm mới bảng
+            JOptionPane.showMessageDialog(this, "Tạo phiếu đặt phòng thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            loadTableData();
+
+        } catch (Exception e) {
+            String errorMessage = "Lỗi khi xử lý: " + e.getMessage();
+            JOptionPane.showMessageDialog(this, errorMessage, "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    private void setupFocusLossOnClick() {
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Component component = SwingUtilities.getDeepestComponentAt(DatPhong_FORM.this, e.getX(), e.getY());
+                if (component == DatPhong_FORM.this) {
+                    Component focusedComponent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+                    if (focusedComponent != null) {
+                        focusedComponent.transferFocus();
+                    }
+                }
+            }
+        });
     }
 
     private void handleRefresh() {
-        dateNgayDat.setDate(new Date());
-        dateTimeNgayDen.setDate(new Date());
-        dateTimeNgayDi.setDate(new Date());
-        dateNgaySinh.setDate(new Date());
-        txtSDT.setText("");
-        txtTenKhachHang.setText("");
-        txtEmail.setText("");
-        txtDiaChi.setText("");
-        txtCCCD.setText("");
-        cmbLoaiPhong.setSelectedIndex(0);
-        txtSoKhach.setText("");
+        Date currentDate = new Date();
+        dateNgayDat.setDate(currentDate);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Date ngayDenDate = calendar.getTime();
+        dateTimeNgayDen.setDate(ngayDenDate);
+        dateTimeNgayDen.setTimeSpinners();
+
+        calendar.setTime(ngayDenDate);
+        calendar.add(Calendar.DAY_OF_MONTH, 2);
+        Date ngayDiDate = calendar.getTime();
+        dateTimeNgayDi.setDate(ngayDiDate);
+        dateTimeNgayDi.setTimeSpinners();
+
+        isUpdating = true;
+        try {
+            txtSDT.setText("");
+            txtTenKhachHang.setText("");
+            txtEmail.setText("");
+            txtCCCD.setText("");
+            cmbLoaiPhong.setSelectedIndex(0);
+        } finally {
+            isUpdating = false;
+        }
     }
 }

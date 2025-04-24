@@ -51,6 +51,13 @@ public class HandlerManager {
         handlers.put("GET_SO_PHONG_BY_LOAI_PHONG", new PhongHandler());
         handlers.put("GET_TEN_LOAI_BY_MA_LOAI", new LoaiPhongHandler());
         handlers.put("TIM_KHACH_HANG_THEO_TEN", new KhachHangHandler());
+        handlers.put("TIM_KHACH_HANG_THEO_CCCD", new KhachHangHandler());
+        handlers.put("SUA_PHONG", new PhongHandler());
+        handlers.put("READ_PHONG", new PhongHandler());
+        handlers.put("THEM_KHACH_HANG", new KhachHangHandler());
+        handlers.put("THEM_KHACH_HANG_BOOLEAN", new KhachHangHandler());
+        handlers.put("SUA_PHONG_BOOLEAN", new PhongHandler());
+        handlers.put("CREATE_HOA_DON", new HoaDonHandler());
 
 
 

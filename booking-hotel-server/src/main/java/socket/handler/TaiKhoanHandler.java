@@ -7,6 +7,7 @@ import model.NhanVien;
 import model.TaiKhoan;
 import model.Request;
 import model.Response;
+import utils.session.SessionManager;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class TaiKhoanHandler implements RequestHandler {
 
                 if (!result.isEmpty()) {
                     NhanVien nhanVien = result.get(0);
+                    SessionManager.setCurrentUser(nhanVien);
                     return new Response<>(true, nhanVien);
                 } else {
                     return new Response<>(false, null);

@@ -36,6 +36,16 @@ public class KhachHangHandler implements RequestHandler {
                 boolean success = khachHangDao.create(dto);
                 return new Response<>(success, success ? "Thêm khách hàng thành công" : "Thêm khách hàng thất bại");
             }
+            case "THEM_KHACH_HANG_BOOLEAN" -> {
+                KhachHangDTO dto = gson.fromJson(
+                        gson.toJson(request.getData()), KhachHangDTO.class
+                );
+                if (dto == null || dto.getMaKH() == null || dto.getMaKH().isEmpty()) {
+                    return new Response<>(false, "Mã khách hàng không hợp lệ");
+                }
+                boolean success = khachHangDao.create(dto);
+                return new Response<>(success, success); // Trả về success dưới dạng Boolean
+            }
             case "SUA_KHACH_HANG" -> {
                 KhachHangDTO dto = gson.fromJson(gson.toJson(request.getData()), KhachHangDTO.class);
                 if (dto == null || dto.getMaKH() == null || dto.getMaKH().isEmpty()) {
@@ -58,8 +68,18 @@ public class KhachHangHandler implements RequestHandler {
                 System.out.println("Trả về danh sách khách hàng: " + ds);
                 return new Response<>(true, ds);
             }
+            case "TIM_KHACH_HANG_THEO_CCCD" -> {
+                String soCCCD = gson.fromJson(gson.toJson(request.getData()), String.class);
+                System.out.println("Nhận yêu cầu TIM_KHACH_HANG_THEO_CCCD với soCCCD: " + soCCCD);
+                if (soCCCD == null || soCCCD.isEmpty()) {
+                    System.out.println("Lỗi: Số CCCD không hợp lệ (null hoặc rỗng)");
+                    return new Response<>(false, "Số CCCD không hợp lệ");
+                }
+                List<KhachHangDTO> ds = khachHangDao.findBySoCCCD(soCCCD);
+                System.out.println("Trả về danh sách khách hàng: " + ds);
+                return new Response<>(true, ds);
+            }
             case "TIM_KHACH_HANG_NANG_CAO" -> {
-                // Tìm kiếm nâng cao theo keyword
                 String keyword = gson.fromJson(gson.toJson(request.getData()), String.class);
                 if (keyword == null || keyword.trim().isEmpty()) {
                     return new Response<>(false, "Từ khóa tìm kiếm không hợp lệ");

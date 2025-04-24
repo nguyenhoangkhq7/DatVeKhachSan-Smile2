@@ -151,4 +151,19 @@ public class PhieuDatPhong_DAO extends GenericDAO<PhieuDatPhong> {
             em.close();
         }
     }
+    public boolean create3(PhieuDatPhongDTO dto) {
+        if (dto == null || dto.getMaPDP() == null || dto.getMaPDP().isEmpty()) {
+            System.out.println("Lỗi: Mã phiếu đặt phòng không hợp lệ");
+            return false;
+        }
+        try {
+            PhieuDatPhong entity = mapper.toEntity(dto); // Sửa toEntityDTO thành toEntity
+            System.out.println("Entity trước khi lưu: " + entity);
+            return super.create(entity); // Đảm bảo GenericDAO có phương thức create3
+        } catch (Exception e) {
+            System.out.println("Lỗi khi thêm phiếu đặt phòng: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -75,6 +75,23 @@ public class KhachHang_DAO extends GenericDAO<KhachHang> {
         }
     }
 
+    // Tìm kiếm khách hàng theo CCCD
+    public List<KhachHangDTO> findBySoCCCD(String soCCCD) {
+        if (soCCCD == null || soCCCD.isEmpty()) return new ArrayList<>();
+        EntityManager em = HibernateUtil.getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<KhachHang> cq = cb.createQuery(KhachHang.class);
+            Root<KhachHang> root = cq.from(KhachHang.class);
+            cq.select(root).where(cb.equal(root.get("soCCCD"), soCCCD));
+            return em.createQuery(cq).getResultList().stream()
+                    .map(mapper::toDTO)
+                    .collect(Collectors.toList());
+        } finally {
+            em.close();
+        }
+    }
+
     public List<KhachHangDTO> findByKeyword(String keyword) {
         EntityManager em = HibernateUtil.getEntityManager();
         try {
@@ -97,5 +114,4 @@ public class KhachHang_DAO extends GenericDAO<KhachHang> {
             em.close();
         }
     }
-
 }

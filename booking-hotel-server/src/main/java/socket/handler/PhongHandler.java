@@ -26,6 +26,22 @@ public class PhongHandler implements RequestHandler {
                 List<PhongDTO> ds = phongDao.getAllPhongDTOs();
                 return new Response<>(true, ds);
             }
+            case "READ_PHONG" -> {
+                String maPhong = (String) request.getData(); // Giả sử dữ liệu yêu cầu là maPhong (mã phòng)
+
+                if (maPhong == null || maPhong.isEmpty()) {
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+
+                PhongDTO phongDTO = phongDao.read(maPhong); // Gọi phương thức read() từ DAO để lấy thông tin phòng
+
+                if (phongDTO != null) {
+                    return new Response<>(true, phongDTO); // Trả về thông tin phòng nếu tìm thấy
+                } else {
+                    return new Response<>(false, "Không tìm thấy phòng với mã: " + maPhong); // Trường hợp không tìm thấy phòng
+                }
+            }
+
             case "THEM_PHONG" -> {
                 PhongDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), PhongDTO.class
@@ -40,11 +56,24 @@ public class PhongHandler implements RequestHandler {
                 PhongDTO dto = gson.fromJson(
                         gson.toJson(request.getData()), PhongDTO.class
                 );
+                System.out.println("Nhận yêu cầu SUA_PHONG với dữ liệu: " + gson.toJson(dto));
+                if (dto == null || dto.getMaPhong() == null || dto.getMaPhong().isEmpty()) {
+                    System.out.println("Lỗi: Mã phòng không hợp lệ");
+                    return new Response<>(false, "Mã phòng không hợp lệ");
+                }
+                boolean success = phongDao.update(dto);
+                System.out.println("Kết quả cập nhật phòng: " + success);
+                return new Response<>(success, success ? "Cập nhật phòng thành công" : "Cập nhật phòng thất bại");
+            }
+            case "SUA_PHONG_BOOLEAN" -> {
+                PhongDTO dto = gson.fromJson(
+                        gson.toJson(request.getData()), PhongDTO.class
+                );
                 if (dto == null || dto.getMaPhong() == null || dto.getMaPhong().isEmpty()) {
                     return new Response<>(false, "Mã phòng không hợp lệ");
                 }
                 boolean success = phongDao.update(dto);
-                return new Response<>(success, success ? "Cập nhật phòng thành công" : "Cập nhật phòng thất bại");
+                return new Response<>(success, success); // Trả về success dưới dạng Boolean
             }
             case "TIM_PHONG_THEO_TEN" -> {
                 String tenPhong = gson.fromJson(gson.toJson(request.getData()), String.class);
